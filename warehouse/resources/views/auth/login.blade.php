@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Portal Warehouse PT Meiwa Indonesia</title>
-    <meta name="description" content="Portal Terpadu Warehouse PT. Meiwa Indonesia - Integrasi MARS & SATURNUS">
+    <title>Login | Portal Warehouse PT Metalart Astra Indonesia</title>
+    <meta name="description" content="Portal Terpadu Warehouse PT Metalart Astra Indonesia - Integrasi MARS & SATURNUS">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -445,7 +445,7 @@
             <a href="{{ url('/') }}" class="logo-container">
                 <img src="{{ asset('assets/images/MAI.png') }}" alt="MAI Logo" class="header-logo" onerror="this.src='{{ asset('assets/images/MAI TERANG.png') }}'">
                 <div class="header-title-box">
-                    <span class="header-company-name">PT. MEIWA INDONESIA</span>
+                    <span class="header-company-name">PT METALART ASTRA INDONESIA</span>
                     <span class="header-portal-label">PORTAL WAREHOUSE TERPADU</span>
                 </div>
             </a>
@@ -553,7 +553,7 @@
 
         <!-- Footer -->
         <footer class="login-footer">
-            &copy; {{ date('Y') }} PT. Meiwa Indonesia. Warehouse Unified Portal — MARS &amp; SATURNUS Integrated Engine.
+            &copy; {{ date('Y') }} PT Metalart Astra Indonesia. Warehouse Unified Portal — MARS &amp; SATURNUS Integrated Engine.
         </footer>
     </div>
 

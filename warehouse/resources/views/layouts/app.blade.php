@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Portal Terpadu Warehouse') | PT. Meiwa Indonesia</title>
+    <title>@yield('title', 'Portal Terpadu Warehouse') | PT Metalart Astra Indonesia</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,7 +33,7 @@
     <style>
         /* Custom Master Layout Styling & Full Width Fix */
         :root {
-            --sidebar-width: 250px;
+            --sidebar-width: 260px;
         }
 
         html, body {
@@ -58,22 +58,21 @@
         }
 
         .sidebar {
-            width: 250px !important;
-            min-width: 250px !important;
-            max-width: 250px !important;
+            width: 260px !important;
+            min-width: 260px !important;
+            max-width: 260px !important;
             height: 100vh !important;
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
             bottom: 0 !important;
             z-index: 1030 !important;
-            overflow-y: auto !important;
-            background: #0f172a !important;
+            overflow: hidden !important;
         }
 
         .page-wrapper {
-            margin-left: 250px !important;
-            width: calc(100% - 250px) !important;
+            margin-left: 260px !important;
+            width: calc(100% - 260px) !important;
             min-height: 100vh !important;
             display: flex !important;
             flex-direction: column !important;
@@ -82,8 +81,8 @@
         }
 
         .navbar {
-            width: calc(100% - 250px) !important;
-            left: 250px !important;
+            width: calc(100% - 260px) !important;
+            left: 260px !important;
             right: 0 !important;
             height: 60px !important;
             background-color: #ffffff !important;
@@ -200,53 +199,292 @@
             background-color: #ffffff;
         }
 
-        body.sidebar-dark .sidebar .sidebar-body .nav .nav-item .nav-link {
-            color: #94a3b8;
-            font-weight: 500;
-            font-size: 0.88rem;
-            padding: 0.65rem 1.5rem;
-            display: flex;
-            align-items: center;
-            transition: all 0.2s ease;
+        /* ==========================================================================
+           SIMPLE TREE-STYLE SIDEBAR (MATCHING USER'S REFERENCE DESIGN)
+           ========================================================================== */
+        .simple-tree-sidebar {
+            width: 260px !important;
+            min-width: 260px !important;
+            max-width: 260px !important;
+            height: 100vh !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            bottom: 0 !important;
+            z-index: 1030 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            background: #f8fafc !important;
+            border-right: 1px solid #e2e8f0 !important;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.02) !important;
+            user-select: none !important;
         }
-        body.sidebar-dark .sidebar .sidebar-body .nav .nav-item .nav-link:hover {
-            color: #ffffff;
-            background: rgba(255, 255, 255, 0.05);
+
+        /* Sidebar Brand Header */
+        .simple-tree-sidebar .sidebar-header-simple {
+            padding: 1rem 1.25rem !important;
+            background: #f8fafc !important;
+            border-bottom: 1px solid #eef2f6 !important;
+            display: flex !important;
+            align-items: center !important;
+            min-height: 64px !important;
+            flex-shrink: 0 !important;
         }
-        body.sidebar-dark .sidebar .sidebar-body .nav .nav-item .nav-link.active {
-            color: #38bdf8;
-            font-weight: 700;
-            background: rgba(56, 189, 248, 0.12);
-            border-left: 3px solid #38bdf8;
+
+        .simple-tree-sidebar .brand-link-simple {
+            display: flex !important;
+            align-items: center !important;
+            text-decoration: none !important;
+            width: 100% !important;
         }
-        body.sidebar-dark .sidebar .sidebar-body .nav .nav-item .nav-link i.link-icon {
-            width: 18px;
-            height: 18px;
-            margin-right: 12px;
+
+        .simple-tree-sidebar .brand-logo-simple {
+            height: 32px !important;
+            width: auto !important;
+            max-width: 175px !important;
+            object-fit: contain !important;
         }
-        .nav-category-badge {
-            font-size: 0.68rem;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            margin-left: auto;
+
+        /* Sidebar Scrollable Body */
+        .simple-tree-sidebar .sidebar-scroll-simple {
+            flex: 1 1 auto !important;
+            overflow-y: auto !important;
+            padding: 1rem 0.85rem !important;
+            background: #f8fafc !important;
         }
-        .bg-mars {
-            background: rgba(239, 68, 68, 0.2);
-            color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.4);
+
+        .simple-tree-sidebar .sidebar-scroll-simple::-webkit-scrollbar {
+            width: 4px !important;
         }
-        .bg-saturnus {
-            background: rgba(56, 189, 248, 0.2);
-            color: #38bdf8;
-            border: 1px solid rgba(56, 189, 248, 0.4);
+
+        .simple-tree-sidebar .sidebar-scroll-simple::-webkit-scrollbar-thumb {
+            background: #cbd5e1 !important;
+            border-radius: 4px !important;
         }
-        .bg-settings {
-            background: rgba(168, 85, 247, 0.2);
-            color: #c084fc;
-            border: 1px solid rgba(168, 85, 247, 0.4);
+
+        /* Standalone Top Menu Item (Dashboard) */
+        .simple-tree-sidebar .nav-tree-standalone {
+            margin-bottom: 0.5rem !important;
+        }
+
+        .simple-tree-sidebar .nav-tree-item {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.65rem !important;
+            padding: 0.48rem 0.65rem !important;
+            border-radius: 6px !important;
+            color: #334155 !important;
+            font-size: 0.86rem !important;
+            font-weight: 500 !important;
+            text-decoration: none !important;
+            transition: all 0.15s ease !important;
+        }
+
+        .simple-tree-sidebar .nav-tree-icon {
+            width: 16px !important;
+            height: 16px !important;
+            color: #64748b !important;
+            flex-shrink: 0 !important;
+        }
+
+        .simple-tree-sidebar .nav-tree-item:hover {
+            background: #f1f5f9 !important;
+            color: #0f172a !important;
+        }
+
+        .simple-tree-sidebar .nav-tree-item.active-tree-item {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+            color: #1d4ed8 !important;
+            font-weight: 600 !important;
+        }
+
+        .simple-tree-sidebar .nav-tree-item.active-tree-item .nav-tree-icon {
+            color: #2563eb !important;
+        }
+
+        /* Collapsible Tree Groups (COMPLIANCE, MONITORING, ORGANIZATION style) */
+        .simple-tree-sidebar .nav-tree-group {
+            margin-top: 0.75rem !important;
+            margin-bottom: 0.25rem !important;
+        }
+
+        .simple-tree-sidebar .nav-tree-header {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 0.42rem 0.65rem !important;
+            cursor: pointer !important;
+            user-select: none !important;
+            border-radius: 6px !important;
+            transition: background 0.15s ease !important;
+        }
+
+        .simple-tree-sidebar .nav-tree-header:hover {
+            background: #f1f5f9 !important;
+        }
+
+        .simple-tree-sidebar .header-left {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.65rem !important;
+            min-width: 0 !important;
+        }
+
+        .simple-tree-sidebar .group-icon {
+            width: 15px !important;
+            height: 15px !important;
+            color: #64748b !important;
+            flex-shrink: 0 !important;
+        }
+
+        .simple-tree-sidebar .group-title {
+            font-size: 0.72rem !important;
+            font-weight: 700 !important;
+            color: #64748b !important;
+            letter-spacing: 0.05em !important;
+            text-transform: uppercase !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+
+        .simple-tree-sidebar .group-caret {
+            font-size: 0.75rem !important;
+            color: #94a3b8 !important;
+            display: inline-block !important;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            line-height: 1 !important;
+        }
+
+        .simple-tree-sidebar .nav-tree-header[aria-expanded="false"] .group-caret {
+            transform: rotate(-90deg) !important;
+        }
+
+        .simple-tree-sidebar .nav-tree-header[aria-expanded="true"] .group-caret {
+            transform: rotate(0deg) !important;
+            color: #334155 !important;
+        }
+
+        /* Continuous Vertical Indented Line */
+        .simple-tree-sidebar .nav-tree-sublist {
+            position: relative !important;
+            margin-left: 17px !important;
+            padding-left: 14px !important;
+            border-left: 1.5px solid #cbd5e1 !important;
+            margin-top: 0.25rem !important;
+            margin-bottom: 0.4rem !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 2px !important;
+        }
+
+        .simple-tree-sidebar .sub-tree-link {
+            display: flex !important;
+            align-items: center !important;
+            padding: 0.42rem 0.65rem !important;
+            border-radius: 6px !important;
+            color: #334155 !important;
+            font-size: 0.84rem !important;
+            font-weight: 500 !important;
+            text-decoration: none !important;
+            position: relative !important;
+            transition: all 0.15s ease !important;
+        }
+
+        .simple-tree-sidebar .sub-tree-link:hover {
+            background: #f1f5f9 !important;
+            color: #0f172a !important;
+        }
+
+        /* Active Subtree Link (Floating card pill with blue bar like 'Frameworks' in image) */
+        .simple-tree-sidebar .sub-tree-link.active-tree-item {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+            color: #1d4ed8 !important;
+            font-weight: 600 !important;
+        }
+
+        .simple-tree-sidebar .active-bar-indicator {
+            position: absolute !important;
+            left: 6px !important;
+            top: 20% !important;
+            bottom: 20% !important;
+            width: 2.5px !important;
+            background: #2563eb !important;
+            border-radius: 2px !important;
+        }
+
+        .simple-tree-sidebar .active-tree-item .sub-tree-text {
+            padding-left: 8px !important;
+        }
+
+        /* Minimal User Profile Bottom Bar */
+        .simple-tree-sidebar .sidebar-user-footer-simple {
+            padding: 0.75rem 1rem !important;
+            border-top: 1px solid #e2e8f0 !important;
+            background: #f8fafc !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            flex-shrink: 0 !important;
+        }
+
+        .simple-tree-sidebar .user-avatar-simple {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 50% !important;
+            background: #e2e8f0 !important;
+            color: #334155 !important;
+            font-weight: 700 !important;
+            font-size: 0.8rem !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+        }
+
+        .simple-tree-sidebar .user-text-simple {
+            display: flex !important;
+            flex-direction: column !important;
+            line-height: 1.2 !important;
+            min-width: 0 !important;
+        }
+
+        .simple-tree-sidebar .user-name-simple {
+            font-size: 0.82rem !important;
+            font-weight: 600 !important;
+            color: #0f172a !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: 125px !important;
+        }
+
+        .simple-tree-sidebar .user-role-simple {
+            font-size: 0.65rem !important;
+            color: #64748b !important;
+            font-weight: 500 !important;
+        }
+
+        .simple-tree-sidebar .logout-btn-simple {
+            color: #94a3b8 !important;
+            width: 28px !important;
+            height: 28px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 6px !important;
+            transition: all 0.15s ease !important;
+            text-decoration: none !important;
+            flex-shrink: 0 !important;
+        }
+
+        .simple-tree-sidebar .logout-btn-simple:hover {
+            color: #ef4444 !important;
+            background: #fee2e2 !important;
         }
         /* Top Navigation Module Switcher */
         .portal-switcher {
@@ -319,7 +557,7 @@
         }
     </style>
 </head>
-<body class="sidebar-dark">
+<body class="sidebar-light">
     <div class="main-wrapper">
 
         <!-- Sidebar Navigation -->

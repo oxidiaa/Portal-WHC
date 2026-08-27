@@ -22,7 +22,7 @@ class UnifiedWarehouseTest extends TestCase
         $response = $this->get('/login');
         $response->assertStatus(200);
         $response->assertSee('PORTAL WAREHOUSE');
-        $response->assertSee('PT. MEIWA INDONESIA');
+        $response->assertSee('PT METALART ASTRA INDONESIA');
     }
 
     public function test_authenticated_user_can_access_dashboard()

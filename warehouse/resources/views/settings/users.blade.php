@@ -12,7 +12,7 @@
                 👥 Manajemen User &amp; Akun
             </h2>
             <p style="font-size: 0.88rem; color: var(--text-muted); margin: 0;">
-                Kelola akun pengguna, departemen, role, dan hak akses portal terpadu PT Meiwa Indonesia.
+                Kelola akun pengguna, departemen, role, dan hak akses portal terpadu PT Metalart Astra Indonesia.
             </p>
         </div>
         <div>
