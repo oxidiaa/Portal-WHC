@@ -61,7 +61,7 @@
                                 </p>
                                 <div class="table-responsive">
                                     <table class="table table-sm table-bordered align-middle mb-0">
-                                        <thead class="table-light">
+                                        <thead class="mars-table-dark">
                                             <tr>
                                                 <th>Item Code</th>
                                                 <th>Item Name</th>
@@ -212,6 +212,29 @@
             </div>
         </div>
     </div>
+
+    <style>
+        .mars-table-dark th {
+            background-color: #2c3e50 !important;
+            color: #ffffff !important;
+            font-size: 11.5px !important;
+            font-weight: 700 !important;
+            border: 1px solid #34495e !important;
+            vertical-align: middle !important;
+            text-transform: uppercase;
+        }
+
+        .table td {
+            vertical-align: middle !important;
+            font-size: 13px !important;
+            color: #212529 !important;
+        }
+
+        .modal-content {
+            background-color: #ffffff !important;
+            color: #212529 !important;
+        }
+    </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
