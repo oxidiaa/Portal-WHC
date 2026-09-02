@@ -792,6 +792,57 @@
         #followUpModal .modal-body::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+
+        /* Input & Filter High-Contrast Table Styling */
+        .request-whc-input,
+        .request-whc-date-input,
+        #dataTable .form-control,
+        #dataTable .form-select {
+            background-color: #ffffff !important;
+            color: #212529 !important;
+            border: 1px solid #ced4da !important;
+            font-size: 0.82rem !important;
+            font-weight: 500 !important;
+        }
+
+        .request-whc-input:focus,
+        .request-whc-date-input:focus,
+        #dataTable .form-control:focus,
+        #dataTable .form-select:focus {
+            background-color: #ffffff !important;
+            color: #212529 !important;
+            border-color: #86b7fe !important;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+        }
+
+        .request-whc-input::placeholder {
+            color: #6c757d !important;
+            opacity: 1 !important;
+        }
+
+        .request-whc-date-input::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            opacity: 0.7;
+        }
+
+        .request-whc-date-input::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+
+        #dataTable thead.table-dark th {
+            background-color: #2c3e50 !important;
+            color: #ffffff !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            border: 1px solid #34495e !important;
+            vertical-align: middle !important;
+        }
+
+        #dataTable tbody td {
+            vertical-align: middle !important;
+            font-size: 12.5px !important;
+            color: #212529 !important;
+        }
     </style>
 
     <script>

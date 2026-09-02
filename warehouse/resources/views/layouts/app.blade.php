@@ -19,12 +19,14 @@
     <!-- Feather Font Icons -->
     <link rel="stylesheet" href="{{ asset('assets/fonts/feather-font/css/iconfont.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/vendors/flag-icon-css/css/flag-icon.min.css') }}">
-    <!-- Layout styles -->
+    <!-- Layout styles (NobleUI / MARS base) -->
     <link rel="stylesheet" href="{{ asset('assets/css/demo1/style.css') }}">
-    <!-- SATURNUS & Form Checksheet Custom Styles -->
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <!-- Unified Portal Custom Enhancements -->
     <link rel="stylesheet" href="{{ asset('css/unified-style.css') }}">
+    <!-- SATURNUS Custom Styles (Scoped to Saturnus routes) -->
+    @if(request()->is('saturnus*') || request()->is('form-registrasi*') || request()->is('form-unregistrasi*'))
+        <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    @endif
 
     <!-- QR Code & Barcode Libraries -->
     <script src="{{ asset('js/qrcode.min.js') }}"></script>
