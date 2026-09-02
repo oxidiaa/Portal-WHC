@@ -32,9 +32,9 @@ class UnifiedWarehouseTest extends TestCase
 
         $response = $this->actingAs($user)->get('/dashboard');
         $response->assertStatus(200);
-        $response->assertSee('Executive Overview');
+        $response->assertSee('ORBIT');
         $response->assertSee('MARS');
-        $response->assertSee('SATURNUS');
+        $response->assertSee('SATURN');
     }
 
     public function test_user_can_access_mars_pages()
