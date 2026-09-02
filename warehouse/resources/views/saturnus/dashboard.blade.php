@@ -4,6 +4,42 @@
 
 @section('content')
 
+<style>
+    /* ==========================================================================
+       🪐 DEEP COSMIC BLACK SPACE BACKGROUND (ORIGINAL SATURNUS THEME)
+       ========================================================================== */
+    html, body, .main-wrapper, .page-wrapper, .page-content {
+        background-color: #020617 !important;
+        background:
+            radial-gradient(ellipse 90% 70% at 50% -10%, rgba(26, 63, 168, 0.35) 0%, transparent 60%),
+            radial-gradient(ellipse 60% 50% at 85% 60%, rgba(0, 173, 239, 0.18) 0%, transparent 55%),
+            radial-gradient(ellipse 50% 40% at 15% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 50%),
+            #020617 !important;
+        background-attachment: fixed !important;
+        color: #f8fafc !important;
+    }
+
+    .page-wrapper {
+        background-color: #020617 !important;
+    }
+
+    .page-content {
+        background: transparent !important;
+        padding: 1.5rem 2rem !important;
+    }
+
+    .footer, footer {
+        background-color: #020617 !important;
+        background: #020617 !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+        color: #94a3b8 !important;
+    }
+
+    .footer p, footer p, .footer span, footer span, .footer a, footer a {
+        color: #94a3b8 !important;
+    }
+</style>
+
 <!-- Load Three.js 3D Engine from CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
