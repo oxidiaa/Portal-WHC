@@ -32,6 +32,37 @@
     <script src="{{ asset('js/qrcode.min.js') }}"></script>
     <script src="{{ asset('js/JsBarcode.all.min.js') }}"></script>
 
+    <!-- Instant Sidebar & Topbar Theme Initializer (Auto MARS = Light, SATURNUS = Dark) -->
+    <script>
+        (function() {
+            try {
+                const isSaturnusRoute = {{ (request()->is('saturnus*') || request()->is('form-registrasi*') || request()->is('form-unregistrasi*')) ? 'true' : 'false' }};
+                
+                // Automatic Module-Based Defaults: MARS = Light, SATURNUS = Dark
+                let activeSidebar = isSaturnusRoute ? 'cosmic' : 'light';
+                let activeTopbar = isSaturnusRoute ? 'cosmic' : 'light';
+                let activeAccent = isSaturnusRoute ? 'purple' : 'blue';
+
+                const customSidebar = localStorage.getItem(isSaturnusRoute ? 'saturnus_sidebar_theme' : 'mars_sidebar_theme');
+                const customTopbar = localStorage.getItem(isSaturnusRoute ? 'saturnus_topbar_theme' : 'mars_topbar_theme');
+                const customAccent = localStorage.getItem('mai_portal_accent');
+
+                if (customSidebar) activeSidebar = customSidebar;
+                if (customTopbar) activeTopbar = customTopbar;
+                if (customAccent) activeAccent = customAccent;
+                
+                const savedNavAnim = localStorage.getItem('mai_nav_animations') !== 'false';
+                
+                document.documentElement.setAttribute('data-sidebar', activeSidebar);
+                document.documentElement.setAttribute('data-topbar', activeTopbar);
+                document.documentElement.setAttribute('data-accent', activeAccent);
+                if (!savedNavAnim) {
+                    document.documentElement.classList.add('no-nav-animations');
+                }
+            } catch(e) {}
+        })();
+    </script>
+
     <style>
         /* Custom Master Layout Styling & Full Width Fix */
         :root {
@@ -657,6 +688,9 @@
             });
         });
     </script>
+
+    <!-- Theme & UI Appearance Customizer Partial -->
+    @include('partials._theme_customizer')
 
     @yield('scripts')
 </body>

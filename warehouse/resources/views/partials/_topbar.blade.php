@@ -33,6 +33,13 @@
                 <span>{{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}</span>
             </li>
 
+            <!-- Quick Theme Switcher Button -->
+            <li class="nav-item">
+                <button type="button" class="btn btn-icon btn-light rounded-circle shadow-sm" id="topbarThemeQuickToggle" title="Ganti Tema (Terang / Gelap / Kosmik)" onclick="document.getElementById('themeCustomizerTrigger')?.click()" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0;">
+                    <i data-feather="sun" id="topbarThemeIcon" style="width: 16px; height: 16px; color: #f59e0b;"></i>
+                </button>
+            </li>
+
             <!-- User Profile Dropdown -->
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="display: flex; align-items: center; gap: 0.5rem;">
