@@ -2339,9 +2339,11 @@ textarea.form-control {
 }
 
 /* ==========================================================================
-   HOLOGRAPHIC MODALS
+   HOLOGRAPHIC MODALS (SCOPED FOR SATURNUS ONLY)
    ========================================================================== */
-.modal {
+.saturnus-modal,
+.saturnus-page .modal:not(.bootstrap-modal),
+.galactic-modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -2353,18 +2355,22 @@ textarea.form-control {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 1060;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.25s ease;
 }
 
-.modal.show {
+.saturnus-modal.show,
+.saturnus-page .modal.show:not(.bootstrap-modal),
+.galactic-modal.show {
     opacity: 1;
     pointer-events: auto;
 }
 
-.modal-content {
+.saturnus-modal .modal-content,
+.saturnus-page .modal:not(.bootstrap-modal) .modal-content,
+.galactic-modal .modal-content {
     background: rgba(8, 18, 38, 0.95);
     border: 1px solid var(--mai-sky);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 173, 239, 0.2);
@@ -2379,11 +2385,15 @@ textarea.form-control {
     overflow-y: auto;
 }
 
-.modal.show .modal-content {
+.saturnus-modal.show .modal-content,
+.saturnus-page .modal.show:not(.bootstrap-modal) .modal-content,
+.galactic-modal.show .modal-content {
     transform: scale(1);
 }
 
-.modal-header {
+.saturnus-modal .modal-header,
+.saturnus-page .modal:not(.bootstrap-modal) .modal-header,
+.galactic-modal .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -2392,33 +2402,14 @@ textarea.form-control {
     border-bottom: 1px solid rgba(0, 173, 239, 0.2);
 }
 
-.modal-header h3 {
+.saturnus-modal .modal-header h3,
+.saturnus-page .modal:not(.bootstrap-modal) .modal-header h3,
+.galactic-modal .modal-header h3 {
     font-family: var(--font-tech);
     font-size: 1.25rem;
     font-weight: 800;
     color: #ffffff;
     letter-spacing: -0.01em;
-}
-
-.btn-close {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: var(--transition-smooth);
-}
-
-.btn-close:hover {
-    background: rgba(239, 68, 68, 0.2);
-    color: #fca5a5;
-    border-color: var(--mai-red);
 }
 
 /* ==========================================================================
