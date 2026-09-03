@@ -85,6 +85,198 @@
         box-shadow: 0 2px 8px rgba(26, 63, 168, 0.3);
     }
 
+    /* Modal Styling - Saturnus Theme */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(2, 6, 23, 0.75) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        z-index: 1060 !important;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+    }
+
+    .modal.show {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
+    .modal-content {
+        background: #ffffff !important;
+        border: 1.5px solid #e2e8f0 !important;
+        color: #0f172a !important;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3) !important;
+        border-radius: 20px !important;
+        width: 92% !important;
+        max-width: 640px !important;
+        padding: 2rem 2.25rem !important;
+        transform: scale(0.95);
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        position: relative;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal.show .modal-content {
+        transform: scale(1) !important;
+    }
+
+    .modal-header {
+        background: transparent !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        margin-bottom: 1.25rem !important;
+        padding: 0 !important;
+        padding-bottom: 1.15rem !important;
+        border-bottom: 1.5px solid #f1f5f9 !important;
+    }
+
+    .modal-header h3 {
+        font-size: 1.25rem !important;
+        font-weight: 800 !important;
+        color: #0f172a !important;
+        margin: 0 !important;
+    }
+
+    .btn-close {
+        background: transparent !important;
+        border: none !important;
+        font-size: 1.35rem !important;
+        line-height: 1 !important;
+        color: #94a3b8 !important;
+        cursor: pointer !important;
+        padding: 0.25rem !important;
+        border-radius: 6px !important;
+        transition: all 0.2s !important;
+    }
+    .btn-close:hover {
+        color: #0f172a !important;
+        background: #f1f5f9 !important;
+    }
+
+    .workspace-light-theme .modal-content {
+        background: #ffffff !important;
+        border: 1.5px solid #e2e8f0 !important;
+        color: #0f172a !important;
+        border-radius: 20px !important;
+        padding: 2rem 2.25rem !important;
+    }
+
+    .workspace-light-theme .modal-header {
+        background: transparent !important;
+        border-bottom: 1.5px solid #f1f5f9 !important;
+        padding: 0 !important;
+        padding-bottom: 1.15rem !important;
+        margin-bottom: 1.25rem !important;
+    }
+
+    .workspace-light-theme .modal-header h3 {
+        color: #0f172a !important;
+        font-weight: 800 !important;
+    }
+
+    .workspace-light-theme .form-group {
+        margin-bottom: 1rem !important;
+    }
+
+    .workspace-light-theme .form-group label {
+        color: #1e293b !important;
+        font-weight: 700 !important;
+        font-size: 0.8rem !important;
+        margin-bottom: 0.35rem !important;
+        display: block !important;
+    }
+
+    .workspace-light-theme .form-control {
+        height: 42px !important;
+        border-radius: 8px !important;
+        border: 1.5px solid #e2e8f0 !important;
+        padding: 0.5rem 0.85rem !important;
+        font-size: 0.85rem !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        width: 100% !important;
+        transition: border-color 0.2s, box-shadow 0.2s !important;
+    }
+
+    .workspace-light-theme .form-control:focus {
+        border-color: #00adef !important;
+        outline: none !important;
+        box-shadow: 0 0 0 3px rgba(0, 173, 239, 0.18) !important;
+    }
+
+    .workspace-light-theme .form-control::placeholder {
+        color: #94a3b8 !important;
+    }
+
+    .workspace-light-theme .fi-checkbox-label {
+        color: #334155 !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        cursor: pointer !important;
+    }
+
+    /* Toast Container & Notification */
+    .toast-container {
+        position: fixed;
+        top: 1.5rem;
+        right: 1.5rem;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        pointer-events: none;
+    }
+
+    .toast {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.875rem 1.25rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        min-width: 280px;
+        max-width: 440px;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        opacity: 0;
+        transform: translateX(30px);
+        transition: all 0.35s ease;
+        pointer-events: auto;
+    }
+
+    .toast.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .toast.success {
+        background: rgba(8, 28, 22, 0.95);
+        border-color: rgba(16, 185, 129, 0.5);
+        color: #6ee7b7;
+    }
+
+    .toast.error {
+        background: rgba(36, 10, 16, 0.95);
+        border-color: rgba(239, 68, 68, 0.5);
+        color: #fca5a5;
+    }
+
     /* Form Comments & Discussion Styling */
     .form-comments-card {
         background: #ffffff !important;
@@ -380,7 +572,6 @@
         <p class="galactic-subtitle">Lembar kerja pendaftaran, monitoring approval 4-tahap, data explorer, dan account master.</p>
     </div>
     <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
-
         <button class="btn btn-secondary" id="btn-form-baru" onclick="createNewForm()" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1.25rem; border-radius: var(--radius-md); cursor: pointer;">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -1344,10 +1535,10 @@
 
 {{-- ===== MODAL: TAMBAH DATA ===== --}}
 <div class="modal" id="addItemModal">
-    <div class="modal-content" style="max-width: 680px; max-height: 90vh; overflow-y: auto;">
-        <div class="modal-header">
-            <h3>Tambah Data Barang</h3>
-            <button class="btn-close" onclick="closeModal('addItemModal')">&times;</button>
+    <div class="modal-content" style="max-width: 660px; max-height: 90vh; overflow-y: auto; padding: 2.25rem 2.5rem 2rem; border-radius: 24px; border: none; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35); background: #ffffff;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1.15rem; margin-bottom: 1.35rem; border-bottom: 1.5px solid #f1f5f9;">
+            <h3 style="font-family: inherit; font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.01em;">Tambah Data Barang</h3>
+            <button class="btn-close" onclick="closeModal('addItemModal')" style="background: transparent; border: none; font-size: 1.35rem; line-height: 1; color: #94a3b8; cursor: pointer; padding: 0.25rem; border-radius: 6px; transition: all 0.2s;">&times;</button>
         </div>
 
         <form action="{{ route('form-registrasi.store') }}" method="POST">
@@ -1355,99 +1546,97 @@
             <input type="hidden" name="form_number" id="modal_form_number" value="{{ $currentFormNo }}">
 
             {{-- Row 1: Kode & Nama --}}
-            <div style="display:grid; grid-template-columns:1fr 2fr; gap:1rem; margin-bottom:1rem;">
-                <div class="form-group" style="margin-bottom:0;">
-                    <label for="fi_kode">Kode Barang <span style="color:var(--color-danger);">*</span></label>
-                    <input type="text" id="fi_kode" name="kode_barang" class="form-control @error('kode_barang') is-invalid @enderror" placeholder="Cth: SBM-001" value="{{ old('kode_barang') }}" required oninput="checkRegistrasiKodeBarang(this.value)" onblur="checkRegistrasiKodeBarang(this.value, true)">
-                    <div id="fi_kode_alert_box" style="display:none; margin-top:0.35rem; font-size:0.78rem; font-weight:600; padding:0.4rem 0.65rem; border-radius:6px;"></div>
-                    @error('kode_barang')<div class="error-text">{{ $message }}</div>@enderror
+            <div style="display: grid; grid-template-columns: 1fr 1.8fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="fi_kode" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.45rem;">Kode Barang <span style="color: #ef4444; margin-left: 2px;">*</span></label>
+                    <input type="text" id="fi_kode" name="kode_barang" class="form-control @error('kode_barang') is-invalid @enderror" placeholder="Cth: SBM-001" value="{{ old('kode_barang') }}" required oninput="checkRegistrasiKodeBarang(this.value)" onblur="checkRegistrasiKodeBarang(this.value, true)" style="height: 46px; border-radius: 12px; border: 1.5px solid #cbd5e1; padding: 0 1rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
+                    <div id="fi_kode_alert_box" style="display: none; margin-top: 0.35rem; font-size: 0.78rem; font-weight: 600; padding: 0.4rem 0.65rem; border-radius: 6px;"></div>
+                    @error('kode_barang')<div class="error-text" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ $message }}</div>@enderror
                 </div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <label for="fi_nama">Nama Barang <span style="color:var(--color-danger);">*</span></label>
-                    <input type="text" id="fi_nama" name="nama_barang" class="form-control @error('nama_barang') is-invalid @enderror" placeholder="Nama barang" value="{{ old('nama_barang') }}" required>
-                    @error('nama_barang')<div class="error-text">{{ $message }}</div>@enderror
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="fi_nama" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.45rem;">Nama Barang <span style="color: #ef4444; margin-left: 2px;">*</span></label>
+                    <input type="text" id="fi_nama" name="nama_barang" class="form-control @error('nama_barang') is-invalid @enderror" placeholder="Nama barang" value="{{ old('nama_barang') }}" required style="height: 46px; border-radius: 12px; border: 1.5px solid #cbd5e1; padding: 0 1rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
+                    @error('nama_barang')<div class="error-text" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ $message }}</div>@enderror
                 </div>
             </div>
 
             {{-- Row 2: Harga & Estimasi Usia --}}
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
-                <div class="form-group" style="margin-bottom:0;">
-                    <label for="fi_harga">Harga (Rp) <span style="color:var(--color-danger);">*</span></label>
-                    <input type="number" id="fi_harga" name="harga" class="form-control @error('harga') is-invalid @enderror" placeholder="0" min="0" value="{{ old('harga') }}" required>
-                    @error('harga')<div class="error-text">{{ $message }}</div>@enderror
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="fi_harga" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.45rem;">Harga (Rp) <span style="color: #ef4444; margin-left: 2px;">*</span></label>
+                    <input type="number" id="fi_harga" name="harga" class="form-control @error('harga') is-invalid @enderror" placeholder="0" min="0" value="{{ old('harga') }}" required style="height: 46px; border-radius: 12px; border: 1.5px solid #cbd5e1; padding: 0 1rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
+                    @error('harga')<div class="error-text" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ $message }}</div>@enderror
                 </div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <label for="fi_usia">Estimasi Usia Pakai <span style="color:var(--color-danger);">*</span></label>
-                    <input type="text" id="fi_usia" name="estimasi_usia_pakai" class="form-control @error('estimasi_usia_pakai') is-invalid @enderror" placeholder="Cth: 730 Hari, 6 Bulan, 1 Tahun" value="{{ old('estimasi_usia_pakai') }}" required>
-                    @error('estimasi_usia_pakai')<div class="error-text">{{ $message }}</div>@enderror
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="fi_usia" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.45rem;">Estimasi Usia Pakai <span style="color: #ef4444; margin-left: 2px;">*</span></label>
+                    <input type="text" id="fi_usia" name="estimasi_usia_pakai" class="form-control @error('estimasi_usia_pakai') is-invalid @enderror" placeholder="Cth: 730 Hari, 6 Bulan, 1 Tahun" value="{{ old('estimasi_usia_pakai') }}" required style="height: 46px; border-radius: 12px; border: 1.5px solid #cbd5e1; padding: 0 1rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
+                    @error('estimasi_usia_pakai')<div class="error-text" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ $message }}</div>@enderror
                 </div>
             </div>
 
             {{-- Row 3: Kategori Penggunaan & Ukuran --}}
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
-                <div class="form-group" style="margin-bottom:0;">
-                    <label for="fi_katpenggunaan">Kategori Penggunaan <span style="color:var(--color-danger);">*</span></label>
-                    <input type="text" id="fi_katpenggunaan" name="kategori_penggunaan" class="form-control @error('kategori_penggunaan') is-invalid @enderror" placeholder="Cth: Produksi, Consumable" value="{{ old('kategori_penggunaan') }}" required>
-                    @error('kategori_penggunaan')<div class="error-text">{{ $message }}</div>@enderror
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="fi_katpenggunaan" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.45rem;">Kategori Penggunaan <span style="color: #ef4444; margin-left: 2px;">*</span></label>
+                    <input type="text" id="fi_katpenggunaan" name="kategori_penggunaan" class="form-control @error('kategori_penggunaan') is-invalid @enderror" placeholder="Cth: Produksi, Consumable" value="{{ old('kategori_penggunaan') }}" required style="height: 46px; border-radius: 12px; border: 1.5px solid #cbd5e1; padding: 0 1rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
+                    @error('kategori_penggunaan')<div class="error-text" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ $message }}</div>@enderror
                 </div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <label for="fi_katukuran">Kategori Ukuran <span style="color:var(--color-danger);">*</span></label>
-                    <input type="text" id="fi_katukuran" name="kategori_ukuran" class="form-control @error('kategori_ukuran') is-invalid @enderror" placeholder="Cth: Kecil, Sedang, Besar" value="{{ old('kategori_ukuran') }}" required>
-                    @error('kategori_ukuran')<div class="error-text">{{ $message }}</div>@enderror
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="fi_katukuran" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.45rem;">Kategori Ukuran <span style="color: #ef4444; margin-left: 2px;">*</span></label>
+                    <input type="text" id="fi_katukuran" name="kategori_ukuran" class="form-control @error('kategori_ukuran') is-invalid @enderror" placeholder="Cth: Kecil, Sedang, Besar" value="{{ old('kategori_ukuran') }}" required style="height: 46px; border-radius: 12px; border: 1.5px solid #cbd5e1; padding: 0 1rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
+                    @error('kategori_ukuran')<div class="error-text" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ $message }}</div>@enderror
                 </div>
             </div>
 
             {{-- Row 4: Min, Titik Order, Max, Lead Time --}}
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:1rem; margin-bottom:1rem;">
-                <div class="form-group" style="margin-bottom:0;">
-                    <label for="fi_min">Min <span style="color:var(--color-danger);">*</span></label>
-                    <input type="number" id="fi_min" name="min" class="form-control @error('min') is-invalid @enderror" placeholder="0" min="0" value="{{ old('min') }}" required>
-                    @error('min')<div class="error-text">{{ $message }}</div>@enderror
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="fi_min" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.45rem;">Min <span style="color: #ef4444; margin-left: 2px;">*</span></label>
+                    <input type="number" id="fi_min" name="min" class="form-control @error('min') is-invalid @enderror" placeholder="0" min="0" value="{{ old('min') }}" required style="height: 46px; border-radius: 12px; border: 1.5px solid #cbd5e1; padding: 0 1rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
+                    @error('min')<div class="error-text" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ $message }}</div>@enderror
                 </div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <label for="fi_titik">Titik Order <span style="color:var(--color-danger);">*</span></label>
-                    <input type="number" id="fi_titik" name="titik_order" class="form-control @error('titik_order') is-invalid @enderror" placeholder="0" min="0" value="{{ old('titik_order') }}" required>
-                    @error('titik_order')<div class="error-text">{{ $message }}</div>@enderror
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="fi_titik" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.45rem;">Titik Order <span style="color: #ef4444; margin-left: 2px;">*</span></label>
+                    <input type="number" id="fi_titik" name="titik_order" class="form-control @error('titik_order') is-invalid @enderror" placeholder="0" min="0" value="{{ old('titik_order') }}" required style="height: 46px; border-radius: 12px; border: 1.5px solid #cbd5e1; padding: 0 1rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
+                    @error('titik_order')<div class="error-text" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ $message }}</div>@enderror
                 </div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <label for="fi_max">Max <span style="color:var(--color-danger);">*</span></label>
-                    <input type="number" id="fi_max" name="max" class="form-control @error('max') is-invalid @enderror" placeholder="0" min="0" value="{{ old('max') }}" required>
-                    @error('max')<div class="error-text">{{ $message }}</div>@enderror
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="fi_max" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.45rem;">Max <span style="color: #ef4444; margin-left: 2px;">*</span></label>
+                    <input type="number" id="fi_max" name="max" class="form-control @error('max') is-invalid @enderror" placeholder="0" min="0" value="{{ old('max') }}" required style="height: 46px; border-radius: 12px; border: 1.5px solid #cbd5e1; padding: 0 1rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
+                    @error('max')<div class="error-text" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ $message }}</div>@enderror
                 </div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <label for="fi_lead">Lead Time <span style="color:var(--color-danger);">*</span></label>
-                    <input type="text" id="fi_lead" name="lead_time" class="form-control @error('lead_time') is-invalid @enderror" placeholder="Cth: 3 Hari" value="{{ old('lead_time') }}" required>
-                    @error('lead_time')<div class="error-text">{{ $message }}</div>@enderror
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="fi_lead" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.45rem;">Lead Time <span style="color: #ef4444; margin-left: 2px;">*</span></label>
+                    <input type="text" id="fi_lead" name="lead_time" class="form-control @error('lead_time') is-invalid @enderror" placeholder="Cth: 3 Hari" value="{{ old('lead_time') }}" required style="height: 46px; border-radius: 12px; border: 1.5px solid #cbd5e1; padding: 0 1rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
+                    @error('lead_time')<div class="error-text" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ $message }}</div>@enderror
                 </div>
             </div>
 
             {{-- Row 5: Kategori B3 / NON B3 --}}
-            <div style="margin-bottom:1.5rem;">
-                <label style="display:block; font-size:0.875rem; font-weight:600; margin-bottom:0.75rem;">Kategori <span style="color:var(--color-danger);">*</span></label>
-                <div style="display:flex; gap:2rem;">
-                    <label class="fi-checkbox-label">
-                        <input type="checkbox" name="is_b3" id="modal_is_b3" value="1" class="fi-checkbox" {{ old('is_b3') ? 'checked' : '' }} onchange="handleB3CategorySelect('b3')">
-                        <span class="fi-checkbox-custom"></span>
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.5rem;">Kategori <span style="color: #ef4444; margin-left: 2px;">*</span></label>
+                <div style="display: flex; gap: 2.25rem; align-items: center;">
+                    <label class="fi-checkbox-label" style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: #1e293b;">
+                        <input type="checkbox" name="is_b3" id="modal_is_b3" value="1" class="fi-checkbox" {{ old('is_b3') ? 'checked' : '' }} onchange="handleB3CategorySelect('b3')" style="width: 17px; height: 17px; accent-color: #00adef; cursor: pointer;">
                         <span>B3 (Bahan Berbahaya Beracun)</span>
                     </label>
-                    <label class="fi-checkbox-label">
-                        <input type="checkbox" name="is_non_b3" id="modal_is_non_b3" value="1" class="fi-checkbox" {{ old('is_non_b3') ? 'checked' : '' }} onchange="handleB3CategorySelect('non_b3')">
-                        <span class="fi-checkbox-custom"></span>
+                    <label class="fi-checkbox-label" style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: #1e293b;">
+                        <input type="checkbox" name="is_non_b3" id="modal_is_non_b3" value="1" class="fi-checkbox" {{ old('is_non_b3') ? 'checked' : '' }} onchange="handleB3CategorySelect('non_b3')" style="width: 17px; height: 17px; accent-color: #00adef; cursor: pointer;">
                         <span>NON B3</span>
                     </label>
                 </div>
-                @error('kategori')<div class="error-text" style="margin-top:0.35rem;">{{ $message }}</div>@enderror
+                @error('kategori')<div class="error-text" style="margin-top: 0.35rem; color: #ef4444; font-size: 0.75rem;">{{ $message }}</div>@enderror
             </div>
 
-            <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('addItemModal')">Batal</button>
-                <button type="submit" class="btn btn-primary">
+            <div style="display: flex; gap: 0.85rem; justify-content: flex-end; align-items: center; margin-top: 1.75rem;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addItemModal')" style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 0.65rem 1.6rem; font-weight: 700; font-size: 0.88rem; color: #1e293b; cursor: pointer; transition: all 0.2s ease;">Batal</button>
+                <button type="submit" class="btn btn-primary" style="background: #0084ff; border: none; border-radius: 12px; padding: 0.65rem 1.6rem; font-weight: 700; font-size: 0.88rem; color: #ffffff; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 16px rgba(0, 132, 255, 0.4); transition: all 0.2s ease;">
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                         <polyline points="17 21 17 13 7 13 7 21"></polyline>
                         <polyline points="7 3 7 8 15 8"></polyline>
                     </svg>
-                    Simpan Data
+                    <span>Simpan Data</span>
                 </button>
             </div>
         </form>
@@ -1502,18 +1691,52 @@
         if (id === 'addItemModal') {
             const hiddenFormNo = document.getElementById('modal_form_number');
             if (hiddenFormNo) {
-                hiddenFormNo.value = selectedChecksheetId;
+                hiddenFormNo.value = selectedChecksheetId || activeFormNo;
             }
         }
-        document.getElementById(id).classList.add('show');
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.add('show');
+        }
     }
+
     function closeModal(id) {
-        document.getElementById(id).classList.remove('show');
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.remove('show');
+        }
     }
-    window.onclick = function(e) {
-        if (e.target.classList.contains('modal')) {
+
+    window.addEventListener('click', function(e) {
+        if (e.target.classList && e.target.classList.contains('modal')) {
             e.target.classList.remove('show');
         }
+    });
+
+    function showToast(message, type = 'success') {
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const iconSvg = type === 'success' 
+            ? `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#10b981" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+            : `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#ef4444" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+
+        toast.innerHTML = `${iconSvg}<span>${message}</span>`;
+        container.appendChild(toast);
+
+        setTimeout(() => toast.classList.add('show'), 10);
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 400);
+        }, 3500);
     }
 
     // Auto-open prompt modal konfirmasi tambah item lagi setelah simpan
@@ -1592,6 +1815,7 @@
     const authRoleRaw = '{{ strtolower(trim(Auth::user()->role ?? "User")) }}';
     const authUserName = '{{ Auth::user()->name ?? "User" }}';
     const authUserDept = '{{ Auth::user()->department ?? "Production" }}';
+    const userDept = (authUserDept || userTag || 'PRODUCTION').trim().toUpperCase();
     let userRoleType = 'user';
     if (authRoleRaw.includes('master') || authRoleRaw.includes('admin')) {
         userRoleType = 'admin';
@@ -2180,24 +2404,24 @@
             }
         }
 
-        const dept = userDept.toUpperCase();
-        let userTag = dept;
+        const dept = (authUserDept || userDept || userTag || 'PRODUCTION').trim().toUpperCase();
+        let targetDeptTag = dept;
         if (dept.includes('PRODUCTION') || dept.includes('DIES ASSY')) {
-            userTag = 'PRODUCTION';
+            targetDeptTag = 'PRODUCTION';
         } else if (dept.includes('HRGA') || dept.includes('HR/GA')) {
-            userTag = 'HRGA';
+            targetDeptTag = 'HRGA';
         } else if (dept.includes('WAREHOUSE')) {
-            userTag = 'WAREHOUSE';
+            targetDeptTag = 'WAREHOUSE';
         } else if (dept.includes('ACCOUNTING')) {
-            userTag = 'ACCOUNTING';
+            targetDeptTag = 'ACCOUNTING';
         } else if (dept.includes('IT')) {
-            userTag = 'IT';
+            targetDeptTag = 'IT';
         } else if (dept.includes('MAINTENANCE')) {
-            userTag = 'MAINTENANCE';
+            targetDeptTag = 'MAINTENANCE';
         } else if (dept.includes('PURCHASING')) {
-            userTag = 'PURCHASING';
+            targetDeptTag = 'PURCHASING';
         } else if (dept.includes('QUALITY') || dept.includes('QA') || dept.includes('QC')) {
-            userTag = 'QUALITY';
+            targetDeptTag = 'QUALITY';
         }
 
         const now = new Date();
@@ -2212,7 +2436,7 @@
                 const seq = parseInt(parts[0], 10);
                 const tag = parts[1];
                 const my = parts[2];
-                if (!isNaN(seq) && tag === userTag && my === monthYearStr) {
+                if (!isNaN(seq) && tag === targetDeptTag && my === monthYearStr) {
                     if (seq > maxSeq) maxSeq = seq;
                 }
             }
@@ -2220,13 +2444,15 @@
 
         const nextSeq = String(maxSeq + 1).padStart(2, '0');
         const todayStr = '{{ date("d-m-Y") }}';
-        const nextFormNo = `${nextSeq}/${userTag}/${monthYearStr}`;
+        const nextFormNo = `${nextSeq}/${targetDeptTag}/${monthYearStr}`;
         
         checksheets[nextFormNo] = {
             docNo: 'No Doc : W1-CDS-PP-20/F1 Rev 2 &nbsp;|&nbsp; No. Form: <span style="font-weight:700; color:var(--color-primary);">' + nextFormNo + '</span>',
             formNo: nextFormNo,
             date: todayStr,
             requestor: '{{ Auth::user()->name ?? "User" }} / {{ Auth::user()->department ?? "Production" }}',
+            requestorName: '{{ Auth::user()->name ?? "User" }}',
+            requestorDept: '{{ Auth::user()->department ?? "Production" }}',
             status: 'Butuh Approval Staff / Section Head',
             items: [],
             signatures: {
@@ -2247,12 +2473,18 @@
             statusText: 'Butuh Approval Staff / Section Head',
             statusClass: 'badge-warning',
             steps: [
-                { role: 'user', title: '1. User Membuat Form', completed: true, active: false, details: '{{ Auth::user()->name ?? "User" }} - ' + userTag + ' (Tanggal: ' + todayStr + ')', status: 'Selesai dibuat & diajukan.', color: 'var(--color-success)' },
+                { role: 'user', title: '1. User Membuat Form', completed: true, active: false, details: '{{ Auth::user()->name ?? "User" }} - ' + targetDeptTag + ' (Tanggal: ' + todayStr + ')', status: 'Selesai dibuat & diajukan.', color: 'var(--color-success)' },
                 { role: 'staff', title: '2. Approval Staff / Section Head', completed: false, active: true, details: 'Menunggu Approval Staff / Section Head...', status: 'Butuh Approval Staff / Section Head.', color: 'var(--color-primary)' },
                 { role: 'accounting', title: '3. Approval Accounting', completed: false, active: false, details: 'Menunggu Approval Accounting...', status: 'Pemeriksaan anggaran & persetujuan.', color: 'var(--text-muted)' },
                 { role: 'warehouse', title: '4. Registrasi Warehouse Consumable', completed: false, active: false, details: 'Menunggu Registrasi Warehouse...', status: 'Registrasi database ERP.', color: 'var(--text-muted)' }
             ]
         };
+
+        // Update form number input inside addItemModal
+        const modalFormNoInput = document.getElementById('modal_form_number');
+        if (modalFormNoInput) {
+            modalFormNoInput.value = nextFormNo;
+        }
 
         updateApprovalSelect();
         renderDataViewTable();
