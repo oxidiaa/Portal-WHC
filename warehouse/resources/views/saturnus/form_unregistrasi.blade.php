@@ -569,52 +569,6 @@
     </div>
 </div>
 
-{{-- ===== SHEET TABS SELECTOR (SEGMENTED CONTROL) ===== --}}
-<div class="sheet-tabs-container no-print">
-    <button type="button" class="sheet-tab active" data-tab="print-preview" onclick="switchSheet('print-preview')">
-        <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
-        </svg>
-        <span>Print Preview (Lembar Cetak)</span>
-    </button>
-
-    <button type="button" class="sheet-tab" data-tab="proses-approval" onclick="switchSheet('proses-approval')">
-        <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
-        <span>Proses Approval</span>
-    </button>
-
-    <button type="button" class="sheet-tab" data-tab="data-view" onclick="switchSheet('data-view')">
-        <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-        </svg>
-        <span>Data View Explorer</span>
-    </button>
-
-    @if(in_array(strtoupper(Auth::user()->role ?? ''), ['MASTER', 'ADMIN']))
-    <button type="button" class="sheet-tab" data-tab="account-master" onclick="switchSheet('account-master')">
-        <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-        </svg>
-        <span>Account Master</span>
-    </button>
-    @endif
-</div>
-
 {{-- ===== TAB PANE: PRINT PREVIEW ===== --}}
 <div id="print-preview-pane" class="tab-pane active">
     

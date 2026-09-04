@@ -11,7 +11,6 @@ use App\Models\User;
 use App\Models\FormApproval;
 use App\Models\FormComment;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 
 class ItemController extends Controller
 {
@@ -24,6 +23,7 @@ class ItemController extends Controller
         $status = $request->input('status');
         $category = $request->input('category');
 
+        // Statistics
         $stats = [
             'total' => Item::count(),
             'registered' => Item::where('status', 'registered')->count(),
@@ -31,8 +31,10 @@ class ItemController extends Controller
             'consumables' => Item::where('category', 'Consumable')->count(),
         ];
 
+        // Base Query
         $query = Item::query();
 
+        // Apply Search
         if ($search) {
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -41,16 +43,20 @@ class ItemController extends Controller
             });
         }
 
+        // Apply Status Filter
         if (in_array($status, ['registered', 'unregistered'])) {
             $query->where('status', $status);
         }
 
+        // Apply Category Filter
         if ($category) {
             $query->where('category', $category);
         }
 
+        // Fetch paginated results
         $items = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
 
+        // Get unique categories for the filter dropdown
         $categories = Item::select('category')->distinct()->pluck('category')->toArray();
         if (empty($categories)) {
             $categories = ['Consumable', 'Asset', 'Electronics', 'Office Stationery', 'Others'];
@@ -64,22 +70,23 @@ class ItemController extends Controller
      */
     public function store(Request $request)
     {
-        $this->abortIfGuest();
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category' => 'required|string|max:100',
             'description' => 'nullable|string',
         ]);
 
+        // Auto-generate code: BRG-YYYYMMDD-XXXX
         $today = now()->format('Ymd');
         
+        // Find the latest item today to get the next sequential number
         $latestItem = Item::where('item_code', 'like', "BRG-{$today}-%")
             ->orderBy('item_code', 'desc')
             ->first();
 
         $nextNumber = 1;
         if ($latestItem) {
+            // Extract sequence number
             $parts = explode('-', $latestItem->item_code);
             if (count($parts) === 3) {
                 $nextNumber = intval($parts[2]) + 1;
@@ -105,8 +112,6 @@ class ItemController extends Controller
      */
     public function unregister(Request $request, $id)
     {
-        $this->abortIfGuest();
-
         $item = Item::findOrFail($id);
 
         if ($item->status === 'unregistered') {
@@ -114,37 +119,43 @@ class ItemController extends Controller
         }
 
         $validated = $request->validate([
-            'reason' => 'required|string|max:500',
+            'unregistration_reason' => 'required|string|min:5|max:1000',
         ], [
-            'reason.required' => 'Alasan unregistrasi wajib diisi.',
+            'unregistration_reason.required' => 'Alasan pembatalan registrasi wajib diisi.',
+            'unregistration_reason.min' => 'Alasan pembatalan minimal 5 karakter.',
         ]);
 
         $item->update([
             'status' => 'unregistered',
             'unregistered_at' => now(),
-            'unregistration_reason' => $validated['reason'],
+            'unregistration_reason' => $validated['unregistration_reason'],
         ]);
 
-        return redirect()->route('saturnus.dashboard')->with('success', 'Barang "' . $item->name . '" (' . $item->item_code . ') berhasil di-unregistrasi.');
+        return redirect()->route('saturnus.dashboard')->with('success', 'Registrasi barang "' . $item->name . '" berhasil dibatalkan (unregistered).');
     }
 
+    /**
+     * Clean up any orphan FormApproval or FormComment records whose form_number no longer exists in FormItem.
+     */
     private function cleanupOrphanFormRecords(): void
     {
-        $existingFormNumbers = FormItem::pluck('form_number')->filter()->unique()->toArray();
-        if (empty($existingFormNumbers)) {
-            FormApproval::query()->delete();
-            FormComment::query()->delete();
-        } else {
-            FormApproval::whereNotIn('form_number', $existingFormNumbers)->delete();
-            FormComment::whereNotIn('form_number', $existingFormNumbers)->delete();
-        }
+        $allActiveFormNumbers = FormItem::pluck('form_number')->filter()->unique()->toArray();
+        FormApproval::whereNotIn('form_number', $allActiveFormNumbers)->delete();
+        FormComment::whereNotIn('form_number', $allActiveFormNumbers)->delete();
     }
 
+    /**
+     * Get list of allowed departments for a given user.
+     *
+     * @param  \App\Models\User  $user
+     * @return array<string>
+     */
     public function getUserAllowedDepartments($user): array
     {
         $userDept = strtoupper(trim($user->department ?? ''));
         $userRole = strtoupper(trim($user->role ?? ''));
 
+        // If department is 'Production / Dies Assy' or role contains both 'PRODUCTION' and 'DIES ASSY'
         if (
             (str_contains($userDept, 'PRODUCTION') && str_contains($userDept, 'DIES ASSY'))
             || (str_contains($userRole, 'PRODUCTION') && str_contains($userRole, 'DIES ASSY'))
@@ -162,6 +173,13 @@ class ItemController extends Controller
         return $userDept ? [$userDept] : ['PRODUCTION'];
     }
 
+    /**
+     * Check if a form's department is allowed for a user.
+     *
+     * @param  \App\Models\User  $user
+     * @param  string|null       $formDept
+     * @return bool
+     */
     public function isDepartmentAllowed($user, ?string $formDept): bool
     {
         if (empty($formDept)) {
@@ -190,13 +208,14 @@ class ItemController extends Controller
     }
 
     /**
-     * Display Form Registrasi page.
+     * Display the Form Pendaftaran Barang Consumable page.
      */
     public function formRegistrasi(Request $request)
     {
         $activeTab = $request->query('tab');
         $currentUser = auth()->user();
         $userRole = strtoupper(trim($currentUser->role ?? 'USER'));
+        $userDept = strtoupper(trim($currentUser->department ?? 'PRODUCTION'));
 
         if ($activeTab === 'account-master' && !in_array($userRole, ['MASTER', 'ADMIN'])) {
             return redirect()->route('saturnus.form_registrasi')->with('error', 'Akses ditolak. Fitur Account Master hanya dapat diakses oleh Role Master.');
@@ -206,6 +225,7 @@ class ItemController extends Controller
         $allExistingItems = FormItem::with('user')->orderBy('created_at', 'asc')->orderBy('id', 'asc')->get();
         $users = User::orderBy('id', 'asc')->get();
 
+        // Auto-create FormApproval record for each unique form_number in form_items if not exists
         $distinctForms = $allExistingItems->pluck('form_number')->filter()->unique();
         foreach ($distinctForms as $fNo) {
             $firstItem = $allExistingItems->firstWhere('form_number', $fNo);
@@ -229,6 +249,7 @@ class ItemController extends Controller
             );
         }
 
+        // Unrestricted roles can see all forms: Master/Admin, Accounting, Warehouse Consumable
         $canViewAllDepartments = in_array($userRole, ['MASTER', 'ADMIN'])
             || str_contains($userRole, 'ACCOUNTING')
             || str_contains($userRole, 'ACC')
@@ -239,6 +260,7 @@ class ItemController extends Controller
             $formApprovals = FormApproval::with('user')->get();
             $formComments = FormComment::with('user')->orderBy('created_at', 'asc')->get();
         } else {
+            // Restricted roles (User, Staff): only see forms created by their allowed department(s)
             $formItems = $allExistingItems->filter(function($item) use ($currentUser) {
                 $itemDept = strtoupper(trim($item->created_by_dept ?? $item->user?->department ?? ''));
                 if ($this->isDepartmentAllowed($currentUser, $itemDept)) {
@@ -284,6 +306,7 @@ class ItemController extends Controller
 
         $activeFormNoParam = $request->query('form');
 
+        // If restricted user attempts to access a form parameter of another department, reset it
         if (!$canViewAllDepartments && $activeFormNoParam) {
             $parts = explode('/', $activeFormNoParam);
             $targetDept = isset($parts[1]) ? strtoupper(trim($parts[1])) : '';
@@ -321,315 +344,567 @@ class ItemController extends Controller
     }
 
     /**
-     * Store item in Form Registrasi.
+     * Display the Proses Approval view directly.
+     */
+    public function prosesApproval(Request $request)
+    {
+        $request->merge(['tab' => 'proses-approval']);
+        return $this->formRegistrasi($request);
+    }
+
+    /**
+     * Display the Data View Explorer directly.
+     */
+    public function dataView(Request $request)
+    {
+        $request->merge(['tab' => 'data-view']);
+        return $this->formRegistrasi($request);
+    }
+
+    /**
+     * Display the Account Master management directly.
+     */
+    public function accountMaster(Request $request)
+    {
+        $currentUser = auth()->user();
+        $userRole = strtoupper(trim($currentUser->role ?? 'USER'));
+        if (!in_array($userRole, ['MASTER', 'ADMIN'])) {
+            return redirect()->route('saturnus.form_registrasi')->with('error', 'Akses ditolak. Fitur Account Master hanya dapat diakses oleh Role Master.');
+        }
+
+        $request->merge(['tab' => 'account-master']);
+        return $this->formRegistrasi($request);
+    }
+
+    /**
+     * Store a new form item entry.
      */
     public function storeFormItem(Request $request)
     {
-        $this->abortIfGuest();
+        if (!$request->has('is_b3') && !$request->has('is_non_b3')) {
+            return back()->withErrors(['kategori' => 'Pilih salah satu kategori (B3 atau NON B3).'])->withInput();
+        }
+
+        if ($request->has('is_b3') && $request->has('is_non_b3')) {
+            return back()->withErrors(['kategori' => 'Hanya boleh memilih salah satu kategori (B3 atau NON B3).'])->withInput();
+        }
 
         $validated = $request->validate([
-            'nama_barang'         => 'required|string|max:255',
-            'harga'               => 'nullable|numeric|min:0',
-            'estimasi_usia_pakai' => 'nullable|string|max:100',
-            'kategori_penggunaan' => 'nullable|string|max:100',
-            'kategori_ukuran'     => 'nullable|string|max:100',
-            'min'                 => 'nullable|integer|min:0',
-            'titik_order'         => 'nullable|integer|min:0',
-            'max'                 => 'nullable|integer|min:0',
-            'lead_time'           => 'nullable|string|max:100',
-            'form_number'         => 'nullable|string|max:100',
-            'form_action_type'    => 'nullable|string|in:new_form,add_item',
+            'form_number'        => 'nullable|string|max:100',
+            'kode_barang'        => 'required|string|max:100',
+            'nama_barang'        => 'required|string|max:255',
+            'harga'              => 'required|numeric|min:0',
+            'estimasi_usia_pakai'=> 'required|string|max:100',
+            'kategori_penggunaan'=> 'required|string|max:100',
+            'kategori_ukuran'    => 'required|string|max:100',
+            'min'                => 'required|integer|min:0',
+            'titik_order'        => 'required|integer|min:0',
+            'max'                => 'required|integer|min:0',
+            'lead_time'          => 'required|string|max:100',
+            'is_b3'              => 'nullable|boolean',
+            'is_non_b3'          => 'nullable|boolean',
+        ], [
+            'kode_barang.required'         => 'Kode barang wajib diisi.',
+            'nama_barang.required'         => 'Nama barang wajib diisi.',
+            'harga.required'               => 'Harga wajib diisi.',
+            'estimasi_usia_pakai.required' => 'Estimasi usia pakai wajib diisi.',
+            'kategori_penggunaan.required' => 'Kategori penggunaan wajib diisi.',
+            'kategori_ukuran.required'     => 'Kategori ukuran wajib diisi.',
+            'min.required'                 => 'Min wajib diisi.',
+            'titik_order.required'         => 'Titik order wajib diisi.',
+            'max.required'                 => 'Max wajib diisi.',
+            'lead_time.required'           => 'Lead time wajib diisi.',
         ]);
 
-        $user = auth()->user();
-        $userTag = strtoupper($user->department ?? $user->name ?? 'PRODUCTION');
-        if (str_contains($userTag, 'PRODUCTION') && str_contains($userTag, 'DIES ASSY')) {
-            $userTag = 'PRODUCTION';
+        $currentUser = auth()->user();
+        $currentUserRole = strtoupper(trim($currentUser->role ?? 'USER'));
+        $currentUserDept = strtoupper(trim($currentUser->department ?? 'PRODUCTION'));
+        $canViewAllDepartments = in_array($currentUserRole, ['MASTER', 'ADMIN'])
+            || str_contains($currentUserRole, 'ACCOUNTING')
+            || str_contains($currentUserRole, 'ACC')
+            || str_contains($currentUserRole, 'WAREHOUSE');
+
+        // Duplicate checks
+        $existingUnreg = UnregistrasiItem::where('kode_barang', $validated['kode_barang'])->latest()->first();
+        if ($existingUnreg) {
+            $isAllowedDept = $canViewAllDepartments || $this->isDepartmentAllowed($currentUser, $existingUnreg->created_by_dept ?? '');
+            $formRef = $isAllowedDept ? "pada Form Unregistrasi {$existingUnreg->form_number}" : "pada sistem";
+            $nameRef = ($isAllowedDept && !empty($existingUnreg->nama_barang)) ? " ({$existingUnreg->nama_barang})" : "";
+            $msg = "Peringatan: Kode barang '{$validated['kode_barang']}'{$nameRef} telah di-discontinue sebelumnya {$formRef}!";
+            return back()->withErrors(['kode_barang' => $msg])->withInput()->with('error', $msg);
         }
 
-        $defaultFormNo = '01/' . $userTag . '/' . date('m-Y');
-        $actionType = $request->input('form_action_type', 'add_item');
-        $formNumber = trim($validated['form_number'] ?? '');
+        $existingReg = FormItem::where('kode_barang', $validated['kode_barang'])->latest()->first();
+        if ($existingReg) {
+            $isAllowedDept = $canViewAllDepartments || $this->isDepartmentAllowed($currentUser, $existingReg->created_by_dept ?? '');
+            $formRef = $isAllowedDept ? "pada Form {$existingReg->form_number}" : "pada sistem";
+            $nameRef = ($isAllowedDept && !empty($existingReg->nama_barang)) ? " ({$existingReg->nama_barang})" : "";
+            $msg = "Peringatan: Kode barang '{$validated['kode_barang']}'{$nameRef} telah didaftarkan sebelumnya {$formRef}!";
+            return back()->withErrors(['kode_barang' => $msg])->withInput()->with('error', $msg);
+        }
 
-        if ($actionType === 'new_form' || empty($formNumber)) {
-            $lastTodayItem = FormItem::where('form_number', 'like', "%/{$userTag}/" . date('m-Y'))
-                ->orderBy('form_number', 'desc')
-                ->first();
-
-            $nextSeq = 1;
-            if ($lastTodayItem && preg_match('/^(\d+)\//', $lastTodayItem->form_number, $matches)) {
-                $nextSeq = intval($matches[1]) + 1;
+        $targetForm = $request->input('form_number');
+        if (!$canViewAllDepartments && $targetForm) {
+            $parts = explode('/', $targetForm);
+            $targetDept = isset($parts[1]) ? strtoupper(trim($parts[1])) : '';
+            if ($targetDept && !$this->isDepartmentAllowed($currentUser, $targetDept)) {
+                $targetForm = null;
             }
-
-            $formNumber = str_pad($nextSeq, 2, '0', STR_PAD_LEFT) . '/' . $userTag . '/' . date('m-Y');
         }
 
-        $approval = FormApproval::where('form_number', $formNumber)->first();
-        if ($approval && $approval->status === 'SELESAI (SUDAH TERDAFTAR)') {
-            return redirect()->route('saturnus.form_registrasi', ['form' => $formNumber])
-                ->with('error', 'Formulir ini sudah berstatus SELESAI dan tidak dapat ditambahkan item baru.');
+        if (empty($targetForm)) {
+            $monthYear = date('m-Y');
+            $defaultDept = (str_contains($currentUserDept, 'PRODUCTION') && str_contains($currentUserDept, 'DIES ASSY')) ? 'PRODUCTION' : $currentUserDept;
+            $targetForm = "01/{$defaultDept}/{$monthYear}";
         }
 
-        $kategoriPenggunaan = $request->input('kategori_penggunaan');
-        $isB3 = ($kategoriPenggunaan === 'B3');
-        $isNonB3 = ($kategoriPenggunaan === 'NON B3');
+        $validated['form_number']     = $targetForm;
+        $validated['is_b3']           = $request->has('is_b3');
+        $validated['is_non_b3']        = $request->has('is_non_b3');
+        $validated['user_id']         = $currentUser->id;
+        $validated['created_by_name'] = $currentUser->name ?? 'User';
+        $validated['created_by_dept'] = $currentUser->department ?? 'Production';
 
-        $item = FormItem::create([
-            'form_number'         => $formNumber,
-            'user_id'             => $user->id,
-            'created_by_name'     => $user->name,
-            'created_by_dept'     => $user->department ?? 'Production',
-            'nama_barang'         => $validated['nama_barang'],
-            'harga'               => $validated['harga'] ?? null,
-            'estimasi_usia_pakai' => $validated['estimasi_usia_pakai'] ?? null,
-            'kategori_penggunaan' => $kategoriPenggunaan,
-            'kategori_ukuran'     => $validated['kategori_ukuran'] ?? null,
-            'min'                 => $validated['min'] ?? null,
-            'titik_order'         => $validated['titik_order'] ?? null,
-            'max'                 => $validated['max'] ?? null,
-            'lead_time'           => $validated['lead_time'] ?? null,
-            'is_b3'               => $isB3,
-            'is_non_b3'           => $isNonB3,
-        ]);
+        FormItem::create($validated);
 
-        if (!$approval) {
-            FormApproval::create([
-                'form_number'      => $formNumber,
-                'user_id'          => $user->id,
-                'requestor_name'   => $user->name,
-                'requestor_dept'   => $user->department ?? 'Production',
-                'form_date'        => date('d-m-Y'),
-                'status'           => 'Butuh Approval Staff / Section Head',
-                'user_signed_at'   => now(),
-                'user_signer_name' => $user->name,
-                'user_comment'     => 'Formulir pendaftaran diajukan.',
-            ]);
+        // Ensure FormApproval exists for the targetForm
+        if ($targetForm) {
+            FormApproval::firstOrCreate(
+                ['form_number' => $targetForm],
+                [
+                    'user_id'          => $currentUser->id,
+                    'requestor_name'   => $currentUser->name ?? 'User',
+                    'requestor_dept'   => $currentUser->department ?? 'Production',
+                    'form_date'        => date('d-m-Y'),
+                    'status'           => 'Butuh Approval Staff / Section Head',
+                    'user_signed_at'   => now(),
+                    'user_signer_name' => $currentUser->name ?? 'User',
+                    'user_comment'     => 'Formulir pendaftaran diajukan.',
+                ]
+            );
         }
 
-        return redirect()->route('saturnus.form_registrasi', ['form' => $formNumber])
-            ->with('success', 'Barang "' . $validated['nama_barang'] . '" berhasil ditambahkan pada Form [' . $formNumber . '].');
+        $redirectParams = $targetForm ? ['form' => $targetForm] : [];
+
+        return redirect()->route('saturnus.form_registrasi', $redirectParams)
+            ->with('success', 'Data barang "' . $validated['nama_barang'] . '" berhasil ditambahkan.')
+            ->with('show_add_more_prompt', true);
     }
 
     /**
-     * Approve Form Registrasi workflow.
+     * Handle approval submission for a form with real database persistence.
      */
     public function approveForm(Request $request)
     {
-        $this->abortIfGuest();
-
-        $validated = $request->validate([
-            'form_number'  => 'required|string',
-            'stage'        => 'required|string|in:user,staff,accounting,warehouse',
-            'signer_name'  => 'required|string|max:255',
-            'comment'      => 'nullable|string|max:500',
-            'assigned_codes' => 'nullable|array',
+        $request->validate([
+            'form_number' => 'required|string',
+            'role'        => 'required|string|in:staff,accounting,warehouse,user',
+            'name'        => 'required|string|max:255',
+            'comment'     => 'nullable|string|max:1000',
         ]);
 
-        $user = auth()->user();
-        $userRole = strtoupper(trim($user->role ?? 'USER'));
-        $stage = $validated['stage'];
-        $formNumber = $validated['form_number'];
+        $formNo = $request->input('form_number');
+        $role = strtolower($request->input('role'));
+        $name = trim($request->input('name'));
+        $comment = trim($request->input('comment')) ?: 'Disetujui.';
+
+        $currentUser = auth()->user();
+        $currentUserRole = strtoupper(trim($currentUser->role ?? ''));
+        $isMaster = in_array($currentUserRole, ['MASTER', 'ADMIN']);
+
+        $firstItem = FormItem::where('form_number', $formNo)->first();
+        $parts = explode('/', $formNo);
+        $inferredDept = (count($parts) >= 2 && !empty($parts[1])) ? strtoupper(trim($parts[1])) : null;
+        $reqDept = $firstItem?->created_by_dept ?? $inferredDept ?? ($currentUser->department ?? 'Production');
+        $reqName = $firstItem?->created_by_name ?? ($currentUser->name ?? 'User');
+        $reqUserId = $firstItem?->user_id ?? $currentUser->id;
 
         $approval = FormApproval::firstOrCreate(
-            ['form_number' => $formNumber],
+            ['form_number' => $formNo],
             [
-                'user_id'        => $user->id,
-                'requestor_name' => $user->name,
-                'requestor_dept' => $user->department ?? 'Production',
-                'form_date'      => date('d-m-Y'),
-                'status'         => 'Butuh Approval Staff / Section Head',
+                'user_id'          => $reqUserId,
+                'requestor_name'   => $reqName,
+                'requestor_dept'   => $reqDept,
+                'form_date'        => $firstItem?->created_at ? $firstItem->created_at->format('d-m-Y') : date('d-m-Y'),
+                'status'           => 'Butuh Approval Staff / Section Head',
+                'user_signed_at'   => now(),
+                'user_signer_name' => $reqName,
+                'user_comment'     => 'Formulir diajukan.',
             ]
         );
 
-        $formItems = FormItem::where('form_number', $formNumber)->get();
-        $hasAsset = $formItems->contains(fn($it) => $it->kategori_aset === 'ASET');
+        $msg = 'Status persetujuan berhasil diperbarui.';
 
-        $now = now();
-        $signerName = $validated['signer_name'];
-        $comment = $validated['comment'] ?? null;
-
-        if ($stage === 'staff') {
-            if (!in_array($userRole, ['MASTER', 'ADMIN', 'STAFF', 'STAFF (PRODUCTION / DIES ASSY)'])) {
-                return redirect()->route('saturnus.form_registrasi', ['form' => $formNumber])
-                    ->with('error', 'Hanya Staff / Section Head yang berhak menyetujui tahap ini.');
+        if ($role === 'staff') {
+            if (!$isMaster && !str_contains($currentUserRole, 'STAFF')) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Akses Ditolak: Hanya Role Staff atau Master yang dapat menyetujui tahap ini.'], 403);
+                }
+                return back()->with('error', 'Akses Ditolak: Hanya Role Staff atau Master yang dapat menyetujui tahap ini.');
             }
 
-            $approval->staff_signed_at   = $now;
-            $approval->staff_signer_name = $signerName;
-            $approval->staff_comment     = $comment;
+            // Department authorization for Staff: Staff can only approve forms from their allowed department(s)
+            if (!$isMaster) {
+                $parts = explode('/', $formNo);
+                $formDept = (count($parts) >= 2 && !empty($parts[1]))
+                    ? strtoupper(trim($parts[1]))
+                    : strtoupper(trim($approval->requestor_dept ?? ''));
 
-            if ($hasAsset) {
-                $approval->status = 'Butuh Approval Accounting (Aset)';
-                $msg = 'Persetujuan Staff berhasil. Formulir diteruskan ke Accounting untuk verifikasi Aset.';
-            } else {
-                $approval->status = 'Butuh Registrasi Kode (Warehouse Consumable)';
-                $msg = 'Persetujuan Staff berhasil. Formulir diteruskan ke Warehouse Consumable.';
-            }
-        } elseif ($stage === 'accounting') {
-            if (!in_array($userRole, ['MASTER', 'ADMIN', 'ACCOUNTING'])) {
-                return redirect()->route('saturnus.form_registrasi', ['form' => $formNumber])
-                    ->with('error', 'Hanya Accounting yang berhak menyetujui tahap ini.');
-            }
-
-            if (!$approval->staff_signed_at) {
-                return redirect()->route('saturnus.form_registrasi', ['form' => $formNumber])
-                    ->with('error', 'Tahap Staff harus disetujui terlebih dahulu sebelum Accounting.');
-            }
-
-            $approval->accounting_signed_at   = $now;
-            $approval->accounting_signer_name = $signerName;
-            $approval->accounting_comment     = $comment;
-            $approval->status = 'Butuh Registrasi Kode (Warehouse Consumable)';
-            $msg = 'Persetujuan Accounting berhasil. Formulir diteruskan ke Warehouse Consumable.';
-        } elseif ($stage === 'warehouse') {
-            if (!in_array($userRole, ['MASTER', 'ADMIN', 'WAREHOUSE CONSUMABLE', 'PPIC WAREHOUSE'])) {
-                return redirect()->route('saturnus.form_registrasi', ['form' => $formNumber])
-                    ->with('error', 'Hanya Warehouse Consumable yang berhak melakukan Registrasi Akhir.');
-            }
-
-            if (!$approval->staff_signed_at) {
-                return redirect()->route('saturnus.form_registrasi', ['form' => $formNumber])
-                    ->with('error', 'Tahap Staff harus disetujui terlebih dahulu.');
-            }
-            if ($hasAsset && !$approval->accounting_signed_at) {
-                return redirect()->route('saturnus.form_registrasi', ['form' => $formNumber])
-                    ->with('error', 'Tahap Accounting harus disetujui terlebih dahulu karena terdapat barang ASET.');
-            }
-
-            $assignedCodes = $request->input('assigned_codes', []);
-            foreach ($formItems as $it) {
-                if (isset($assignedCodes[$it->id]) && !empty(trim($assignedCodes[$it->id]))) {
-                    $code = trim($assignedCodes[$it->id]);
-                    $it->update(['kode_barang' => $code]);
-
-                    Item::updateOrCreate(
-                        ['item_code' => $code],
-                        [
-                            'name'          => $it->nama_barang,
-                            'category'      => $it->kategori_aset === 'ASET' ? 'Asset' : 'Consumable',
-                            'description'   => "Terdaftar dari Form {$formNumber} ({$it->kategori_penggunaan})",
-                            'status'        => 'registered',
-                            'registered_at' => now(),
-                        ]
-                    );
+                if ($formDept && !$this->isDepartmentAllowed($currentUser, $formDept)) {
+                    $userDeptName = $currentUser->department ?? 'Anda';
+                    $errMsg = "Akses Ditolak: Anda login sebagai Staff Departemen {$userDeptName}. Anda hanya berwenang menyetujui formulir dari departemen Anda sendiri (Form {$formNo} berasal dari Departemen {$formDept}).";
+                    if ($request->wantsJson() || $request->ajax()) {
+                        return response()->json(['success' => false, 'message' => $errMsg], 403);
+                    }
+                    return back()->with('error', $errMsg);
                 }
             }
 
-            $approval->warehouse_signed_at   = $now;
-            $approval->warehouse_signer_name = $signerName;
-            $approval->warehouse_comment     = $comment;
-            $approval->status = 'SELESAI (SUDAH TERDAFTAR)';
-            $msg = 'Registrasi Berhasil! Seluruh kode barang telah didaftarkan ke sistem.';
+            $approval->staff_signed_at = now();
+            $approval->staff_signer_name = $name;
+            $approval->staff_comment = $comment;
+            $approval->status = 'Butuh Approval Accounting';
+            $approval->save();
+
+            $msg = "Form $formNo berhasil disetujui oleh Staff ($name). Tahap selanjutnya: Butuh Approval Accounting.";
+        } elseif ($role === 'accounting') {
+            if (!$isMaster && !str_contains($currentUserRole, 'ACC')) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Akses Ditolak: Hanya Role Accounting atau Master yang dapat menyetujui tahap ini.'], 403);
+                }
+                return back()->with('error', 'Akses Ditolak: Hanya Role Accounting atau Master yang dapat menyetujui tahap ini.');
+            }
+
+            if (!$approval->staff_signed_at && !$isMaster) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Akses Ditolak: Tahap Staff harus disetujui terlebih dahulu.'], 422);
+                }
+                return back()->with('error', 'Akses Ditolak: Tahap Staff harus disetujui terlebih dahulu.');
+            }
+
+            $approval->accounting_signed_at = now();
+            $approval->accounting_signer_name = $name;
+            $approval->accounting_comment = $comment;
+            $approval->status = 'Butuh Approval Warehouse Consumable';
+            $approval->save();
+
+            $msg = "Form $formNo berhasil disetujui oleh Accounting ($name). Tahap selanjutnya: Butuh Approval Warehouse Consumable.";
+        } elseif ($role === 'warehouse') {
+            if (!$isMaster && !str_contains($currentUserRole, 'WAREHOUSE')) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Akses Ditolak: Hanya Role Warehouse Consumable atau Master yang dapat menyelesaikan registrasi ini.'], 403);
+                }
+                return back()->with('error', 'Akses Ditolak: Hanya Role Warehouse Consumable atau Master yang dapat menyelesaikan registrasi ini.');
+            }
+
+            if (!$approval->accounting_signed_at && !$isMaster) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Akses Ditolak: Tahap Accounting harus disetujui terlebih dahulu.'], 422);
+                }
+                return back()->with('error', 'Akses Ditolak: Tahap Accounting harus disetujui terlebih dahulu.');
+            }
+
+            $approval->warehouse_signed_at = now();
+            $approval->warehouse_signer_name = $name;
+            $approval->warehouse_comment = $comment;
+            $approval->status = 'Item Telah didaftarkan';
+            $approval->save();
+
+            $msg = "Form $formNo telah berhasil diregistrasi oleh Warehouse Consumable ($name). Proses Selesai.";
         }
 
-        $approval->save();
-
-        if (!empty($comment)) {
-            FormComment::create([
-                'form_number' => $formNumber,
-                'user_id'     => $user->id,
-                'user_name'   => $signerName,
-                'user_dept'   => $user->department ?? 'General',
-                'user_role'   => $userRole,
-                'comment'     => "[Tahap " . strtoupper($stage) . "] " . $comment,
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success'  => true,
+                'message'  => $msg,
+                'approval' => $approval,
             ]);
         }
 
-        return redirect()->route('saturnus.form_registrasi', ['form' => $formNumber])->with('success', $msg);
+        return redirect()->route('saturnus.form_registrasi', ['tab' => 'proses-approval', 'form' => $formNo])
+            ->with('success', $msg);
     }
 
     /**
-     * Delete entire checksheet.
+     * Delete an entire form / checksheet permanently.
      */
     public function deleteFormChecksheet(Request $request)
     {
-        $this->abortIfGuest();
-
-        $formNumber = $request->input('form_number');
-        if (empty($formNumber)) {
-            return redirect()->route('saturnus.form_registrasi')->with('error', 'Nomor formulir tidak valid.');
+        $formNo = $request->input('form_number');
+        if (!$formNo) {
+            return redirect()->route('saturnus.form_registrasi', ['tab' => 'data-view'])->with('error', 'Form number tidak valid.');
         }
 
-        FormItem::where('form_number', $formNumber)->delete();
-        FormApproval::where('form_number', $formNumber)->delete();
-        FormComment::where('form_number', $formNumber)->delete();
+        $currentUser = auth()->user();
+        $currentUserRole = strtoupper(trim($currentUser->role ?? ''));
+        $isMaster = in_array($currentUserRole, ['MASTER', 'ADMIN']);
 
-        return redirect()->route('saturnus.form_registrasi')
-            ->with('success', "Formulir [{$formNumber}] beserta seluruh data item dan approval berhasil dihapus.");
+        // Only Master / Admin can delete form checksheet
+        if (!$isMaster) {
+            return redirect()->route('saturnus.form_registrasi', ['tab' => 'data-view'])
+                ->with('error', 'Akses ditolak: Hanya Role Master yang memiliki wewenang untuk menghapus form registrasi.');
+        }
+
+        FormItem::where('form_number', $formNo)->forceDelete();
+        FormApproval::where('form_number', $formNo)->delete();
+        FormComment::where('form_number', $formNo)->delete();
+        $this->cleanupOrphanFormRecords();
+
+        return redirect()->route('saturnus.form_registrasi', ['tab' => 'data-view'])
+            ->with('success', 'Formulir "' . $formNo . '" berhasil dihapus secara permanen.');
     }
 
     /**
-     * Delete single item from form.
+     * Delete a form item entry.
      */
     public function deleteFormItem($id)
     {
-        $this->abortIfGuest();
-
         $item = FormItem::findOrFail($id);
-        $formNumber = $item->form_number;
-        $itemName = $item->nama_barang;
-        $item->delete();
+        $currentUser = auth()->user();
+        $currentUserRole = strtoupper(trim($currentUser->role ?? ''));
+        $isMaster = in_array($currentUserRole, ['MASTER', 'ADMIN']);
 
-        $remaining = FormItem::where('form_number', $formNumber)->count();
-        if ($remaining === 0) {
-            FormApproval::where('form_number', $formNumber)->delete();
-            FormComment::where('form_number', $formNumber)->delete();
-            return redirect()->route('saturnus.form_registrasi')
-                ->with('success', "Barang \"{$itemName}\" dihapus. Formulir [{$formNumber}] otomatis ditutup karena tidak memiliki item.");
+        if (!$isMaster) {
+            $itemDept = strtoupper(trim($item->created_by_dept ?? $item->user?->department ?? ''));
+            if (!$itemDept && str_contains($item->form_number, '/')) {
+                $parts = explode('/', $item->form_number);
+                $itemDept = isset($parts[1]) ? strtoupper(trim($parts[1])) : '';
+            }
+            if ($itemDept && !$this->isDepartmentAllowed($currentUser, $itemDept)) {
+                return redirect()->route('saturnus.form_registrasi')
+                    ->with('error', 'Akses ditolak: Anda tidak memiliki wewenang menghapus barang dari departemen lain.');
+            }
         }
 
-        return redirect()->route('saturnus.form_registrasi', ['form' => $formNumber])
-            ->with('success', "Barang \"{$itemName}\" berhasil dihapus dari formulir.");
+        $name = $item->nama_barang;
+        $targetForm = $item->form_number;
+        $item->forceDelete();
+
+        if (FormItem::where('form_number', $targetForm)->count() === 0) {
+            FormApproval::where('form_number', $targetForm)->delete();
+            FormComment::where('form_number', $targetForm)->delete();
+            $firstItem = FormItem::orderBy('created_at', 'asc')->first();
+            $targetForm = $firstItem ? $firstItem->form_number : null;
+        }
+
+        $this->cleanupOrphanFormRecords();
+
+        $redirectParams = $targetForm ? ['form' => $targetForm] : [];
+
+        return redirect()->route('saturnus.form_registrasi', $redirectParams)
+            ->with('success', 'Data "' . $name . '" berhasil dihapus.');
     }
 
     /**
-     * Store comment.
+     * Store a comment for a form checksheet. All authenticated roles can post comments.
      */
     public function storeComment(Request $request)
     {
-        $this->abortIfGuest();
-
-        $validated = $request->validate([
+        $request->validate([
             'form_number' => 'required|string',
-            'comment'     => 'required|string|max:1000',
+            'comment'     => 'required|string|min:1|max:2000',
         ], [
             'comment.required' => 'Komentar tidak boleh kosong.',
+            'comment.max'      => 'Komentar maksimal 2000 karakter.',
         ]);
 
-        $user = auth()->user();
+        $formNo = $request->input('form_number');
+        $commentText = trim($request->input('comment'));
+        $currentUser = auth()->user();
 
-        FormComment::create([
-            'form_number' => $validated['form_number'],
-            'user_id'     => $user->id,
-            'user_name'   => $user->name,
-            'user_dept'   => $user->department ?? 'General',
-            'user_role'   => $user->role ?? 'User',
-            'comment'     => $validated['comment'],
+        $userRole = strtoupper(trim($currentUser->role ?? 'USER'));
+        $canViewAllDepartments = in_array($userRole, ['MASTER', 'ADMIN'])
+            || str_contains($userRole, 'ACCOUNTING')
+            || str_contains($userRole, 'ACC')
+            || str_contains($userRole, 'WAREHOUSE');
+
+        if (!$canViewAllDepartments) {
+            $parts = explode('/', $formNo);
+            $formDept = (count($parts) >= 2 && !empty($parts[1])) ? strtoupper(trim($parts[1])) : '';
+            if ($formDept && !$this->isDepartmentAllowed($currentUser, $formDept)) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Akses ditolak untuk formulir departemen lain.'], 403);
+                }
+                return back()->with('error', 'Akses ditolak untuk formulir departemen lain.');
+            }
+        }
+
+        $comment = FormComment::create([
+            'form_number' => $formNo,
+            'user_id'     => $currentUser->id,
+            'user_name'   => $currentUser->name ?? 'User',
+            'user_dept'   => $currentUser->department ?? 'Production',
+            'user_role'   => $currentUser->role ?? 'User',
+            'comment'     => $commentText,
         ]);
 
-        return redirect()->route('saturnus.form_registrasi', ['form' => $validated['form_number']])
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Komentar berhasil ditambahkan.',
+                'comment' => [
+                    'id'             => $comment->id,
+                    'form_number'    => $comment->form_number,
+                    'user_id'        => $comment->user_id,
+                    'user_name'      => $comment->user_name,
+                    'user_dept'      => $comment->user_dept,
+                    'user_role'      => $comment->user_role,
+                    'comment'        => $comment->comment,
+                    'created_at_raw' => $comment->created_at?->toISOString() ?? now()->toISOString(),
+                    'created_at'     => $comment->created_at ? $comment->created_at->setTimezone('Asia/Jakarta')->format('d-m-Y H:i') : now('Asia/Jakarta')->format('d-m-Y H:i'),
+                    'can_delete'     => in_array(strtoupper(trim($currentUser->role ?? '')), ['MASTER', 'ADMIN']),
+                ],
+            ]);
+        }
+
+        return redirect()->route('saturnus.form_registrasi', ['form' => $formNo])
             ->with('success', 'Komentar berhasil ditambahkan.');
     }
 
     /**
-     * Delete comment.
+     * Delete a comment. Only Master/Admin role can delete comments.
      */
     public function deleteComment(Request $request, $id)
     {
-        $this->abortIfGuest();
-
         $comment = FormComment::findOrFail($id);
         $currentUser = auth()->user();
-        $userRole = strtoupper(trim($currentUser->role ?? ''));
+        $userRole = strtoupper(trim($currentUser->role ?? 'USER'));
+        $isMaster = in_array($userRole, ['MASTER', 'ADMIN']);
 
-        if ($comment->user_id !== $currentUser->id && !in_array($userRole, ['MASTER', 'ADMIN'])) {
-            return back()->with('error', 'Anda tidak memiliki hak untuk menghapus komentar ini.');
+        if (!$isMaster) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Akses Ditolak: Hanya Role Master yang memiliki hak untuk menghapus komentar.'], 403);
+            }
+            return back()->with('error', 'Akses Ditolak: Hanya Role Master yang memiliki hak untuk menghapus komentar.');
         }
 
-        $formNumber = $comment->form_number;
+        $formNo = $comment->form_number;
         $comment->delete();
 
-        return redirect()->route('saturnus.form_registrasi', ['form' => $formNumber])
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Komentar berhasil dihapus.',
+            ]);
+        }
+
+        return redirect()->route('saturnus.form_registrasi', ['form' => $formNo])
             ->with('success', 'Komentar berhasil dihapus.');
+    }
+
+    /**
+     * Store a new user account in database.
+     */
+    public function storeUser(Request $request)
+    {
+        $userRole = strtoupper(auth()->user()->role ?? '');
+        if (!in_array($userRole, ['MASTER', 'ADMIN'])) {
+            return redirect()->route('saturnus.form_registrasi')->with('error', 'Akses ditolak. Hanya role Master yang dapat membuat akun pengguna.');
+        }
+
+        $validated = $request->validate([
+            'name'       => 'required|string|max:255',
+            'username'   => 'nullable|string|max:100|unique:users,email',
+            'department' => 'required|string|max:100',
+            'role'       => 'required|string|max:100',
+            'password'   => 'required|string|min:4',
+        ], [
+            'name.required'       => 'User Name wajib diisi.',
+            'department.required' => 'Department wajib diisi.',
+            'role.required'       => 'Role wajib diisi.',
+            'password.required'   => 'Password wajib diisi.',
+            'password.min'        => 'Password minimal 4 karakter.',
+            'username.unique'     => 'Username / Login ID sudah digunakan oleh pengguna lain.',
+        ]);
+
+        $username = trim($request->input('username'));
+        if (!$username) {
+            $username = strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', trim($validated['name'])));
+            $baseUsername = $username;
+            $counter = 1;
+            while (User::where('email', $username)->exists()) {
+                $username = $baseUsername . '_' . $counter;
+                $counter++;
+            }
+        }
+
+        User::create([
+            'name'       => $validated['name'],
+            'email'      => $username,
+            'department' => $validated['department'],
+            'role'       => $validated['role'],
+            'status'     => 'Aktif',
+            'password'   => bcrypt($validated['password']),
+        ]);
+
+        return redirect()->route('saturnus.form_registrasi', ['tab' => 'account-master'])
+            ->with('success', 'Akun pengguna "' . $validated['name'] . '" berhasil dibuat.');
+    }
+
+    /**
+     * Update an existing user account in database.
+     */
+    public function updateUser(Request $request, $id)
+    {
+        $currentUserRole = strtoupper(auth()->user()->role ?? '');
+        if (!in_array($currentUserRole, ['MASTER', 'ADMIN'])) {
+            return redirect()->route('saturnus.form_registrasi')->with('error', 'Akses ditolak. Hanya role Master yang dapat mengubah akun pengguna.');
+        }
+
+        $user = User::findOrFail($id);
+
+        $validated = $request->validate([
+            'name'       => 'required|string|max:255',
+            'username'   => 'nullable|string|max:100|unique:users,email,' . $user->id,
+            'department' => 'required|string|max:100',
+            'role'       => 'required|string|max:100',
+            'password'   => 'nullable|string|min:4',
+        ], [
+            'name.required'       => 'User Name wajib diisi.',
+            'department.required' => 'Department wajib diisi.',
+            'role.required'       => 'Role wajib diisi.',
+            'username.unique'     => 'Username / Login ID sudah digunakan oleh pengguna lain.',
+            'password.min'        => 'Password minimal 4 karakter.',
+        ]);
+
+        $user->name = $validated['name'];
+        if (!empty($validated['username'])) {
+            $user->email = trim($validated['username']);
+        }
+        $user->department = $validated['department'];
+        $user->role = $validated['role'];
+
+        if (!empty($validated['password'])) {
+            $user->password = bcrypt($validated['password']);
+        }
+
+        $user->save();
+
+        return redirect()->route('saturnus.form_registrasi', ['tab' => 'account-master'])
+            ->with('success', 'Akun pengguna "' . $user->name . '" berhasil diperbarui.');
+    }
+
+    /**
+     * Delete a user account from database.
+     */
+    public function deleteUser($id)
+    {
+        $currentUserRole = strtoupper(auth()->user()->role ?? '');
+        if (!in_array($currentUserRole, ['MASTER', 'ADMIN'])) {
+            return redirect()->route('saturnus.form_registrasi')->with('error', 'Akses ditolak. Hanya role Master yang dapat menghapus akun pengguna.');
+        }
+
+        $user = User::findOrFail($id);
+
+        if (auth()->id() === $user->id) {
+            return redirect()->route('saturnus.form_registrasi', ['tab' => 'account-master'])
+                ->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
+        }
+
+        $name = $user->name;
+        $user->delete();
+
+        return redirect()->route('saturnus.form_registrasi', ['tab' => 'account-master'])
+            ->with('success', 'Akun "' . $name . '" berhasil dihapus.');
     }
 }

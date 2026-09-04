@@ -68,8 +68,76 @@
     $hasStaffSig = (bool)($currentApproval && ($currentApproval->staff_signed_at || $currentApproval->staff_signer_name));
     $hasAccSig = (bool)($currentApproval && ($currentApproval->accounting_signed_at || $currentApproval->accounting_signer_name));
     $hasWhSig = (bool)($currentApproval && ($currentApproval->warehouse_signed_at || $currentApproval->warehouse_signer_name));
+
+    $currentTab = $activeTab ?? request()->query('tab', 'print-preview');
+    if (!in_array($currentTab, ['print-preview', 'proses-approval', 'data-view', 'account-master'])) {
+        $currentTab = 'print-preview';
+    }
 @endphp
 <style>
+    /* Explicit Tab Pane switching control */
+    .tab-pane {
+        display: none !important;
+    }
+    .tab-pane.active {
+        display: block !important;
+        animation: fadeInPane 0.22s ease-out;
+    }
+    @keyframes fadeInPane {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Sheet Tabs Segmented Control */
+    .sheet-tabs-container {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        background: #ffffff !important;
+        border: 1.5px solid #e2e8f0 !important;
+        border-radius: var(--radius-lg) !important;
+        padding: 0.45rem !important;
+        margin-bottom: 1.5rem !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+        overflow-x: auto !important;
+    }
+
+    .sheet-tab {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.55rem !important;
+        padding: 0.65rem 1.25rem !important;
+        border-radius: var(--radius-md) !important;
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #475569 !important;
+        font-family: var(--font-tech) !important;
+        font-size: 0.88rem !important;
+        font-weight: 700 !important;
+        cursor: pointer !important;
+        text-decoration: none !important;
+        transition: var(--transition-smooth) !important;
+        white-space: nowrap !important;
+        user-select: none !important;
+    }
+
+    .sheet-tab:hover {
+        color: #0f172a !important;
+        background: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
+    }
+
+    .sheet-tab.active {
+        background: linear-gradient(135deg, var(--mai-blue) 0%, #00adef 100%) !important;
+        color: #ffffff !important;
+        border-color: var(--mai-sky) !important;
+        box-shadow: 0 4px 18px rgba(0, 173, 239, 0.45) !important;
+    }
+
+    .sheet-tab svg {
+        flex-shrink: 0 !important;
+    }
+
     /* Sheet Tabs & Stepper Enhancements for Form Registrasi */
     .filter-pill-btn {
         border-radius: 20px !important;
@@ -590,54 +658,8 @@
     </div>
 </div>
 
-{{-- ===== SHEET TABS SELECTOR (SEGMENTED CONTROL) ===== --}}
-<div class="sheet-tabs-container no-print">
-    <button type="button" class="sheet-tab active" data-tab="print-preview" onclick="switchSheet('print-preview')">
-        <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
-        </svg>
-        <span>Print Preview (Lembar Cetak)</span>
-    </button>
-
-    <button type="button" class="sheet-tab" data-tab="proses-approval" onclick="switchSheet('proses-approval')">
-        <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
-        <span>Proses Approval</span>
-    </button>
-
-    <button type="button" class="sheet-tab" data-tab="data-view" onclick="switchSheet('data-view')">
-        <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-        </svg>
-        <span>Data View Explorer</span>
-    </button>
-
-    @if(in_array(strtoupper(Auth::user()->role ?? ''), ['MASTER', 'ADMIN']))
-    <button type="button" class="sheet-tab" data-tab="account-master" onclick="switchSheet('account-master')">
-        <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-        </svg>
-        <span>Account Master</span>
-    </button>
-    @endif
-</div>
-
 {{-- ===== TAB PANE: PRINT PREVIEW ===== --}}
-<div id="print-preview-pane" class="tab-pane active">
+<div id="print-preview-pane" class="tab-pane {{ $currentTab === 'print-preview' ? 'active' : '' }}">
     
     <!-- Quick Document Status Bar (No Print) -->
     <div class="sheet-doc-toolbar no-print">
@@ -982,7 +1004,7 @@
 </div>
 
 {{-- ===== TAB PANE: PROSES APPROVAL ===== --}}
-<div id="proses-approval-pane" class="tab-pane no-print">
+<div id="proses-approval-pane" class="tab-pane no-print {{ $currentTab === 'proses-approval' ? 'active' : '' }}">
     {{-- Clean Header Stats Row --}}
     <div class="dataview-stats">
         <div class="dataview-stat-card">
@@ -1134,7 +1156,7 @@
 </div>
 
 {{-- ===== TAB PANE: DATA VIEW ===== --}}
-<div id="data-view-pane" class="tab-pane no-print">
+<div id="data-view-pane" class="tab-pane no-print {{ $currentTab === 'data-view' ? 'active' : '' }}">
     {{-- Stats Cards Row --}}
     <div class="dataview-stats">
         <div class="dataview-stat-card">
@@ -1238,7 +1260,7 @@
 
 @if(in_array(strtoupper(Auth::user()->role ?? ''), ['MASTER', 'ADMIN']))
 {{-- ===== TAB PANE: ACCOUNT MASTER ===== --}}
-<div id="account-master-pane" class="tab-pane no-print">
+<div id="account-master-pane" class="tab-pane no-print {{ $currentTab === 'account-master' ? 'active' : '' }}">
     <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 1200px; margin: 0 auto;">
         
         {{-- Header Card & Actions --}}
@@ -2496,7 +2518,10 @@
         showToast(`Formulir Baru (${nextFormNo}) Berhasil Dibuat! Silakan isi data barang.`, 'success');
     }
 
-    function switchSheet(tabId) {
+    function switchSheet(tabId, event) {
+        if (event) {
+            event.preventDefault();
+        }
         if (tabId === 'account-master' && userRoleType !== 'admin') {
             alert('Akses Ditolak: Hanya Role Master yang memiliki wewenang untuk mengakses fitur Account Master.');
             return;
@@ -2513,6 +2538,18 @@
             return attr.includes(`'${tabId}'`) || attr.includes(`"${tabId}"`);
         });
         if (matchingTab) matchingTab.classList.add('active');
+
+        if (window.history && window.history.replaceState) {
+            let targetUrl = '{{ route("saturnus.form_registrasi") }}';
+            if (tabId === 'proses-approval') {
+                targetUrl = '{{ route("saturnus.proses_approval") }}';
+            } else if (tabId === 'data-view') {
+                targetUrl = '{{ route("saturnus.data_view") }}';
+            } else if (tabId === 'account-master') {
+                targetUrl = '{{ route("saturnus.account_master") }}';
+            }
+            window.history.replaceState({ tab: tabId }, '', targetUrl);
+        }
     }
 
     function renderSignatureSlot(containerEl, statusText, val, qrcodeId) {

@@ -111,8 +111,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/items', [Saturnus\ItemController::class, 'store'])->name('items.store');
         Route::post('/items/{id}/unregister', [Saturnus\ItemController::class, 'unregister'])->name('items.unregister');
 
-        // Form Registrasi
+        // Form Registrasi & Dedicated Views
         Route::get('/form-registrasi', [Saturnus\ItemController::class, 'formRegistrasi'])->name('form_registrasi');
+        Route::get('/proses-approval', [Saturnus\ItemController::class, 'prosesApproval'])->name('proses_approval');
+        Route::get('/data-view', [Saturnus\ItemController::class, 'dataView'])->name('data_view');
+        Route::get('/account-master', [Saturnus\ItemController::class, 'accountMaster'])->name('account_master');
         Route::post('/form-registrasi/item', [Saturnus\ItemController::class, 'storeFormItem'])->name('form_registrasi.item.store');
         Route::post('/form-registrasi/approve', [Saturnus\ItemController::class, 'approveForm'])->name('form_registrasi.approve');
         Route::match(['delete', 'post'], '/form-registrasi/delete-checksheet', [Saturnus\ItemController::class, 'deleteFormChecksheet'])->name('form_registrasi.delete_checksheet');
@@ -250,6 +253,9 @@ Route::middleware(['auth'])->group(function () {
 
     // SATURNUS Legacy Endpoints
     Route::get('/form-registrasi', fn(Illuminate\Http\Request $req) => redirect()->route('saturnus.form_registrasi', $req->query()))->name('form-registrasi');
+    Route::get('/proses-approval', fn(Illuminate\Http\Request $req) => redirect()->route('saturnus.proses_approval', $req->query()))->name('proses-approval');
+    Route::get('/data-view', fn(Illuminate\Http\Request $req) => redirect()->route('saturnus.data_view', $req->query()))->name('data-view');
+    Route::get('/account-master', fn(Illuminate\Http\Request $req) => redirect()->route('saturnus.account_master', $req->query()))->name('account-master');
     Route::post('/form-registrasi', [Saturnus\ItemController::class, 'storeFormItem'])->name('form-registrasi.store');
     Route::post('/form-registrasi/store-item', [Saturnus\ItemController::class, 'storeFormItem']);
     Route::post('/form-registrasi/approve', [Saturnus\ItemController::class, 'approveForm'])->name('form-registrasi.approve');
