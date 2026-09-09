@@ -107,6 +107,46 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user account is active
+     */
+    public function isActive(): bool
+    {
+        $status = strtolower(trim($this->status ?? 'active'));
+        return in_array($status, ['active', 'aktif', '1', 'true']);
+    }
+
+    /**
+     * Get badge color class for role
+     */
+    public function getRoleBadgeClassAttribute(): string
+    {
+        $role = strtoupper(trim($this->role ?? ''));
+        if (str_contains($role, 'MASTER') || str_contains($role, 'ADMIN')) return 'danger';
+        if (str_contains($role, 'WAREHOUSE') || str_contains($role, 'WHC')) return 'orange';
+        if (str_contains($role, 'PURCHASING')) return 'primary';
+        if (str_contains($role, 'STAFF')) return 'info';
+        if (str_contains($role, 'ACCOUNTING')) return 'success';
+        if (str_contains($role, 'MAINTENANCE')) return 'warning';
+        return 'purple';
+    }
+
+    /**
+     * Get role icon / emoji
+     */
+    public function getRoleIconAttribute(): string
+    {
+        $role = strtoupper(trim($this->role ?? ''));
+        if (str_contains($role, 'MASTER') || str_contains($role, 'ADMIN')) return '👑';
+        if (str_contains($role, 'WAREHOUSE') || str_contains($role, 'WHC')) return '📦';
+        if (str_contains($role, 'PURCHASING')) return '🛒';
+        if (str_contains($role, 'STAFF')) return '📝';
+        if (str_contains($role, 'ACCOUNTING')) return '📊';
+        if (str_contains($role, 'MAINTENANCE')) return '⚙️';
+        if (str_contains($role, 'GUEST')) return '👁️';
+        return '👤';
+    }
+
+    /**
      * Form items created by this user
      */
     public function formItems()

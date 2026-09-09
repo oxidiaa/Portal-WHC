@@ -145,7 +145,9 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/users/{id}', [Settings\UserController::class, 'destroy'])->name('users.destroy');
 
         Route::get('/roles', [Settings\RolePermissionController::class, 'index'])->name('roles.index');
+        Route::post('/roles', [Settings\RolePermissionController::class, 'store'])->name('roles.store');
         Route::put('/roles/{id}', [Settings\RolePermissionController::class, 'update'])->name('roles.update');
+        Route::delete('/roles/{id}', [Settings\RolePermissionController::class, 'destroy'])->name('roles.destroy');
     });
 
     /*
