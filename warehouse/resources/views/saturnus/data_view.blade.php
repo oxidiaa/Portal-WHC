@@ -8,58 +8,7 @@
     $isMaster = in_array($userRoleRaw, ['MASTER', 'ADMIN']) || (Auth::user() && method_exists(Auth::user(), 'isMaster') && Auth::user()->isMaster());
 @endphp
 
-<style>
-    /* Sheet Tabs Segmented Control */
-    .sheet-tabs-container {
-        display: flex !important;
-        align-items: center !important;
-        gap: 0.5rem !important;
-        background: #ffffff !important;
-        border: 1.5px solid #e2e8f0 !important;
-        border-radius: var(--radius-lg) !important;
-        padding: 0.45rem !important;
-        margin-bottom: 1.5rem !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
-        overflow-x: auto !important;
-    }
-
-    .sheet-tab {
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 0.55rem !important;
-        padding: 0.65rem 1.25rem !important;
-        border-radius: var(--radius-md) !important;
-        background: #f8fafc !important;
-        border: 1px solid #e2e8f0 !important;
-        color: #475569 !important;
-        font-family: var(--font-tech) !important;
-        font-size: 0.88rem !important;
-        font-weight: 700 !important;
-        cursor: pointer !important;
-        text-decoration: none !important;
-        transition: var(--transition-smooth) !important;
-        white-space: nowrap !important;
-        user-select: none !important;
-    }
-
-    .sheet-tab:hover {
-        color: #0f172a !important;
-        background: #f1f5f9 !important;
-        border-color: #cbd5e1 !important;
-    }
-
-    .sheet-tab.active {
-        background: linear-gradient(135deg, var(--mai-blue) 0%, #00adef 100%) !important;
-        color: #ffffff !important;
-        border-color: var(--mai-sky) !important;
-        box-shadow: 0 4px 18px rgba(0, 173, 239, 0.45) !important;
-    }
-</style>
-
 <div class="workspace-light-theme">
-
-    <!-- Navigation Tabs -->
-    @include('saturnus._tabs')
 
     <!-- Header Section -->
     <div class="header no-print">
