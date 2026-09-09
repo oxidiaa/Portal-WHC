@@ -208,18 +208,12 @@ class ItemController extends Controller
     }
 
     /**
-     * Display the Form Pendaftaran Barang Consumable page.
+     * Prepare shared data for Saturnus form registration pages.
      */
-    public function formRegistrasi(Request $request)
+    private function getRegistrasiFormData(Request $request): array
     {
-        $activeTab = $request->query('tab');
         $currentUser = auth()->user();
         $userRole = strtoupper(trim($currentUser->role ?? 'USER'));
-        $userDept = strtoupper(trim($currentUser->department ?? 'PRODUCTION'));
-
-        if ($activeTab === 'account-master' && !in_array($userRole, ['MASTER', 'ADMIN'])) {
-            return redirect()->route('saturnus.form_registrasi')->with('error', 'Akses ditolak. Fitur Account Master hanya dapat diakses oleh Role Master.');
-        }
 
         $this->cleanupOrphanFormRecords();
         $allExistingItems = FormItem::with('user')->orderBy('created_at', 'asc')->orderBy('id', 'asc')->get();
@@ -331,16 +325,24 @@ class ItemController extends Controller
             })->values();
         }
 
-        return view('saturnus.form_registrasi', compact(
+        return compact(
             'formItems',
             'users',
             'formApprovals',
             'activeFormNoParam',
             'formComments',
             'allRegisteredCodes',
-            'allUnregisteredCodes',
-            'activeTab'
-        ));
+            'allUnregisteredCodes'
+        );
+    }
+
+    /**
+     * Display the Form Pendaftaran Barang Consumable page (Lembar Cetak).
+     */
+    public function formRegistrasi(Request $request)
+    {
+        $data = $this->getRegistrasiFormData($request);
+        return view('saturnus.form_registrasi', $data);
     }
 
     /**
@@ -348,8 +350,8 @@ class ItemController extends Controller
      */
     public function prosesApproval(Request $request)
     {
-        $request->merge(['tab' => 'proses-approval']);
-        return $this->formRegistrasi($request);
+        $data = $this->getRegistrasiFormData($request);
+        return view('saturnus.proses_approval', $data);
     }
 
     /**
@@ -357,8 +359,8 @@ class ItemController extends Controller
      */
     public function dataView(Request $request)
     {
-        $request->merge(['tab' => 'data-view']);
-        return $this->formRegistrasi($request);
+        $data = $this->getRegistrasiFormData($request);
+        return view('saturnus.data_view', $data);
     }
 
     /**
@@ -372,8 +374,8 @@ class ItemController extends Controller
             return redirect()->route('saturnus.form_registrasi')->with('error', 'Akses ditolak. Fitur Account Master hanya dapat diakses oleh Role Master.');
         }
 
-        $request->merge(['tab' => 'account-master']);
-        return $this->formRegistrasi($request);
+        $users = User::orderBy('id', 'asc')->get();
+        return view('saturnus.account_master', compact('users'));
     }
 
     /**
@@ -621,7 +623,7 @@ class ItemController extends Controller
             ]);
         }
 
-        return redirect()->route('saturnus.form_registrasi', ['tab' => 'proses-approval', 'form' => $formNo])
+        return redirect()->route('saturnus.proses_approval', ['form' => $formNo])
             ->with('success', $msg);
     }
 
@@ -632,7 +634,7 @@ class ItemController extends Controller
     {
         $formNo = $request->input('form_number');
         if (!$formNo) {
-            return redirect()->route('saturnus.form_registrasi', ['tab' => 'data-view'])->with('error', 'Form number tidak valid.');
+            return redirect()->route('saturnus.data_view')->with('error', 'Form number tidak valid.');
         }
 
         $currentUser = auth()->user();
@@ -641,7 +643,7 @@ class ItemController extends Controller
 
         // Only Master / Admin can delete form checksheet
         if (!$isMaster) {
-            return redirect()->route('saturnus.form_registrasi', ['tab' => 'data-view'])
+            return redirect()->route('saturnus.data_view')
                 ->with('error', 'Akses ditolak: Hanya Role Master yang memiliki wewenang untuk menghapus form registrasi.');
         }
 
@@ -650,7 +652,7 @@ class ItemController extends Controller
         FormComment::where('form_number', $formNo)->delete();
         $this->cleanupOrphanFormRecords();
 
-        return redirect()->route('saturnus.form_registrasi', ['tab' => 'data-view'])
+        return redirect()->route('saturnus.data_view')
             ->with('success', 'Formulir "' . $formNo . '" berhasil dihapus secara permanen.');
     }
 

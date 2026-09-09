@@ -24,7 +24,7 @@
     <!-- Unified Portal Custom Enhancements -->
     <link rel="stylesheet" href="{{ asset('css/unified-style.css') }}">
     <!-- SATURNUS Custom Styles (Scoped to Saturnus routes) -->
-    @if(request()->is('saturnus*') || request()->is('form-registrasi*') || request()->is('form-unregistrasi*'))
+    @if(request()->is('saturnus*') || request()->is('form-registrasi*') || request()->is('form-unregistrasi*') || request()->is('proses-approval*') || request()->is('data-view*') || request()->is('account-master*'))
         <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     @endif
 
@@ -36,7 +36,7 @@
     <script>
         (function() {
             try {
-                const isSaturnusRoute = {{ (request()->is('saturnus*') || request()->is('form-registrasi*') || request()->is('form-unregistrasi*')) ? 'true' : 'false' }};
+                const isSaturnusRoute = {{ (request()->is('saturnus*') || request()->is('form-registrasi*') || request()->is('form-unregistrasi*') || request()->is('proses-approval*') || request()->is('data-view*') || request()->is('account-master*')) ? 'true' : 'false' }};
                 
                 // Automatic Module-Based Defaults: MARS = Light, SATURNUS = Dark
                 let activeSidebar = isSaturnusRoute ? 'cosmic' : 'light';

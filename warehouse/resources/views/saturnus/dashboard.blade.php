@@ -161,7 +161,7 @@
 
     <!-- Floating Sci-Fi Command Dock (Clean Bottom Quick Launcher) -->
     <div class="saturn-floating-dock">
-        <a href="{{ route('form-registrasi') }}" class="dock-launcher-btn primary">
+        <a href="{{ route('saturnus.form_registrasi') }}" class="dock-launcher-btn primary">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -169,7 +169,7 @@
             <span>+ Form Registrasi Baru</span>
         </a>
 
-        <a href="{{ route('form-registrasi') }}#proses-approval" class="dock-launcher-btn secondary">
+        <a href="{{ route('saturnus.proses_approval') }}" class="dock-launcher-btn secondary">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
@@ -177,7 +177,7 @@
             <span>Proses Approval</span>
         </a>
 
-        <a href="{{ route('form-registrasi') }}#data-view" class="dock-launcher-btn secondary">
+        <a href="{{ route('saturnus.data_view') }}" class="dock-launcher-btn secondary">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
                 <line x1="8" y1="6" x2="21" y2="6"></line>
                 <line x1="8" y1="12" x2="21" y2="12"></line>
@@ -187,7 +187,7 @@
         </a>
 
         @if(in_array(strtoupper(Auth::user()->role ?? ''), ['MASTER', 'ADMIN']))
-        <a href="{{ route('form-registrasi') }}#account-master" class="dock-launcher-btn secondary">
+        <a href="{{ route('saturnus.account_master') }}" class="dock-launcher-btn secondary">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                 <circle cx="9" cy="7" r="4"></circle>
@@ -213,7 +213,7 @@
             diam: '5,149 KM',
             dist: '1,221,870 KM',
             dept: 'Production Requestor Node',
-            link: "{{ route('form-registrasi') }}"
+            link: "{{ route('saturnus.form_registrasi') }}"
         },
         enceladus: {
             badge: 'SATURN II · ENCELADUS',
@@ -222,7 +222,7 @@
             diam: '504 KM',
             dist: '238,020 KM',
             dept: 'Staff Verification Node',
-            link: "{{ route('form-registrasi') }}#proses-approval"
+            link: "{{ route('saturnus.proses_approval') }}"
         },
         rhea: {
             badge: 'SATURN V · RHEA',
@@ -231,7 +231,7 @@
             diam: '1,527 KM',
             dist: '527,108 KM',
             dept: 'Accounting & Budget Hub',
-            link: "{{ route('form-registrasi') }}#proses-approval"
+            link: "{{ route('saturnus.proses_approval') }}"
         },
         dione: {
             badge: 'SATURN IV · DIONE',
@@ -240,7 +240,7 @@
             diam: '1,122 KM',
             dist: '377,396 KM',
             dept: 'Warehouse Master Dock',
-            link: "{{ route('form-registrasi') }}#data-view"
+            link: "{{ route('saturnus.data_view') }}"
         },
         tethys: {
             badge: 'SATURN III · TETHYS',
@@ -249,7 +249,7 @@
             diam: '1,062 KM',
             dist: '294,619 KM',
             dept: 'Inventory Threshold Controller',
-            link: "{{ route('form-registrasi') }}#data-view"
+            link: "{{ route('saturnus.data_view') }}"
         },
         mimas: {
             badge: 'SATURN I · MIMAS',

@@ -706,7 +706,7 @@ html.no-nav-animations .navbar * {
     closeBtn?.addEventListener('click', closeDrawer);
     backdrop?.addEventListener('click', closeDrawer);
 
-    const isSaturnusRoute = {{ (request()->is('saturnus*') || request()->is('form-registrasi*') || request()->is('form-unregistrasi*')) ? 'true' : 'false' }};
+    const isSaturnusRoute = {{ (request()->is('saturnus*') || request()->is('form-registrasi*') || request()->is('form-unregistrasi*') || request()->is('proses-approval*') || request()->is('data-view*') || request()->is('account-master*')) ? 'true' : 'false' }};
     const sidebarStorageKey = isSaturnusRoute ? 'saturnus_sidebar_theme' : 'mars_sidebar_theme';
     const topbarStorageKey = isSaturnusRoute ? 'saturnus_topbar_theme' : 'mars_topbar_theme';
 

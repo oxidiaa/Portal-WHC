@@ -92,21 +92,21 @@
                         @if(request()->routeIs('saturnus.dashboard'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Dashboard SATURNUS</span>
                     </a>
-                    <a href="{{ route('saturnus.form_registrasi') }}" class="sub-tree-link {{ (request()->routeIs('saturnus.form_registrasi') || request()->routeIs('form-registrasi')) && (!request()->has('tab') || request()->query('tab') === 'print-preview') ? 'active-tree-item' : '' }}">
-                        @if((request()->routeIs('saturnus.form_registrasi') || request()->routeIs('form-registrasi')) && (!request()->has('tab') || request()->query('tab') === 'print-preview'))<span class="active-bar-indicator"></span>@endif
+                    <a href="{{ route('saturnus.form_registrasi') }}" class="sub-tree-link {{ request()->routeIs('saturnus.form_registrasi') || request()->routeIs('form-registrasi') ? 'active-tree-item' : '' }}">
+                        @if(request()->routeIs('saturnus.form_registrasi') || request()->routeIs('form-registrasi'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Form Registrasi (Lembar Cetak)</span>
                     </a>
-                    <a href="{{ route('saturnus.proses_approval') }}" class="sub-tree-link {{ request()->routeIs('saturnus.proses_approval') || request()->routeIs('proses-approval') || (request()->routeIs('saturnus.form_registrasi*') && request()->query('tab') === 'proses-approval') ? 'active-tree-item' : '' }}">
-                        @if(request()->routeIs('saturnus.proses_approval') || request()->routeIs('proses-approval') || (request()->routeIs('saturnus.form_registrasi*') && request()->query('tab') === 'proses-approval'))<span class="active-bar-indicator"></span>@endif
+                    <a href="{{ route('saturnus.proses_approval') }}" class="sub-tree-link {{ request()->routeIs('saturnus.proses_approval') || request()->routeIs('proses-approval') ? 'active-tree-item' : '' }}">
+                        @if(request()->routeIs('saturnus.proses_approval') || request()->routeIs('proses-approval'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Proses Approval</span>
                     </a>
-                    <a href="{{ route('saturnus.data_view') }}" class="sub-tree-link {{ request()->routeIs('saturnus.data_view') || request()->routeIs('data-view') || (request()->routeIs('saturnus.form_registrasi*') && request()->query('tab') === 'data-view') ? 'active-tree-item' : '' }}">
-                        @if(request()->routeIs('saturnus.data_view') || request()->routeIs('data-view') || (request()->routeIs('saturnus.form_registrasi*') && request()->query('tab') === 'data-view'))<span class="active-bar-indicator"></span>@endif
+                    <a href="{{ route('saturnus.data_view') }}" class="sub-tree-link {{ request()->routeIs('saturnus.data_view') || request()->routeIs('data-view') ? 'active-tree-item' : '' }}">
+                        @if(request()->routeIs('saturnus.data_view') || request()->routeIs('data-view'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Data View Explorer</span>
                     </a>
                     @if($isMasterOrAdmin || in_array(strtolower($user->username ?? ''), ['master', 'admin']))
-                    <a href="{{ route('saturnus.account_master') }}" class="sub-tree-link {{ request()->routeIs('saturnus.account_master') || request()->routeIs('account-master') || (request()->routeIs('saturnus.form_registrasi*') && request()->query('tab') === 'account-master') ? 'active-tree-item' : '' }}">
-                        @if(request()->routeIs('saturnus.account_master') || request()->routeIs('account-master') || (request()->routeIs('saturnus.form_registrasi*') && request()->query('tab') === 'account-master'))<span class="active-bar-indicator"></span>@endif
+                    <a href="{{ route('saturnus.account_master') }}" class="sub-tree-link {{ request()->routeIs('saturnus.account_master') || request()->routeIs('account-master') ? 'active-tree-item' : '' }}">
+                        @if(request()->routeIs('saturnus.account_master') || request()->routeIs('account-master'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Data Account Master</span>
                     </a>
                     @endif
