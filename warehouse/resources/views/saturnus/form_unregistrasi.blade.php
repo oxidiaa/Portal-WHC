@@ -92,18 +92,21 @@
         background-color: rgba(2, 6, 23, 0.75) !important;
         backdrop-filter: blur(12px) !important;
         -webkit-backdrop-filter: blur(12px) !important;
-        display: flex !important;
+        display: none !important;
         align-items: center !important;
         justify-content: center !important;
         z-index: 1060 !important;
         opacity: 0;
-        pointer-events: none;
+        pointer-events: none !important;
+        visibility: hidden !important;
         transition: opacity 0.25s ease;
     }
 
     .modal.show {
+        display: flex !important;
         opacity: 1 !important;
         pointer-events: auto !important;
+        visibility: visible !important;
     }
 
     .modal-content {
@@ -118,12 +121,15 @@
         transform: scale(0.95);
         transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
         position: relative;
+        z-index: 1070 !important;
         max-height: 90vh;
         overflow-y: auto;
+        pointer-events: auto !important;
     }
 
     .modal.show .modal-content {
         transform: scale(1) !important;
+        pointer-events: auto !important;
     }
 
     .modal-header {
@@ -1091,7 +1097,7 @@
 
             <div class="form-group" style="margin-bottom: 1.15rem;">
                 <label for="fi_kode" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.45rem;">Kode Barang <span style="color: #ef4444; margin-left: 2px;">*</span></label>
-                <input type="text" id="fi_kode" name="kode_barang" class="form-control @error('kode_barang') is-invalid @enderror" placeholder="Cth: SBM-001" value="{{ old('kode_barang') }}" required oninput="checkUnregistrasiKodeBarang(this.value)" onblur="checkUnregistrasiKodeBarang(this.value, true)" style="height: 46px; border-radius: 12px; border: 1.5px solid #cbd5e1; padding: 0 1rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
+                <input type="text" id="fi_kode" name="kode_barang" class="form-control @error('kode_barang') is-invalid @enderror" placeholder="Cth: SBM-001" value="{{ old('kode_barang') }}" required oninput="checkUnregistrasiKodeBarang(this.value)" onblur="checkUnregistrasiKodeBarang(this.value)" style="height: 46px; border-radius: 12px; border: 1.5px solid #cbd5e1; padding: 0 1rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
                 <div id="fi_kode_alert_box" style="display: none; margin-top: 0.35rem; font-size: 0.78rem; font-weight: 600; padding: 0.4rem 0.65rem; border-radius: 6px;"></div>
                 @error('kode_barang')<div class="error-text" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ $message }}</div>@enderror
             </div>
@@ -1185,7 +1191,7 @@
     const allRegisteredCodes = @json($allRegisteredCodes ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     const allUnregisteredCodes = @json($allUnregisteredCodes ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-    function checkUnregistrasiKodeBarang(val, showAlert = false) {
+    function checkUnregistrasiKodeBarang(val) {
         const code = (val || '').trim().toUpperCase();
         const alertBox = document.getElementById('fi_kode_alert_box');
         if (!alertBox) return;
@@ -1196,22 +1202,22 @@
             return;
         }
 
+        const unregList = Array.isArray(allUnregisteredCodes) ? allUnregisteredCodes : [];
+        const regList = Array.isArray(allRegisteredCodes) ? allRegisteredCodes : [];
+
         // Check if already in Unregistrasi
-        const unregMatch = allUnregisteredCodes.find(i => (i.kode_barang || '').trim().toUpperCase() === code);
+        const unregMatch = unregList.find(i => (i.kode_barang || '').trim().toUpperCase() === code);
         if (unregMatch) {
             alertBox.style.display = 'block';
             alertBox.style.background = 'rgba(239, 68, 68, 0.12)';
             alertBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
             alertBox.style.color = '#b91c1c';
             alertBox.innerHTML = `🚫 <strong>PERINGATAN:</strong> Item dengan Kode Barang <strong>${escapeHtml(code)}</strong> (${escapeHtml(unregMatch.nama_barang || '')}) telah di-discontinue sebelumnya pada <strong>Form Unregistrasi ${escapeHtml(unregMatch.form_number || '')}</strong>!`;
-            if (showAlert) {
-                alert(`Peringatan: Item dengan Kode Barang "${code}" (${unregMatch.nama_barang || ''}) telah di-discontinue sebelumnya pada Form Unregistrasi ${unregMatch.form_number || ''}!`);
-            }
             return;
         }
 
         // Check if registered in FormItem (Informative match & auto-fill)
-        const regMatch = allRegisteredCodes.find(i => (i.kode_barang || '').trim().toUpperCase() === code);
+        const regMatch = regList.find(i => (i.kode_barang || '').trim().toUpperCase() === code);
         if (regMatch) {
             alertBox.style.display = 'block';
             alertBox.style.background = 'rgba(16, 185, 129, 0.1)';

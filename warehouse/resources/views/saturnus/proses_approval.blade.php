@@ -61,18 +61,22 @@
         bottom: 0;
         background-color: rgba(2, 6, 23, 0.75) !important;
         backdrop-filter: blur(12px) !important;
-        display: flex !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        display: none !important;
         align-items: center !important;
         justify-content: center !important;
         z-index: 1060 !important;
         opacity: 0;
-        pointer-events: none;
+        pointer-events: none !important;
+        visibility: hidden !important;
         transition: opacity 0.25s ease;
     }
 
     .modal.show {
+        display: flex !important;
         opacity: 1 !important;
         pointer-events: auto !important;
+        visibility: visible !important;
     }
 
     .modal-content {
@@ -87,12 +91,15 @@
         transform: scale(0.95);
         transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
         position: relative;
+        z-index: 1070 !important;
         max-height: 90vh;
         overflow-y: auto;
+        pointer-events: auto !important;
     }
 
     .modal.show .modal-content {
         transform: scale(1) !important;
+        pointer-events: auto !important;
     }
 
     .btn-close {

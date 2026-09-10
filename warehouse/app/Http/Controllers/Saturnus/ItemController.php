@@ -368,12 +368,20 @@ class ItemController extends Controller
      */
     public function storeFormItem(Request $request)
     {
-        if (!$request->has('is_b3') && !$request->has('is_non_b3')) {
-            return back()->withErrors(['kategori' => 'Pilih salah satu kategori (B3 atau NON B3).'])->withInput();
-        }
+        // Handle B3 / NON B3 Category
+        $kategoriSelection = $request->input('kategori_b3');
+        $isB3 = false;
+        $isNonB3 = false;
 
-        if ($request->has('is_b3') && $request->has('is_non_b3')) {
-            return back()->withErrors(['kategori' => 'Hanya boleh memilih salah satu kategori (B3 atau NON B3).'])->withInput();
+        if ($kategoriSelection === 'b3' || $request->has('is_b3')) {
+            $isB3 = true;
+            $isNonB3 = false;
+        } elseif ($kategoriSelection === 'non_b3' || $request->has('is_non_b3')) {
+            $isB3 = false;
+            $isNonB3 = true;
+        } else {
+            // Default to NON B3 if not specified
+            $isNonB3 = true;
         }
 
         $validated = $request->validate([
@@ -388,19 +396,21 @@ class ItemController extends Controller
             'titik_order'        => 'required|integer|min:0',
             'max'                => 'required|integer|min:0',
             'lead_time'          => 'required|string|max:100',
-            'is_b3'              => 'nullable|boolean',
-            'is_non_b3'          => 'nullable|boolean',
+            'is_b3'              => 'nullable',
+            'is_non_b3'          => 'nullable',
+            'kategori_b3'        => 'nullable|string',
         ], [
-            'kode_barang.required'         => 'Kode barang wajib diisi.',
+            'kode_barang.required'         => 'Kode barang wajib diisi dan tidak boleh kosong.',
             'nama_barang.required'         => 'Nama barang wajib diisi.',
             'harga.required'               => 'Harga wajib diisi.',
+            'harga.numeric'                => 'Harga harus berupa angka.',
             'estimasi_usia_pakai.required' => 'Estimasi usia pakai wajib diisi.',
             'kategori_penggunaan.required' => 'Kategori penggunaan wajib diisi.',
             'kategori_ukuran.required'     => 'Kategori ukuran wajib diisi.',
-            'min.required'                 => 'Min wajib diisi.',
-            'titik_order.required'         => 'Titik order wajib diisi.',
-            'max.required'                 => 'Max wajib diisi.',
-            'lead_time.required'           => 'Lead time wajib diisi.',
+            'min.required'                 => 'Nilai Min stok wajib diisi.',
+            'titik_order.required'         => 'Nilai Titik Order wajib diisi.',
+            'max.required'                 => 'Nilai Max stok wajib diisi.',
+            'lead_time.required'           => 'Lead time pengadaan wajib diisi.',
         ]);
 
         $currentUser = auth()->user();
@@ -411,22 +421,15 @@ class ItemController extends Controller
             || str_contains($currentUserRole, 'ACC')
             || str_contains($currentUserRole, 'WAREHOUSE');
 
-        // Duplicate checks
-        $existingUnreg = UnregistrasiItem::where('kode_barang', $validated['kode_barang'])->latest()->first();
+        $kodeBarangInput = trim($validated['kode_barang']);
+
+        // Duplicate checks on kode_barang
+        $existingUnreg = UnregistrasiItem::where('kode_barang', $kodeBarangInput)->latest()->first();
         if ($existingUnreg) {
             $isAllowedDept = $canViewAllDepartments || $this->isDepartmentAllowed($currentUser, $existingUnreg->created_by_dept ?? '');
             $formRef = $isAllowedDept ? "pada Form Unregistrasi {$existingUnreg->form_number}" : "pada sistem";
             $nameRef = ($isAllowedDept && !empty($existingUnreg->nama_barang)) ? " ({$existingUnreg->nama_barang})" : "";
-            $msg = "Peringatan: Kode barang '{$validated['kode_barang']}'{$nameRef} telah di-discontinue sebelumnya {$formRef}!";
-            return back()->withErrors(['kode_barang' => $msg])->withInput()->with('error', $msg);
-        }
-
-        $existingReg = FormItem::where('kode_barang', $validated['kode_barang'])->latest()->first();
-        if ($existingReg) {
-            $isAllowedDept = $canViewAllDepartments || $this->isDepartmentAllowed($currentUser, $existingReg->created_by_dept ?? '');
-            $formRef = $isAllowedDept ? "pada Form {$existingReg->form_number}" : "pada sistem";
-            $nameRef = ($isAllowedDept && !empty($existingReg->nama_barang)) ? " ({$existingReg->nama_barang})" : "";
-            $msg = "Peringatan: Kode barang '{$validated['kode_barang']}'{$nameRef} telah didaftarkan sebelumnya {$formRef}!";
+            $msg = "Peringatan: Kode barang '{$kodeBarangInput}'{$nameRef} telah di-discontinue sebelumnya {$formRef}!";
             return back()->withErrors(['kode_barang' => $msg])->withInput()->with('error', $msg);
         }
 
@@ -445,9 +448,17 @@ class ItemController extends Controller
             $targetForm = "01/{$defaultDept}/{$monthYear}";
         }
 
+        $existingReg = FormItem::where('kode_barang', $kodeBarangInput)->where('form_number', $targetForm)->latest()->first();
+        if ($existingReg) {
+            $nameRef = !empty($existingReg->nama_barang) ? " ({$existingReg->nama_barang})" : "";
+            $msg = "Peringatan: Kode barang '{$kodeBarangInput}'{$nameRef} sudah ada dalam formulir {$targetForm} ini!";
+            return back()->withErrors(['kode_barang' => $msg])->withInput()->with('error', $msg);
+        }
+
+        $validated['kode_barang']     = $kodeBarangInput;
         $validated['form_number']     = $targetForm;
-        $validated['is_b3']           = $request->has('is_b3');
-        $validated['is_non_b3']        = $request->has('is_non_b3');
+        $validated['is_b3']           = $isB3;
+        $validated['is_non_b3']       = $isNonB3;
         $validated['user_id']         = $currentUser->id;
         $validated['created_by_name'] = $currentUser->name ?? 'User';
         $validated['created_by_dept'] = $currentUser->department ?? 'Production';
@@ -474,7 +485,7 @@ class ItemController extends Controller
         $redirectParams = $targetForm ? ['form' => $targetForm] : [];
 
         return redirect()->route('saturnus.form_registrasi', $redirectParams)
-            ->with('success', 'Data barang "' . $validated['nama_barang'] . '" berhasil ditambahkan.')
+            ->with('success', 'Data barang "' . $validated['nama_barang'] . '" berhasil ditambahkan ke Formulir ' . $targetForm . '.')
             ->with('show_add_more_prompt', true);
     }
 
