@@ -185,16 +185,6 @@
             </svg>
             <span>Data View Explorer</span>
         </a>
-
-        @if(in_array(strtoupper(Auth::user()->role ?? ''), ['MASTER', 'ADMIN']))
-        <a href="{{ route('saturnus.account_master') }}" class="dock-launcher-btn secondary">
-            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-            </svg>
-            <span>Account Master</span>
-        </a>
-        @endif
     </div>
 </div>
 

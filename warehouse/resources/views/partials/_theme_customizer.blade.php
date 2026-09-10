@@ -594,6 +594,24 @@ html[data-sidebar="blue"] .simple-tree-sidebar .sub-tree-link.active-tree-item {
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
 
+/* Sidebar Brand Logo Dark/Light Theme Switching */
+html[data-sidebar="dark"] .simple-tree-sidebar .brand-logo-simple.logo-dark-version,
+html[data-sidebar="cosmic"] .simple-tree-sidebar .brand-logo-simple.logo-dark-version,
+html[data-sidebar="blue"] .simple-tree-sidebar .brand-logo-simple.logo-dark-version {
+    display: none !important;
+}
+html[data-sidebar="dark"] .simple-tree-sidebar .brand-logo-simple.logo-light-version,
+html[data-sidebar="cosmic"] .simple-tree-sidebar .brand-logo-simple.logo-light-version,
+html[data-sidebar="blue"] .simple-tree-sidebar .brand-logo-simple.logo-light-version {
+    display: block !important;
+}
+html[data-sidebar="light"] .simple-tree-sidebar .brand-logo-simple.logo-dark-version {
+    display: block !important;
+}
+html[data-sidebar="light"] .simple-tree-sidebar .brand-logo-simple.logo-light-version {
+    display: none !important;
+}
+
 /* ==========================================================================
    DYNAMIC TOPBAR (NAVBAR) THEMES
    ========================================================================== */
@@ -706,7 +724,7 @@ html.no-nav-animations .navbar * {
     closeBtn?.addEventListener('click', closeDrawer);
     backdrop?.addEventListener('click', closeDrawer);
 
-    const isSaturnusRoute = {{ (request()->is('saturnus*') || request()->is('form-registrasi*') || request()->is('form-unregistrasi*') || request()->is('proses-approval*') || request()->is('data-view*') || request()->is('account-master*')) ? 'true' : 'false' }};
+    const isSaturnusRoute = {{ (request()->is('saturnus*') || request()->is('form-registrasi*') || request()->is('form-unregistrasi*') || request()->is('proses-approval*') || request()->is('data-view*')) ? 'true' : 'false' }};
     const sidebarStorageKey = isSaturnusRoute ? 'saturnus_sidebar_theme' : 'mars_sidebar_theme';
     const topbarStorageKey = isSaturnusRoute ? 'saturnus_topbar_theme' : 'mars_topbar_theme';
 

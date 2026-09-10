@@ -24,7 +24,7 @@
     <!-- Unified Portal Custom Enhancements -->
     <link rel="stylesheet" href="{{ asset('css/unified-style.css') }}">
     <!-- SATURNUS Custom Styles (Scoped to Saturnus routes) -->
-    @if(request()->is('saturnus*') || request()->is('form-registrasi*') || request()->is('form-unregistrasi*') || request()->is('proses-approval*') || request()->is('data-view*') || request()->is('account-master*'))
+    @if(request()->is('saturnus*') || request()->is('form-registrasi*') || request()->is('form-unregistrasi*') || request()->is('proses-approval*') || request()->is('data-view*'))
         <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     @endif
 
@@ -36,7 +36,7 @@
     <script>
         (function() {
             try {
-                const isSaturnusRoute = {{ (request()->is('saturnus*') || request()->is('form-registrasi*') || request()->is('form-unregistrasi*') || request()->is('proses-approval*') || request()->is('data-view*') || request()->is('account-master*')) ? 'true' : 'false' }};
+                const isSaturnusRoute = {{ (request()->is('saturnus*') || request()->is('form-registrasi*') || request()->is('form-unregistrasi*') || request()->is('proses-approval*') || request()->is('data-view*')) ? 'true' : 'false' }};
                 
                 // Automatic Module-Based Defaults: MARS = Light, SATURNUS = Dark
                 let activeSidebar = isSaturnusRoute ? 'cosmic' : 'light';
@@ -255,27 +255,48 @@
 
         /* Sidebar Brand Header */
         .simple-tree-sidebar .sidebar-header-simple {
-            padding: 1rem 1.25rem !important;
+            padding: 1.15rem 1.25rem !important;
             background: #f8fafc !important;
             border-bottom: 1px solid #eef2f6 !important;
             display: flex !important;
             align-items: center !important;
-            min-height: 64px !important;
+            justify-content: center !important;
+            min-height: 76px !important;
             flex-shrink: 0 !important;
+            text-align: center !important;
         }
 
         .simple-tree-sidebar .brand-link-simple {
             display: flex !important;
             align-items: center !important;
+            justify-content: center !important;
             text-decoration: none !important;
             width: 100% !important;
+            transition: transform 0.2s ease, opacity 0.2s ease !important;
+        }
+
+        .simple-tree-sidebar .brand-link-simple:hover {
+            transform: scale(1.02) !important;
+            opacity: 0.95 !important;
         }
 
         .simple-tree-sidebar .brand-logo-simple {
-            height: 32px !important;
+            height: auto !important;
+            max-height: 48px !important;
             width: auto !important;
-            max-width: 175px !important;
+            max-width: 200px !important;
             object-fit: contain !important;
+            margin: 0 auto !important;
+            display: block !important;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.04)) !important;
+        }
+
+        .simple-tree-sidebar .brand-logo-simple.logo-dark-version {
+            display: block !important;
+        }
+
+        .simple-tree-sidebar .brand-logo-simple.logo-light-version {
+            display: none !important;
         }
 
         /* Sidebar Scrollable Body */

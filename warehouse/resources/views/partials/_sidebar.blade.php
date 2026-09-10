@@ -4,7 +4,7 @@
     $isMasterOrAdmin = in_array($userRole, ['MASTER', 'ADMIN']) || ($user && $user->isMaster());
     
     $isMarsActive = request()->routeIs('mars.*') || request()->routeIs('item_master.*') || request()->routeIs('data_po.*') || request()->routeIs('item_minim.*') || request()->routeIs('item_outstanding.*') || request()->routeIs('kedatangan_barang.*') || request()->routeIs('history.*');
-    $isSaturnusActive = request()->routeIs('saturnus.*') || request()->routeIs('form_registrasi*') || request()->routeIs('form-registrasi*') || request()->routeIs('form_unregistrasi*') || request()->routeIs('form-unregistrasi*') || request()->routeIs('proses-approval*') || request()->routeIs('data-view*') || request()->routeIs('account-master*');
+    $isSaturnusActive = request()->routeIs('saturnus.*') || request()->routeIs('form_registrasi*') || request()->routeIs('form-registrasi*') || request()->routeIs('form_unregistrasi*') || request()->routeIs('form-unregistrasi*') || request()->routeIs('proses-approval*') || request()->routeIs('data-view*');
     $isSettingsActive = request()->routeIs('settings.*');
 @endphp
 
@@ -12,8 +12,9 @@
 <nav class="sidebar simple-tree-sidebar">
     <!-- Brand Header -->
     <div class="sidebar-header-simple">
-        <a href="{{ route('dashboard.index') }}" class="brand-link-simple">
-            <img src="{{ asset('assets/images/logo.png') }}" alt="PT Metalart Astra Indonesia" class="brand-logo-simple" onerror="this.src='{{ asset('assets/images/MAI.png') }}'">
+        <a href="{{ route('dashboard.index') }}" class="brand-link-simple" title="PT Metalart Astra Indonesia">
+            <img src="{{ asset('assets/images/logo_mai_dark.png') }}?v={{ time() }}" alt="PT Metalart Astra Indonesia" class="brand-logo-simple logo-dark-version" onerror="this.src='{{ asset('assets/images/MAI GELAP.png') }}'">
+            <img src="{{ asset('assets/images/logo_mai_light.png') }}?v={{ time() }}" alt="PT Metalart Astra Indonesia" class="brand-logo-simple logo-light-version" onerror="this.src='{{ asset('assets/images/MAI TERANG.png') }}'">
         </a>
     </div>
 
@@ -104,12 +105,6 @@
                         @if(request()->routeIs('saturnus.data_view') || request()->routeIs('data-view'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Data View Explorer</span>
                     </a>
-                    @if($isMasterOrAdmin || in_array(strtolower($user->username ?? ''), ['master', 'admin']))
-                    <a href="{{ route('saturnus.account_master') }}" class="sub-tree-link {{ request()->routeIs('saturnus.account_master') || request()->routeIs('account-master') ? 'active-tree-item' : '' }}">
-                        @if(request()->routeIs('saturnus.account_master') || request()->routeIs('account-master'))<span class="active-bar-indicator"></span>@endif
-                        <span class="sub-tree-text">Data Account Master</span>
-                    </a>
-                    @endif
                     <a href="{{ route('saturnus.form_unregistrasi') }}" class="sub-tree-link {{ request()->routeIs('saturnus.form_unregistrasi*') || request()->routeIs('form-unregistrasi*') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('saturnus.form_unregistrasi*') || request()->routeIs('form-unregistrasi*'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Form Unregistrasi</span>
