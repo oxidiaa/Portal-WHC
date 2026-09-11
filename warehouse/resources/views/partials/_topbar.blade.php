@@ -1,6 +1,12 @@
 @php
     $user = auth()->user();
     $currentRoute = Route::currentRouteName() ?? '';
+    $userRole = strtoupper(trim($user->role ?? 'GUEST'));
+    $isMasterOrAdmin = in_array($userRole, ['MASTER', 'ADMIN']) || ($user && $user->isMaster());
+
+    $canAccessMars = $user && ($isMasterOrAdmin || $user->canAccessModule('mars') || $user->hasPermission('mars.*'));
+    $canAccessSaturnus = $user && ($isMasterOrAdmin || $user->canAccessModule('saturnus') || $user->hasPermission('saturnus.*'));
+    $canAccessSettings = $user && ($isMasterOrAdmin || $user->canAccessModule('settings') || $user->hasPermission('settings.*'));
 @endphp
 
 <!-- partial:partials/_navbar.html -->
@@ -16,14 +22,20 @@
                 <i data-feather="grid" style="width: 14px; height: 14px;"></i>
                 <span>Dashboard Utama</span>
             </a>
+
+            @if($canAccessMars)
             <a href="{{ route('mars.dashboard') }}" class="portal-pill {{ str_starts_with($currentRoute, 'mars.') || str_starts_with($currentRoute, 'item_') ? 'active-mars' : '' }}">
                 <i data-feather="package" style="width: 14px; height: 14px;"></i>
                 <span>Modul MARS</span>
             </a>
+            @endif
+
+            @if($canAccessSaturnus)
             <a href="{{ route('saturnus.dashboard') }}" class="portal-pill {{ str_starts_with($currentRoute, 'saturnus.') || str_starts_with($currentRoute, 'form-') ? 'active-saturnus' : '' }}">
                 <i data-feather="globe" style="width: 14px; height: 14px;"></i>
                 <span>Modul SATURNUS</span>
             </a>
+            @endif
         </div>
 
         <ul class="navbar-nav align-items-center gap-3">
@@ -71,19 +83,23 @@
                                 <span>Dashboard Utama</span>
                             </a>
                         </li>
+                        @if($canAccessMars)
                         <li class="dropdown-item py-2">
                             <a href="{{ route('mars.dashboard') }}" class="text-body ms-0 d-flex align-items-center">
                                 <i class="me-2 icon-md" data-feather="bar-chart-2"></i>
                                 <span>Dashboard MARS</span>
                             </a>
                         </li>
+                        @endif
+                        @if($canAccessSaturnus)
                         <li class="dropdown-item py-2">
                             <a href="{{ route('saturnus.dashboard') }}" class="text-body ms-0 d-flex align-items-center">
                                 <i class="me-2 icon-md" data-feather="globe"></i>
                                 <span>Dashboard SATURNUS</span>
                             </a>
                         </li>
-                        @if($user && ($user->isMaster() || in_array(strtolower($user->username ?? ''), ['master', 'admin'])))
+                        @endif
+                        @if($canAccessSettings)
                         <li class="dropdown-item py-2">
                             <a href="{{ route('settings.users.index') }}" class="text-body ms-0 d-flex align-items-center">
                                 <i class="me-2 icon-md" data-feather="users"></i>

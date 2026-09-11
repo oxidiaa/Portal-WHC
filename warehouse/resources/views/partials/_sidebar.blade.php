@@ -3,6 +3,10 @@
     $userRole = strtoupper(trim($user->role ?? 'GUEST'));
     $isMasterOrAdmin = in_array($userRole, ['MASTER', 'ADMIN']) || ($user && $user->isMaster());
     
+    $canAccessMars = $user && ($isMasterOrAdmin || $user->canAccessModule('mars') || $user->hasPermission('mars.*'));
+    $canAccessSaturnus = $user && ($isMasterOrAdmin || $user->canAccessModule('saturnus') || $user->hasPermission('saturnus.*'));
+    $canAccessSettings = $user && ($isMasterOrAdmin || $user->canAccessModule('settings') || $user->hasPermission('settings.*'));
+
     $isMarsActive = request()->routeIs('mars.*') || request()->routeIs('item_master.*') || request()->routeIs('data_po.*') || request()->routeIs('item_minim.*') || request()->routeIs('item_outstanding.*') || request()->routeIs('kedatangan_barang.*') || request()->routeIs('history.*');
     $isSaturnusActive = request()->routeIs('saturnus.*') || request()->routeIs('form_registrasi*') || request()->routeIs('form-registrasi*') || request()->routeIs('form_unregistrasi*') || request()->routeIs('form-unregistrasi*') || request()->routeIs('proses-approval*') || request()->routeIs('data-view*');
     $isSettingsActive = request()->routeIs('settings.*');
@@ -30,6 +34,7 @@
         </div>
 
         {{-- 2. COMPLIANCE / MARS GROUP --}}
+        @if($canAccessMars)
         <div class="nav-tree-group">
             <div class="nav-tree-header" data-bs-toggle="collapse" data-bs-target="#collapseMars" aria-expanded="{{ $isMarsActive ? 'true' : 'false' }}">
                 <div class="header-left">
@@ -41,43 +46,61 @@
             
             <div class="collapse {{ $isMarsActive ? 'show' : '' }}" id="collapseMars">
                 <div class="nav-tree-sublist">
+                    @if($isMasterOrAdmin || $user->hasPermission('mars.dashboard.view'))
                     <a href="{{ route('mars.dashboard') }}" class="sub-tree-link {{ request()->routeIs('mars.dashboard') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('mars.dashboard'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Dashboard MARS</span>
                     </a>
+                    @endif
+
+                    @if($isMasterOrAdmin || $user->hasPermission('mars.master.view'))
                     <a href="{{ route('mars.item_master.index') }}" class="sub-tree-link {{ request()->routeIs('mars.item_master.*') || request()->routeIs('item_master.*') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('mars.item_master.*') || request()->routeIs('item_master.*'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Data Master Item</span>
                     </a>
+                    @endif
+
+                    @if($isMasterOrAdmin || $user->hasPermission('mars.po.view'))
                     <a href="{{ route('mars.data_po.index') }}" class="sub-tree-link {{ request()->routeIs('mars.data_po.*') || request()->routeIs('data_po.*') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('mars.data_po.*') || request()->routeIs('data_po.*'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Data PO</span>
                     </a>
-                    @if($isMasterOrAdmin || in_array(strtolower($user->username ?? ''), ['master', 'admin']))
+                    @endif
+
+                    @if($isMasterOrAdmin || $user->hasPermission('mars.outstanding.view'))
                     <a href="{{ route('mars.item_outstanding.index') }}" class="sub-tree-link {{ request()->routeIs('mars.item_outstanding.*') || request()->routeIs('item_outstanding.*') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('mars.item_outstanding.*') || request()->routeIs('item_outstanding.*'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Item Outstanding</span>
                     </a>
                     @endif
+
+                    @if($isMasterOrAdmin || $user->hasPermission('mars.minim.view'))
                     <a href="{{ route('mars.item_minim.index') }}" class="sub-tree-link {{ request()->routeIs('mars.item_minim.*') || request()->routeIs('item_minim.*') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('mars.item_minim.*') || request()->routeIs('item_minim.*'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Item Minim (Order Point)</span>
                     </a>
-                    @if($isMasterOrAdmin || in_array(strtolower($user->username ?? ''), ['master', 'whc', 'warehouse', 'admin']))
+                    @endif
+
+                    @if($isMasterOrAdmin || $user->hasPermission('mars.kedatangan.view'))
                     <a href="{{ route('mars.kedatangan_barang.index') }}" class="sub-tree-link {{ request()->routeIs('mars.kedatangan_barang.*') || request()->routeIs('kedatangan_barang.*') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('mars.kedatangan_barang.*') || request()->routeIs('kedatangan_barang.*'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Kedatangan Barang</span>
                     </a>
                     @endif
+
+                    @if($isMasterOrAdmin || $user->hasPermission('mars.history.view'))
                     <a href="{{ route('mars.history.index') }}" class="sub-tree-link {{ request()->routeIs('mars.history.*') || request()->routeIs('history.*') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('mars.history.*') || request()->routeIs('history.*'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">History Kedatangan</span>
                     </a>
+                    @endif
                 </div>
             </div>
         </div>
+        @endif
 
         {{-- 3. MONITORING / SATURNUS GROUP --}}
+        @if($canAccessSaturnus)
         <div class="nav-tree-group">
             <div class="nav-tree-header" data-bs-toggle="collapse" data-bs-target="#collapseSaturnus" aria-expanded="{{ $isSaturnusActive ? 'true' : 'false' }}">
                 <div class="header-left">
@@ -89,32 +112,47 @@
             
             <div class="collapse {{ $isSaturnusActive ? 'show' : '' }}" id="collapseSaturnus">
                 <div class="nav-tree-sublist">
+                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.directory.view'))
                     <a href="{{ route('saturnus.dashboard') }}" class="sub-tree-link {{ request()->routeIs('saturnus.dashboard') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('saturnus.dashboard'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Dashboard SATURNUS</span>
                     </a>
+                    @endif
+
+                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.registrasi.view'))
                     <a href="{{ route('saturnus.form_registrasi') }}" class="sub-tree-link {{ request()->routeIs('saturnus.form_registrasi') || request()->routeIs('form-registrasi') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('saturnus.form_registrasi') || request()->routeIs('form-registrasi'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Form Registrasi</span>
                     </a>
+                    @endif
+
+                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.registrasi.approve') || $user->hasPermission('saturnus.registrasi.view'))
                     <a href="{{ route('saturnus.proses_approval') }}" class="sub-tree-link {{ request()->routeIs('saturnus.proses_approval') || request()->routeIs('proses-approval') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('saturnus.proses_approval') || request()->routeIs('proses-approval'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Proses Approval</span>
                     </a>
+                    @endif
+
+                    @if($isMasterOrAdmin || $user->hasPermission(['saturnus.directory.view', 'saturnus.registrasi.view']))
                     <a href="{{ route('saturnus.data_view') }}" class="sub-tree-link {{ request()->routeIs('saturnus.data_view') || request()->routeIs('data-view') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('saturnus.data_view') || request()->routeIs('data-view'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Data View Explorer</span>
                     </a>
+                    @endif
+
+                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.unregistrasi.view'))
                     <a href="{{ route('saturnus.form_unregistrasi') }}" class="sub-tree-link {{ request()->routeIs('saturnus.form_unregistrasi*') || request()->routeIs('form-unregistrasi*') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('saturnus.form_unregistrasi*') || request()->routeIs('form-unregistrasi*'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Form Unregistrasi</span>
                     </a>
+                    @endif
                 </div>
             </div>
         </div>
+        @endif
 
         {{-- 4. ORGANIZATION / ADMINISTRASI GROUP --}}
-        @if($isMasterOrAdmin || in_array(strtolower($user->username ?? ''), ['master', 'admin']))
+        @if($canAccessSettings)
         <div class="nav-tree-group">
             <div class="nav-tree-header" data-bs-toggle="collapse" data-bs-target="#collapseSettings" aria-expanded="{{ $isSettingsActive ? 'true' : 'false' }}">
                 <div class="header-left">
@@ -126,14 +164,19 @@
             
             <div class="collapse {{ $isSettingsActive ? 'show' : '' }}" id="collapseSettings">
                 <div class="nav-tree-sublist">
+                    @if($isMasterOrAdmin || $user->hasPermission('settings.users.manage'))
                     <a href="{{ route('settings.users.index') }}" class="sub-tree-link {{ request()->routeIs('settings.users.*') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('settings.users.*'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Manajemen User</span>
                     </a>
+                    @endif
+
+                    @if($isMasterOrAdmin || $user->hasPermission('settings.roles.manage'))
                     <a href="{{ route('settings.roles.index') }}" class="sub-tree-link {{ request()->routeIs('settings.roles.*') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('settings.roles.*'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Hak Akses &amp; Role</span>
                     </a>
+                    @endif
                 </div>
             </div>
         </div>

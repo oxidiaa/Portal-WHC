@@ -11,6 +11,8 @@
         || str_contains($userRoleRaw, 'ACC')
         || str_contains($userRoleRaw, 'WAREHOUSE');
 
+    $canCreateForm = Auth::user() && (Auth::user()->isMaster() || (Auth::user()->hasRole('user') && Auth::user()->hasPermission('saturnus.unregistrasi.create')));
+
     $allowedDepts = [strtoupper(trim(Auth::user()->department ?? 'PRODUCTION'))];
     if (
         (str_contains($userDeptTag, 'PRODUCTION') && str_contains($userDeptTag, 'DIES ASSY'))
@@ -593,6 +595,7 @@
         <p class="galactic-subtitle">Lembar kerja pengajuan discontinue, monitoring approval 3-tahap, dan data explorer.</p>
     </div>
     <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
+        @if($canCreateForm)
         <button class="btn btn-secondary" id="btn-form-baru" onclick="createNewForm()" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1.25rem; border-radius: var(--radius-md); cursor: pointer;">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -600,6 +603,7 @@
             </svg>
             <span>+ Form Baru</span>
         </button>
+        @endif
         <button class="btn btn-secondary" onclick="printCurrentSheet()" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1.25rem; border-radius: var(--radius-md);">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 6 2 18 2 18 9"></polyline>
@@ -722,6 +726,7 @@
                                         <h4 class="empty-state-title">Belum Ada Data Barang Unregistrasi</h4>
                                         <p class="empty-state-desc">Formulir unregistrasi ini masih kosong. Klik tombol di bawah untuk mengisi data formulir discontinue.</p>
                                     </div>
+                                    @if($canCreateForm)
                                     <div class="empty-state-actions">
                                         <button type="button" class="empty-state-btn" onclick="openModal('addItemModal')">
                                             <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -731,6 +736,7 @@
                                             + Isi Data Formulir
                                         </button>
                                     </div>
+                                    @endif
                                 </div>
                             </div>
                         </td>
@@ -1727,6 +1733,11 @@
     }
 
     function createNewForm() {
+        if (!{{ $canCreateForm ? 'true' : 'false' }}) {
+            alert('Akses Ditolak: Hanya akun dengan role User yang memiliki hak akses untuk membuat formulir baru.');
+            return;
+        }
+
         let maxSeq = 0;
         for (const fNo in checksheets) {
             const parts = fNo.split('/');

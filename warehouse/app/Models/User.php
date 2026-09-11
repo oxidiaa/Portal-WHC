@@ -49,6 +49,123 @@ class User extends Authenticatable
     }
 
     /**
+     * Cache for resolved Role model
+     */
+    protected ?Role $cachedRoleModel = null;
+
+    /**
+     * Get the associated Role model based on the user's role attribute
+     */
+    public function getRoleModel(): ?Role
+    {
+        if ($this->cachedRoleModel !== null) {
+            return $this->cachedRoleModel;
+        }
+
+        $userRole = trim($this->role ?? '');
+        if (!$userRole) {
+            return null;
+        }
+
+        // 1. Direct match by slug or exact name
+        $role = Role::with('permissions')
+            ->where('slug', strtolower($userRole))
+            ->orWhere('name', $userRole)
+            ->first();
+
+        if ($role) {
+            $this->cachedRoleModel = $role;
+            return $this->cachedRoleModel;
+        }
+
+        // 2. Fuzzy match for standard department/role variants
+        $userRoleLower = strtolower($userRole);
+        $slug = match (true) {
+            str_contains($userRoleLower, 'master') || str_contains($userRoleLower, 'admin') => 'master',
+            str_contains($userRoleLower, 'warehouse') || str_contains($userRoleLower, 'whc') => 'warehouse',
+            str_contains($userRoleLower, 'purchasing') => 'purchasing',
+            str_contains($userRoleLower, 'staff') => 'staff',
+            str_contains($userRoleLower, 'accounting') || str_contains($userRoleLower, 'acc') => 'accounting',
+            str_contains($userRoleLower, 'maintenance') => 'maintenance',
+            str_contains($userRoleLower, 'guest') => 'guest',
+            str_contains($userRoleLower, 'user') || str_contains($userRoleLower, 'production') || str_contains($userRoleLower, 'dies') => 'user',
+            default => null,
+        };
+
+        if ($slug) {
+            $role = Role::with('permissions')->where('slug', $slug)->first();
+        }
+
+        $this->cachedRoleModel = $role;
+        return $this->cachedRoleModel;
+    }
+
+    /**
+     * Check if user has specific permission(s).
+     * Supports single slug, array of slugs, comma-delimited strings, and wildcards (e.g. "saturnus.*")
+     */
+    public function hasPermission(string|array $permissions): bool
+    {
+        // Super admins / master always pass
+        if ($this->isMaster() || in_array(strtolower($this->username ?? ''), ['master', 'admin'])) {
+            return true;
+        }
+
+        $roleModel = $this->getRoleModel();
+        if (!$roleModel) {
+            return false;
+        }
+
+        if (is_string($permissions)) {
+            $permissions = array_map('trim', explode(',', $permissions));
+        }
+
+        $rolePermissions = $roleModel->permissions->pluck('slug')->toArray();
+
+        foreach ($permissions as $permission) {
+            $perm = trim($permission);
+            if (empty($perm)) continue;
+
+            if (in_array($perm, $rolePermissions, true)) {
+                return true;
+            }
+
+            // Support wildcards like "saturnus.*" or "mars.*" or "settings.*"
+            if (str_ends_with($perm, '.*')) {
+                $prefix = substr($perm, 0, -2);
+                foreach ($rolePermissions as $rp) {
+                    if (str_starts_with($rp, $prefix . '.')) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user has permission to access any feature in a module (e.g. 'mars', 'saturnus', 'settings')
+     */
+    public function canAccessModule(string $module): bool
+    {
+        if ($this->isMaster() || in_array(strtolower($this->username ?? ''), ['master', 'admin'])) {
+            return true;
+        }
+
+        $roleModel = $this->getRoleModel();
+        if (!$roleModel) {
+            return false;
+        }
+
+        $module = strtolower(trim($module));
+
+        return $roleModel->permissions->contains(function ($perm) use ($module) {
+            return strtolower($perm->module) === $module || str_starts_with($perm->slug, $module . '.');
+        });
+    }
+
+    /**
      * Helper to check user role.
      */
     public function hasRole(string|array $roles): bool
@@ -65,11 +182,23 @@ class User extends Authenticatable
             return true;
         }
 
+        $roleModel = $this->getRoleModel();
+        $roleSlug = $roleModel ? strtolower($roleModel->slug) : '';
+        $roleName = $roleModel ? strtoupper($roleModel->name) : '';
+
         foreach ($roles as $r) {
             $rUpper = strtoupper(trim($r));
             $rLower = strtolower(trim($r));
 
             if ($userRole === $rUpper || $username === $rLower) {
+                return true;
+            }
+
+            if ($roleSlug && $roleSlug === $rLower) {
+                return true;
+            }
+
+            if ($roleName && $roleName === $rUpper) {
                 return true;
             }
 

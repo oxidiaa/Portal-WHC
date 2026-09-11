@@ -4,6 +4,15 @@
 
 @section('content')
 
+@php
+    $user = auth()->user();
+    $userRole = strtoupper(trim($user->role ?? 'GUEST'));
+    $isMasterOrAdmin = in_array($userRole, ['MASTER', 'ADMIN']) || ($user && $user->isMaster());
+    
+    $canAccessMars = $user && ($isMasterOrAdmin || $user->canAccessModule('mars') || $user->hasPermission('mars.*'));
+    $canAccessSaturnus = $user && ($isMasterOrAdmin || $user->canAccessModule('saturnus') || $user->hasPermission('saturnus.*'));
+@endphp
+
 <!-- Three.js 3D WebGL Engine from CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
@@ -709,7 +718,7 @@ html, body, .main-wrapper, .page-wrapper, .page-content {
         <div class="orbit-destinations-row" id="destinationsRow">
             
             <!-- MARS DESTINATION (LEFT) -->
-            <div class="destination-unit unit-mars" id="marsUnit" onclick="navigateToPlanet('mars')">
+            <div class="destination-unit unit-mars {{ !$canAccessMars ? 'access-restricted' : '' }}" id="marsUnit" onclick="navigateToPlanet('mars')">
                 <div class="planet-interactive-anchor" id="marsAnchor">
                     <div class="orbit-connecting-arc"></div>
                 </div>
@@ -724,6 +733,7 @@ html, body, .main-wrapper, .page-wrapper, .page-content {
                     <span class="telemetry-row">SYSTEM: <strong>PO &amp; INVENTORY</strong></span>
                 </div>
 
+                @if($canAccessMars)
                 <a href="javascript:void(0)" class="btn-enter-orbit" onclick="event.stopPropagation(); navigateToPlanet('mars');">
                     <span>ENTER MARS</span>
                     <svg class="btn-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -731,10 +741,15 @@ html, body, .main-wrapper, .page-wrapper, .page-content {
                         <polyline points="12 5 19 12 12 19"></polyline>
                     </svg>
                 </a>
+                @else
+                <div class="btn-enter-orbit" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; cursor: not-allowed;">
+                    <span>🔒 AKSES TERKUNCI</span>
+                </div>
+                @endif
             </div>
 
             <!-- SATURN DESTINATION (RIGHT) -->
-            <div class="destination-unit unit-saturn" id="saturnUnit" onclick="navigateToPlanet('saturn')">
+            <div class="destination-unit unit-saturn {{ !$canAccessSaturnus ? 'access-restricted' : '' }}" id="saturnUnit" onclick="navigateToPlanet('saturn')">
                 <div class="planet-interactive-anchor" id="saturnAnchor">
                     <div class="orbit-connecting-arc"></div>
                 </div>
@@ -749,6 +764,7 @@ html, body, .main-wrapper, .page-wrapper, .page-content {
                     <span class="telemetry-row">SYSTEM: <strong>REGISTRATION &amp; ASSETS</strong></span>
                 </div>
 
+                @if($canAccessSaturnus)
                 <a href="javascript:void(0)" class="btn-enter-orbit" onclick="event.stopPropagation(); navigateToPlanet('saturn');">
                     <span>ENTER SATURN</span>
                     <svg class="btn-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -756,6 +772,11 @@ html, body, .main-wrapper, .page-wrapper, .page-content {
                         <polyline points="12 5 19 12 12 19"></polyline>
                     </svg>
                 </a>
+                @else
+                <div class="btn-enter-orbit" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; cursor: not-allowed;">
+                    <span>🔒 AKSES TERKUNCI</span>
+                </div>
+                @endif
             </div>
 
         </div>
@@ -1126,7 +1147,19 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // --- 7. Warp Transition Execution ---
+    const canAccessMars = {{ $canAccessMars ? 'true' : 'false' }};
+    const canAccessSaturnus = {{ $canAccessSaturnus ? 'true' : 'false' }};
+
     window.navigateToPlanet = function (target) {
+        if (target === 'mars' && !canAccessMars) {
+            alert('Akses Ditolak: Akun role {{ $userRole }} Anda tidak memiliki izin untuk mengakses Modul MARS.');
+            return;
+        }
+        if (target === 'saturn' && !canAccessSaturnus) {
+            alert('Akses Ditolak: Akun role {{ $userRole }} Anda tidak memiliki izin untuk mengakses Modul SATURNUS.');
+            return;
+        }
+
         if (isWarping) return;
         isWarping = true;
 

@@ -108,8 +108,8 @@ class RolePermissionSeeder extends Seeder
                     'mars.po.view', 'mars.outstanding.view', 'mars.outstanding.manage', 'mars.minim.view',
                     'mars.minim.manage', 'mars.kedatangan.view', 'mars.kedatangan.manage', 'mars.history.view',
                     'mars.history.manage', 'saturnus.directory.view', 'saturnus.items.manage',
-                    'saturnus.registrasi.view', 'saturnus.registrasi.create', 'saturnus.registrasi.approve',
-                    'saturnus.unregistrasi.view', 'saturnus.unregistrasi.create', 'saturnus.unregistrasi.approve'
+                    'saturnus.registrasi.view', 'saturnus.registrasi.approve',
+                    'saturnus.unregistrasi.view', 'saturnus.unregistrasi.approve'
                 ])->pluck('id'));
             } elseif ($r['slug'] === 'purchasing') {
                 $role->permissions()->sync(Permission::whereIn('slug', [
@@ -119,19 +119,24 @@ class RolePermissionSeeder extends Seeder
             } elseif ($r['slug'] === 'staff') {
                 $role->permissions()->sync(Permission::whereIn('slug', [
                     'dashboard.view', 'saturnus.directory.view', 'saturnus.registrasi.view',
-                    'saturnus.registrasi.create', 'saturnus.registrasi.approve', 'saturnus.unregistrasi.view',
-                    'saturnus.unregistrasi.create', 'saturnus.unregistrasi.approve', 'mars.minim.view'
+                    'saturnus.registrasi.approve', 'saturnus.unregistrasi.view',
+                    'saturnus.unregistrasi.approve', 'mars.minim.view'
                 ])->pluck('id'));
             } elseif ($r['slug'] === 'accounting') {
                 $role->permissions()->sync(Permission::whereIn('slug', [
                     'dashboard.view', 'saturnus.directory.view', 'saturnus.registrasi.view',
                     'saturnus.registrasi.approve', 'saturnus.unregistrasi.view'
                 ])->pluck('id'));
-            } elseif (in_array($r['slug'], ['user', 'maintenance'])) {
+            } elseif ($r['slug'] === 'user') {
                 $role->permissions()->sync(Permission::whereIn('slug', [
                     'dashboard.view', 'saturnus.directory.view', 'saturnus.registrasi.view',
                     'saturnus.registrasi.create', 'saturnus.unregistrasi.view', 'saturnus.unregistrasi.create',
                     'mars.minim.view'
+                ])->pluck('id'));
+            } elseif ($r['slug'] === 'maintenance') {
+                $role->permissions()->sync(Permission::whereIn('slug', [
+                    'dashboard.view', 'saturnus.directory.view', 'saturnus.registrasi.view',
+                    'saturnus.unregistrasi.view', 'mars.minim.view'
                 ])->pluck('id'));
             } elseif ($r['slug'] === 'guest') {
                 $role->permissions()->sync(Permission::whereIn('slug', [

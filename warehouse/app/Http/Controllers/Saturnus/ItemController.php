@@ -368,6 +368,11 @@ class ItemController extends Controller
      */
     public function storeFormItem(Request $request)
     {
+        $user = auth()->user();
+        if (!$user || (!$user->isMaster() && !$user->hasRole('user') && !$user->hasPermission('saturnus.registrasi.create'))) {
+            return redirect()->back()->with('error', 'Akses Ditolak: Hanya akun dengan role User yang memiliki hak akses untuk membuat formulir registrasi baru.');
+        }
+
         // Handle B3 / NON B3 Category
         $kategoriSelection = $request->input('kategori_b3');
         $isB3 = false;

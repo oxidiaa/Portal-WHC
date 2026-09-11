@@ -168,6 +168,11 @@ class FormUnregistrasiController extends Controller
     {
         $this->abortIfGuest();
 
+        $user = auth()->user();
+        if (!$user || (!$user->isMaster() && !$user->hasRole('user') && !$user->hasPermission('saturnus.unregistrasi.create'))) {
+            return redirect()->back()->with('error', 'Akses Ditolak: Hanya akun dengan role User yang memiliki hak akses untuk membuat formulir unregistrasi baru.');
+        }
+
         $validated = $request->validate([
             'form_number' => 'nullable|string',
             'kode_barang' => 'required|string',
