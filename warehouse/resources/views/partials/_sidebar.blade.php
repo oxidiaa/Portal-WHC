@@ -95,7 +95,7 @@
                     </a>
                     <a href="{{ route('saturnus.form_registrasi') }}" class="sub-tree-link {{ request()->routeIs('saturnus.form_registrasi') || request()->routeIs('form-registrasi') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('saturnus.form_registrasi') || request()->routeIs('form-registrasi'))<span class="active-bar-indicator"></span>@endif
-                        <span class="sub-tree-text">Form Registrasi (Lembar Cetak)</span>
+                        <span class="sub-tree-text">Form Registrasi</span>
                     </a>
                     <a href="{{ route('saturnus.proses_approval') }}" class="sub-tree-link {{ request()->routeIs('saturnus.proses_approval') || request()->routeIs('proses-approval') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('saturnus.proses_approval') || request()->routeIs('proses-approval'))<span class="active-bar-indicator"></span>@endif
