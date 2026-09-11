@@ -20,21 +20,6 @@
             <h1 class="galactic-title" style="font-size: 1.6rem; margin-bottom: 0.2rem;">Data View Explorer Form Registrasi</h1>
             <p class="galactic-subtitle">Pusat pencarian, monitoring, dan arsip seluruh formulir pendaftaran barang consumable.</p>
         </div>
-        <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
-            <a href="{{ route('saturnus.form_registrasi') }}" class="btn btn-secondary" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1.25rem; border-radius: var(--radius-md); text-decoration: none;">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                <span>+ Buat Form Baru</span>
-            </a>
-            <a href="{{ route('saturnus.proses_approval') }}" class="btn btn-secondary" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1.25rem; border-radius: var(--radius-md); text-decoration: none;">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                </svg>
-                <span>Proses Approval</span>
-            </a>
-        </div>
     </div>
 
     {{-- Stats Cards Row --}}
