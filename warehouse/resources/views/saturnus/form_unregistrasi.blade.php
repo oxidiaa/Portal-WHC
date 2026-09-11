@@ -374,13 +374,32 @@
     @media print {
         @page {
             size: A4 landscape;
-            margin: 5mm 7mm 5mm 7mm;
+            margin: 5mm 5mm 5mm 5mm;
+        }
+        html, body {
+            background: #ffffff !important;
+            color: #000000 !important;
+            font-size: 8pt !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: auto !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         .sidebar,
+        .navbar,
+        nav,
+        .footer,
+        footer,
         .header,
         .sheet-tabs-container,
         .sheet-doc-toolbar,
         .toast-container,
+        .mai-toast-container,
+        .theme-customizer-trigger,
+        .theme-customizer-drawer,
         .no-print,
         .tab-pane:not(#print-preview-pane),
         #btn-tambah-data,
@@ -391,15 +410,32 @@
         .app-bg-glow-2,
         .app-bg-glow-3,
         .empty-state-row,
-        .modal {
+        .modal,
+        .modal-backdrop,
+        button,
+        .btn {
             display: none !important;
-        }
-        .main-content {
+            visibility: hidden !important;
+            height: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
+        }
+        .main-wrapper,
+        .page-wrapper,
+        .page-content,
+        .main-content,
+        .workspace-light-theme {
+            margin: 0 !important;
+            margin-left: 0 !important;
+            padding: 0 !important;
             width: 100% !important;
+            min-width: 100% !important;
             max-width: 100% !important;
-            background: transparent !important;
+            left: 0 !important;
+            top: 0 !important;
+            background: #ffffff !important;
+            display: block !important;
+            box-sizing: border-box !important;
         }
         #print-preview-pane {
             display: block !important;

@@ -609,6 +609,42 @@
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+
+        /* Global Print Reset: Completely hide web chrome/UI and expand printable content */
+        @media print {
+            .sidebar, .navbar, nav, .footer, footer, .theme-customizer-trigger, .theme-customizer-drawer, .mai-toast-container, .toast-container, .no-print, .btn, button, .modal, .modal-backdrop {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .main-wrapper, .page-wrapper, .page-content {
+                margin: 0 !important;
+                margin-left: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                min-width: 100% !important;
+                max-width: 100% !important;
+                left: 0 !important;
+                top: 0 !important;
+                background: #ffffff !important;
+                display: block !important;
+                box-sizing: border-box !important;
+            }
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                width: 100% !important;
+                height: auto !important;
+                min-height: auto !important;
+                overflow: visible !important;
+                color: #000000 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
     </style>
 </head>
 <body class="sidebar-light">

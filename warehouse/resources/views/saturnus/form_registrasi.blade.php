@@ -231,51 +231,168 @@
     @media print {
         @page {
             size: A4 landscape;
-            margin: 6mm 8mm 6mm 8mm;
+            margin: 5mm 5mm 5mm 5mm;
         }
-        body {
+        html, body {
             background: #ffffff !important;
             color: #000000 !important;
             font-size: 8pt !important;
             margin: 0 !important;
             padding: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: auto !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
-        .no-print, .sidebar, .topbar, .footer, .header, .sheet-tabs-container, .sheet-doc-toolbar, .saturn-floating-dock, .theme-customizer-toggle, .form-comments-card, .form-reg-footer-actions, .cs-selector-ribbon, .table-action-col {
+        .no-print, .sidebar, .navbar, nav, .footer, footer, .header, .sheet-tabs-container, .sheet-doc-toolbar, .saturn-floating-dock, .theme-customizer-trigger, .theme-customizer-drawer, .form-comments-card, .form-reg-footer-actions, .cs-selector-ribbon, .table-action-col, .mai-toast-container, .toast-container, button, .btn {
             display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
-        .page-content, .workspace-light-theme {
+        .main-wrapper, .page-wrapper, .page-content, .workspace-light-theme {
             padding: 0 !important;
             margin: 0 !important;
+            margin-left: 0 !important;
             width: 100% !important;
+            min-width: 100% !important;
+            max-width: 100% !important;
+            left: 0 !important;
+            top: 0 !important;
             background: #ffffff !important;
+            display: block !important;
+            box-sizing: border-box !important;
         }
         .form-reg-card {
             border: 1.5px solid #000000 !important;
             box-shadow: none !important;
-            padding: 4mm !important;
+            border-radius: 0 !important;
+            padding: 2mm 3mm !important;
             margin: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
             background: #ffffff !important;
+            box-sizing: border-box !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+        .form-reg-header {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            border-bottom: 1.5px solid #000000 !important;
+            padding-bottom: 3px !important;
+            margin-bottom: 4px !important;
+        }
+        .form-reg-logo img {
+            height: 32px !important;
+            width: auto !important;
+        }
+        .form-reg-company strong {
+            font-size: 8pt !important;
+            color: #000000 !important;
+        }
+        .form-reg-company span {
+            font-size: 6pt !important;
+            line-height: 1.15 !important;
+            color: #000000 !important;
+        }
+        .form-reg-title {
+            font-size: 11pt !important;
+            font-weight: 800 !important;
+            color: #000000 !important;
+            margin: 0 !important;
+            text-align: center !important;
+        }
+        .form-reg-nodoc {
+            font-size: 6.5pt !important;
+            color: #000000 !important;
+            margin: 1px 0 0 0 !important;
+            text-align: center !important;
+        }
+        .form-reg-meta {
+            display: flex !important;
+            justify-content: space-between !important;
+            font-size: 7.5pt !important;
+            margin-bottom: 4px !important;
+            color: #000000 !important;
+        }
+        .form-reg-table-wrap {
+            width: 100% !important;
+            overflow: visible !important;
+            margin-bottom: 4px !important;
+        }
+        .form-reg-table {
+            width: 100% !important;
+            table-layout: fixed !important;
+            border-collapse: collapse !important;
+            border: 1.5px solid #000000 !important;
         }
         .form-reg-table th, .form-reg-table td {
             border: 1px solid #000000 !important;
             color: #000000 !important;
-            padding: 2px 4px !important;
-            font-size: 7.5pt !important;
+            padding: 2px 3px !important;
+            font-size: 7pt !important;
+            line-height: 1.2 !important;
+            text-align: center !important;
+            vertical-align: middle !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+        }
+        .form-reg-table th {
+            background: #f1f5f9 !important;
+            font-weight: 800 !important;
+        }
+        .item-code-badge {
+            background: transparent !important;
+            color: #000000 !important;
+            border: none !important;
+            font-weight: 700 !important;
+            padding: 0 !important;
+            font-size: 7pt !important;
+        }
+        .form-reg-signature {
+            display: grid !important;
+            grid-template-columns: repeat(4, 1fr) !important;
+            gap: 4px !important;
+            margin-top: 4px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
         }
         .sig-box {
             border: 1px solid #000000 !important;
+            border-radius: 0 !important;
             background: #ffffff !important;
+            padding: 2px 4px !important;
+            text-align: center !important;
+        }
+        .sig-label {
+            font-size: 6.5pt !important;
+            font-weight: 800 !important;
+            color: #000000 !important;
+            margin-bottom: 2px !important;
+        }
+        .sig-space {
+            min-height: 48px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
         .sig-qrcode canvas {
             display: none !important;
         }
         .sig-qrcode img {
-            width: 36px !important;
-            height: 36px !important;
-            margin: 0 auto !important;
+            width: 38px !important;
+            height: 38px !important;
+            margin: 1px auto !important;
             display: block !important;
+        }
+        .sig-line {
+            border-bottom: 1px solid #000000 !important;
+            margin: 2px 8px 0 !important;
         }
     }
 </style>
