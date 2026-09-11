@@ -489,7 +489,7 @@ class FormUnregistrasiController extends Controller
                     'user_role'      => $comment->user_role,
                     'comment'        => $comment->comment,
                     'created_at_raw' => $comment->created_at?->toISOString() ?? now()->toISOString(),
-                    'created_at'     => $comment->created_at ? $comment->created_at->setTimezone('Asia/Jakarta')->format('d-m-Y H:i') : now('Asia/Jakarta')->format('d-m-Y H:i'),
+                    'created_at'     => $comment->created_at?->toISOString() ?? now()->toISOString(),
                     'can_delete'     => in_array(strtoupper(trim($currentUser->role ?? '')), ['MASTER', 'ADMIN']),
                 ],
             ]);

@@ -1363,18 +1363,37 @@
     }
 
     function formatCommentDate(val) {
-        if (!val) return '';
+        if (!val) return 'Baru saja';
+        if (typeof val === 'string' && (val.includes('WIB') || val.includes('Baru saja'))) {
+            return val;
+        }
+
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+        if (typeof val === 'string') {
+            const dmyMatch = val.match(/^(\d{1,2})-(\d{1,2})-(\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/);
+            if (dmyMatch) {
+                const day = String(dmyMatch[1]).padStart(2, '0');
+                const monthIdx = parseInt(dmyMatch[2], 10) - 1;
+                const year = dmyMatch[3];
+                const hours = String(dmyMatch[4] || '00').padStart(2, '0');
+                const minutes = String(dmyMatch[5] || '00').padStart(2, '0');
+                const month = monthNames[monthIdx] || dmyMatch[2];
+                return `${day} ${month} ${year}, ${hours}:${minutes} WIB`;
+            }
+        }
+
         try {
             const d = new Date(val);
-            if (isNaN(d.getTime())) return val;
-            const dd = String(d.getDate()).padStart(2, '0');
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const yyyy = d.getFullYear();
-            const hh = String(d.getHours()).padStart(2, '0');
-            const min = String(d.getMinutes()).padStart(2, '0');
-            return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+            if (isNaN(d.getTime())) return String(val);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = monthNames[d.getMonth()];
+            const year = d.getFullYear();
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            return `${day} ${month} ${year}, ${hours}:${minutes} WIB`;
         } catch (e) {
-            return val;
+            return String(val);
         }
     }
 
