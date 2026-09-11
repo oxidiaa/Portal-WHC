@@ -310,34 +310,6 @@
         </div>
     </div>
 
-    {{-- ===== CHECKSHEET SELECTOR PILLS RIBBON (NO PRINT) ===== --}}
-    <div class="cs-selector-ribbon no-print">
-        <span style="font-size: 0.75rem; font-weight: 800; color: #64748b; margin-right: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-            PILIH FORM:
-        </span>
-
-        @foreach($accessibleFormNumbers as $fNo)
-            @php
-                $csItemsCount = $formItems->where('form_number', $fNo)->count();
-                $csAppr = $formApprovals->firstWhere('form_number', $fNo);
-                $isDone = $csAppr && ($csAppr->status === 'Item Telah didaftarkan' || $csAppr->warehouse_signed_at);
-                $isActive = ($fNo === $currentFormNo);
-            @endphp
-            <a href="{{ route('saturnus.form_registrasi', ['form' => $fNo]) }}" class="cs-pill-btn {{ $isActive ? 'active' : '' }}" title="{{ $fNo }}">
-                <span style="width: 8px; height: 8px; border-radius: 50%; background: {{ $isDone ? '#10b981' : ($isActive ? '#ffffff' : '#f59e0b') }};"></span>
-                <span>{{ $fNo }}</span>
-                <span class="cs-pill-count">{{ $csItemsCount }} Item</span>
-            </a>
-        @endforeach
-
-        @if($accessibleFormNumbers->isEmpty())
-            <span class="badge" style="background: #f1f5f9; color: #64748b; font-size: 0.78rem; padding: 0.45rem 0.85rem; border-radius: 8px;">
-                Belum ada form checksheet. Klik "+ Form Baru" untuk memulai.
-            </span>
-        @endif
-    </div>
-
     <!-- Quick Document Status Bar (No Print) -->
     <div class="sheet-doc-toolbar no-print">
         <div class="doc-toolbar-left">
