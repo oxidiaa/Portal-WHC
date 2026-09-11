@@ -694,7 +694,7 @@
                                     </div>
                                     <div>
                                         <h4 class="empty-state-title">Belum Ada Data Barang Unregistrasi</h4>
-                                        <p class="empty-state-desc">Formulir unregistrasi ini masih kosong. Klik tombol di bawah atau gunakan tombol <strong>Tambah Data Unreg</strong> untuk mengisi data discontinue.</p>
+                                        <p class="empty-state-desc">Formulir unregistrasi ini masih kosong. Klik tombol di bawah untuk mengisi data formulir discontinue.</p>
                                     </div>
                                     <div class="empty-state-actions">
                                         <button type="button" class="empty-state-btn" onclick="openModal('addItemModal')">
@@ -702,7 +702,7 @@
                                                 <line x1="12" y1="5" x2="12" y2="19"></line>
                                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                             </svg>
-                                            + Tambah Data Pertama
+                                            + Isi Data Formulir
                                         </button>
                                     </div>
                                 </div>
@@ -1087,7 +1087,7 @@
 <div class="modal" id="addItemModal">
     <div class="modal-content" style="max-width: 620px; max-height: 90vh; overflow-y: auto; padding: 2.25rem 2.5rem 2rem; border-radius: 24px; border: none; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35); background: #ffffff;">
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1.15rem; margin-bottom: 1.35rem; border-bottom: 1.5px solid #f1f5f9;">
-            <h3 style="font-family: inherit; font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.01em;">Tambah Data Barang Unregistrasi</h3>
+            <h3 style="font-family: inherit; font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.01em;">Formulir Pengajuan Unregistrasi Baru</h3>
             <button class="btn-close" onclick="closeModal('addItemModal')" style="background: transparent; border: none; font-size: 1.35rem; line-height: 1; color: #94a3b8; cursor: pointer; padding: 0.25rem; border-radius: 6px; transition: all 0.2s;">&times;</button>
         </div>
 
@@ -1331,7 +1331,7 @@
                         </div>
                         <div>
                             <h4 class="empty-state-title">Belum Ada Data Barang Unregistrasi</h4>
-                            <p class="empty-state-desc">Formulir unregistrasi ini masih kosong. Klik tombol di bawah atau gunakan tombol <strong>Tambah Data Unreg</strong> untuk mengisi data discontinue.</p>
+                            <p class="empty-state-desc">Formulir unregistrasi ini masih kosong. Klik tombol di bawah untuk mengisi data formulir discontinue.</p>
                         </div>
                         <div class="empty-state-actions">
                             <button type="button" class="empty-state-btn" onclick="openModal('addItemModal')">
@@ -1339,7 +1339,7 @@
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
-                                + Tambah Data Pertama
+                                + Isi Data Formulir
                             </button>
                         </div>
                     </div>

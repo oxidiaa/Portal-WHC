@@ -448,11 +448,10 @@ class ItemController extends Controller
             $targetForm = "01/{$defaultDept}/{$monthYear}";
         }
 
-        $existingReg = FormItem::where('kode_barang', $kodeBarangInput)->where('form_number', $targetForm)->latest()->first();
-        if ($existingReg) {
-            $nameRef = !empty($existingReg->nama_barang) ? " ({$existingReg->nama_barang})" : "";
-            $msg = "Peringatan: Kode barang '{$kodeBarangInput}'{$nameRef} sudah ada dalam formulir {$targetForm} ini!";
-            return back()->withErrors(['kode_barang' => $msg])->withInput()->with('error', $msg);
+        // Formulir yang sudah berhasil dibuat tidak boleh ditambahkan item lagi
+        if (FormItem::where('form_number', $targetForm)->exists()) {
+            $msg = "Formulir {$targetForm} sudah berhasil dibuat. Penambahan item ke formulir yang sudah ada tidak diperbolehkan. Silakan klik '+ Form Baru'.";
+            return back()->withErrors(['form_number' => $msg])->withInput()->with('error', $msg);
         }
 
         $validated['kode_barang']     = $kodeBarangInput;
@@ -485,8 +484,7 @@ class ItemController extends Controller
         $redirectParams = $targetForm ? ['form' => $targetForm] : [];
 
         return redirect()->route('saturnus.form_registrasi', $redirectParams)
-            ->with('success', 'Data barang "' . $validated['nama_barang'] . '" berhasil ditambahkan ke Formulir ' . $targetForm . '.')
-            ->with('show_add_more_prompt', true);
+            ->with('success', 'Formulir ' . $targetForm . ' untuk barang "' . $validated['nama_barang'] . '" berhasil dibuat.');
     }
 
     /**

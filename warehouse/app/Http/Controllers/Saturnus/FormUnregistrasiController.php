@@ -212,6 +212,12 @@ class FormUnregistrasiController extends Controller
             }
         }
 
+        // Formulir unregistrasi yang sudah berhasil dibuat tidak boleh ditambahkan item lagi
+        if (UnregistrasiItem::where('form_number', $targetFormNo)->exists()) {
+            return redirect()->route('saturnus.form_unregistrasi', ['form' => $targetFormNo])
+                ->with('error', 'Formulir ' . $targetFormNo . ' sudah berhasil dibuat. Penambahan item ke formulir yang sudah ada tidak diperbolehkan. Silakan klik "+ Form Baru".');
+        }
+
         $item = new UnregistrasiItem();
         $item->form_number     = $targetFormNo;
         $item->user_id         = $currentUser->id;
@@ -239,7 +245,7 @@ class FormUnregistrasiController extends Controller
         );
 
         return redirect()->route('saturnus.form_unregistrasi', ['form' => $targetFormNo])
-            ->with('success', 'Data barang "' . $item->nama_barang . '" berhasil ditambahkan ke formulir ' . $targetFormNo . '.');
+            ->with('success', 'Formulir ' . $targetFormNo . ' untuk barang "' . $item->nama_barang . '" berhasil dibuat.');
     }
 
     /**

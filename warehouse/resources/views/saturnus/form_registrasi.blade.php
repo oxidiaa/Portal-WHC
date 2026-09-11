@@ -292,13 +292,6 @@
             <p class="galactic-subtitle">Lembar kerja resmi pendaftaran barang consumable, tabel item, tanda tangan QR Code, dan cetak A4.</p>
         </div>
         <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
-            <button class="btn btn-primary" id="btn-tambah-item-header" onclick="openModal('addItemModal')" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1.25rem; border-radius: var(--radius-md); cursor: pointer; box-shadow: 0 4px 14px rgba(0, 132, 255, 0.35);">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                <span>+ Tambah Data Barang</span>
-            </button>
             <button class="btn btn-secondary" id="btn-form-baru" onclick="createNewForm()" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1.25rem; border-radius: var(--radius-md); cursor: pointer;">
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -541,7 +534,7 @@
                                     </div>
                                     <div>
                                         <h4 class="empty-state-title">Belum Ada Data Barang Pada Formulir Ini</h4>
-                                        <p class="empty-state-desc">Formulir <strong>{{ $currentFormNo }}</strong> masih kosong. Klik tombol di bawah untuk menambahkan item barang consumable baru.</p>
+                                        <p class="empty-state-desc">Formulir <strong>{{ $currentFormNo }}</strong> masih kosong. Klik tombol di bawah untuk mengisi data formulir pendaftaran barang.</p>
                                     </div>
                                     <div class="empty-state-actions">
                                         <button type="button" class="empty-state-btn" onclick="openModal('addItemModal')">
@@ -549,7 +542,7 @@
                                                 <line x1="12" y1="5" x2="12" y2="19"></line>
                                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                             </svg>
-                                            + Tambah Data Pertama
+                                            + Isi Data Formulir
                                         </button>
                                     </div>
                                 </div>
@@ -559,17 +552,6 @@
                     @endforelse
                 </tbody>
             </table>
-        </div>
-
-        {{-- ===== FORM ACTION BAR (NO PRINT) ===== --}}
-        <div class="form-reg-footer-actions no-print" style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
-            <button type="button" class="btn btn-primary" onclick="openModal('addItemModal')" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.65rem 1.4rem; border-radius: var(--radius-md); box-shadow: 0 4px 14px rgba(0, 132, 255, 0.35);">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                <span>+ Tambah Data Barang</span>
-            </button>
         </div>
 
         {{-- ===== SIGNATURE ===== --}}
@@ -707,8 +689,8 @@
     <div class="modal-content" style="max-width: 660px; max-height: 90vh; overflow-y: auto; padding: 2rem 2.25rem 1.75rem; border-radius: 20px; border: none; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35); background: #ffffff;">
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; margin-bottom: 1.25rem; border-bottom: 1.5px solid #f1f5f9;">
             <div>
-                <h3 style="font-family: inherit; font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0;">Tambah Data Barang</h3>
-                <p style="font-size: 0.78rem; color: #64748b; margin: 0.2rem 0 0 0;">Formulir: <strong style="color: #0084ff;" id="modal_form_number_display">{{ $currentFormNo }}</strong></p>
+                <h3 style="font-family: inherit; font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0;">Formulir Pendaftaran Barang Baru</h3>
+                <p style="font-size: 0.78rem; color: #64748b; margin: 0.2rem 0 0 0;">Nomor Formulir: <strong style="color: #0084ff;" id="modal_form_number_display">{{ $currentFormNo }}</strong></p>
             </div>
             <button class="btn-close" onclick="closeModal('addItemModal')" style="background: transparent; border: none; font-size: 1.35rem; line-height: 1; color: #94a3b8; cursor: pointer; padding: 0.25rem; border-radius: 6px; transition: all 0.2s;">&times;</button>
         </div>
@@ -871,32 +853,6 @@
                 </button>
             </div>
         </form>
-    </div>
-</div>
-
-{{-- ===== MODAL: KONFIRMASI TAMBAH ITEM LAGI ===== --}}
-<div class="modal" id="addMorePromptModal">
-    <div class="modal-content" style="max-width: 480px; text-align: center; padding: 2.25rem 1.75rem; border-radius: 20px;">
-        <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: #10b981; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.15rem;">
-            <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="2.5" fill="none">
-                <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-        </div>
-        <h3 style="font-family: inherit; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem; font-size: 1.25rem;">
-            Data Barang Berhasil Disimpan!
-        </h3>
-        <p style="color: #64748b; font-size: 0.88rem; line-height: 1.5; margin-bottom: 1.5rem;">
-            Apakah Anda ingin menambahkan item barang consumable lainnya ke dalam formulir <strong>{{ $currentFormNo }}</strong>?
-        </p>
-        <div style="display: flex; gap: 0.75rem; justify-content: center;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('addMorePromptModal')" style="padding: 0.6rem 1.25rem; font-weight: 700; border-radius: 10px; min-width: 120px;">
-                Tidak, Selesai
-            </button>
-            <button type="button" class="btn btn-primary" onclick="closeModal('addMorePromptModal'); openModal('addItemModal');" style="padding: 0.6rem 1.25rem; font-weight: 700; border-radius: 10px; display: inline-flex; align-items: center; gap: 0.4rem; min-width: 160px; background: linear-gradient(135deg, #1a3fa8 0%, #00adef 100%);">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                Ya, Tambah Item Lagi
-            </button>
-        </div>
     </div>
 </div>
 
@@ -1076,7 +1032,7 @@
                                 </div>
                                 <div>
                                     <h4 class="empty-state-title">Formulir Registrasi Baru (${nextFormNo})</h4>
-                                    <p class="empty-state-desc">Formulir baru telah siap. Isi data barang pada jendela popup untuk menambahkan item pertama.</p>
+                                    <p class="empty-state-desc">Formulir baru telah siap. Isi data barang pada jendela popup untuk membuat formulir pendaftaran.</p>
                                 </div>
                                 <div class="empty-state-actions">
                                     <button type="button" class="empty-state-btn" onclick="openModal('addItemModal')">
@@ -1084,7 +1040,7 @@
                                             <line x1="12" y1="5" x2="12" y2="19"></line>
                                             <line x1="5" y1="12" x2="19" y2="12"></line>
                                         </svg>
-                                        + Tambah Data Pertama
+                                        + Isi Data Formulir
                                     </button>
                                 </div>
                             </div>
@@ -1095,7 +1051,7 @@
         }
 
         renderComments(nextFormNo);
-        showToast(`Formulir Baru ${nextFormNo} Siap. Silakan masukkan data barang.`, 'success');
+        showToast(`Formulir Baru ${nextFormNo} Siap. Silakan isi data pendaftaran barang.`, 'success');
         openModal('addItemModal');
     }
 
@@ -1266,21 +1222,22 @@
         }
     }
 
-    // Auto-open prompt modal konfirmasi tambah item lagi setelah simpan
-    @if(session('show_add_more_prompt'))
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
-                openModal('addMorePromptModal');
-            }, 300);
-        });
-    @endif
-
     // Auto-open modal jika ada validation error dari form tambah data
     @if($errors->any())
         document.addEventListener('DOMContentLoaded', function() {
             openModal('addItemModal');
         });
     @endif
+
+    // Keyboard shortcut: Press 'N' to create new form
+    document.addEventListener('keydown', function(e) {
+        if ((e.key === 'n' || e.key === 'N') && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+            if (!document.querySelector('.modal.show')) {
+                e.preventDefault();
+                createNewForm();
+            }
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', function() {
         initAllSignaturesQRCodes();
