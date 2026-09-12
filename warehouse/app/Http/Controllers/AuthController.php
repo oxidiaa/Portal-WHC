@@ -26,17 +26,16 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'login'    => 'required|string',
-            'password' => 'required|string',
-        ], [
-            'login.required'    => 'Username atau Email wajib diisi.',
-            'password.required' => 'Password wajib diisi.',
-        ]);
+        $loginInput = trim($request->input('username', $request->input('login', '')));
+        $password = $request->input('password', '');
+        $remember = $request->boolean('remember') || $request->filled('remember');
 
-        $loginInput = trim($credentials['login']);
-        $password = $credentials['password'];
-        $remember = $request->boolean('remember');
+        if (empty($loginInput) || empty($password)) {
+            return back()->withErrors([
+                'username' => 'Username/Email dan Password wajib diisi.',
+                'login'    => 'Username/Email dan Password wajib diisi.',
+            ])->withInput($request->only('username', 'login', 'remember'));
+        }
 
         $fieldType = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
@@ -48,8 +47,9 @@ class AuthController extends Controller
         if ($user && Hash::check($password, $user->password)) {
             if (isset($user->status) && in_array(strtolower($user->status), ['nonaktif', 'inactive'])) {
                 return back()->withErrors([
-                    'login' => 'Akun Anda dinonaktifkan. Silakan hubungi Administrator.',
-                ])->onlyInput('login');
+                    'username' => 'Akun Anda dinonaktifkan. Silakan hubungi Administrator.',
+                    'login'    => 'Akun Anda dinonaktifkan. Silakan hubungi Administrator.',
+                ])->withInput($request->only('username', 'login', 'remember'));
             }
 
             Auth::login($user, $remember);
@@ -60,8 +60,9 @@ class AuthController extends Controller
         }
 
         return back()->withErrors([
-            'login' => 'Username/Email atau Password yang Anda masukkan tidak sesuai.',
-        ])->onlyInput('login');
+            'username' => 'Username/Email atau Password yang Anda masukkan tidak sesuai.',
+            'login'    => 'Username/Email atau Password yang Anda masukkan tidak sesuai.',
+        ])->withInput($request->only('username', 'login', 'remember'));
     }
 
     /**
