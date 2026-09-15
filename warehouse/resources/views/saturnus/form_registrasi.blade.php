@@ -788,7 +788,7 @@
                     <label for="fi_kode" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.35rem;">
                         Kode Barang <span style="color: #ef4444; margin-left: 2px;">*</span>
                     </label>
-                    <input type="text" id="fi_kode" name="kode_barang" class="form-control @error('kode_barang') is-invalid @enderror" placeholder="Cth: SBM-001 / CSM-001" value="{{ old('kode_barang') }}" required oninput="checkRegistrasiKodeBarang(this.value)" onblur="checkRegistrasiKodeBarang(this.value)" style="height: 44px; border-radius: 10px; border: 1.5px solid #cbd5e1; padding: 0 0.85rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
+                    <input type="text" id="fi_kode" name="kode_barang" class="form-control @error('kode_barang') is-invalid @enderror" placeholder="Cth: SBM-001" value="{{ old('kode_barang') }}" required oninput="checkRegistrasiKodeBarang(this.value)" onblur="checkRegistrasiKodeBarang(this.value)" style="height: 44px; border-radius: 10px; border: 1.5px solid #cbd5e1; padding: 0 0.85rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
                     <div id="fi_kode_alert_box" style="display: none; margin-top: 0.35rem; font-size: 0.76rem; font-weight: 600; padding: 0.35rem 0.6rem; border-radius: 6px;"></div>
                     @error('kode_barang')<div class="error-text" style="color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem;">{{ $message }}</div>@enderror
                 </div>
@@ -835,7 +835,7 @@
                     <label for="fi_katpenggunaan" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.35rem;">
                         Kategori Penggunaan <span style="color: #ef4444; margin-left: 2px;">*</span>
                     </label>
-                    <input type="text" id="fi_katpenggunaan" name="kategori_penggunaan" list="list_kat_penggunaan" class="form-control @error('kategori_penggunaan') is-invalid @enderror" placeholder="Cth: Produksi, Consumable, Dies Assy" value="{{ old('kategori_penggunaan') }}" required style="height: 44px; border-radius: 10px; border: 1.5px solid #cbd5e1; padding: 0 0.85rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
+                    <input type="text" id="fi_katpenggunaan" name="kategori_penggunaan" list="list_kat_penggunaan" class="form-control @error('kategori_penggunaan') is-invalid @enderror" placeholder="Cth: Sparepart, Consumable, Dies" value="{{ old('kategori_penggunaan') }}" required style="height: 44px; border-radius: 10px; border: 1.5px solid #cbd5e1; padding: 0 0.85rem; font-size: 0.88rem; background: #ffffff; color: #0f172a; width: 100%;">
                     <datalist id="list_kat_penggunaan">
                         <option value="Produksi"></option>
                         <option value="Consumable"></option>
