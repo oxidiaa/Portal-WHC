@@ -53,6 +53,11 @@
         box-shadow: 0 2px 8px rgba(26, 63, 168, 0.3);
     }
 
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
     .modal {
         position: fixed;
         top: 0;
@@ -287,23 +292,6 @@
         </div>
     </div>
 
-</div>
-
-{{-- ===== MODAL: QUICK APPROVAL ===== --}}
-<div class="modal" id="quickApprovalModal">
-    <div class="modal-content" style="max-width: 540px; padding: 1.75rem; border-radius: var(--radius-lg);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 0.75rem;">
-            <h3 style="font-family: var(--font-heading); font-weight: 700; margin: 0; color: var(--text-primary); font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
-                <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--color-primary)" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                Persetujuan Form Registrasi
-            </h3>
-            <button class="btn-close" onclick="closeModal('quickApprovalModal')">&times;</button>
-        </div>
-
-        <div id="quick-approval-modal-body">
-            {{-- Rendered dynamically via openQuickApprovalModal() --}}
-        </div>
-    </div>
 </div>
 
 @endsection
@@ -622,7 +610,7 @@
                             Lihat
                         </a>
                         ${canApprove ? `
-                            <button class="btn btn-sm btn-primary" onclick="openQuickApprovalModal('${escapeHtml(fNo)}')" style="font-size: 0.75rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 8px; background: linear-gradient(135deg, #1a3fa8 0%, #00adef 100%);">
+                            <button class="btn btn-sm btn-primary" onclick="directApproveForm('${escapeHtml(fNo)}', '${targetRole}', this)" style="font-size: 0.75rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 8px; background: linear-gradient(135deg, #1a3fa8 0%, #00adef 100%); border: none; cursor: pointer;">
                                 ${roleLabel}
                             </button>
                         ` : `
@@ -654,75 +642,17 @@
         }).join('');
     }
 
-    function openQuickApprovalModal(csId) {
-        const modalBody = document.getElementById('quick-approval-modal-body');
-        if (!modalBody) return;
-
-        const dbAppr = serverFormApprovals.find(a => a.form_number === csId);
-        const userDone = Boolean(dbAppr?.user_signed_at || true);
-        const staffDone = Boolean(dbAppr?.staff_signed_at);
-        const accDone = Boolean(dbAppr?.accounting_signed_at);
-        const whDone = Boolean(dbAppr?.warehouse_signed_at);
-
-        let activeStepRole = 'staff';
-        let roleTitle = 'Staff / Section Head (Tahap 1)';
-        let roleDesc = 'Menyetujui pendaftaran barang consumable dari departemen terkait.';
-
-        if (!staffDone) {
-            activeStepRole = 'staff';
-            roleTitle = 'Staff / Section Head (Tahap 1)';
-            roleDesc = 'Menyetujui pendaftaran barang consumable dari departemen terkait.';
-        } else if (!accDone) {
-            activeStepRole = 'accounting';
-            roleTitle = 'Accounting Department (Tahap 2)';
-            roleDesc = 'Menyetujui alokasi biaya dan klasifikasi consumable.';
-        } else if (!whDone) {
-            activeStepRole = 'warehouse';
-            roleTitle = 'Warehouse Consumable (Tahap 3 - Final)';
-            roleDesc = 'Menyelesaikan pendaftaran barang dan menempatkan ke sistem gudang.';
+    async function directApproveForm(csId, roleKey, btnEl) {
+        let originalContent = '';
+        if (btnEl) {
+            originalContent = btnEl.innerHTML;
+            btnEl.disabled = true;
+            btnEl.style.opacity = '0.75';
+            btnEl.innerHTML = `
+                <svg style="animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 3px;" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path></svg>
+                <span>Menyetujui...</span>
+            `;
         }
-
-        modalBody.innerHTML = `
-            <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
-                <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">No. Checksheet:</div>
-                <div style="font-size: 1.15rem; font-weight: 800; color: #1a3fa8; font-family: var(--font-tech); margin-top: 0.15rem;">${escapeHtml(csId)}</div>
-                <div style="font-size: 0.82rem; color: #334155; margin-top: 0.35rem;">
-                    Tahap: <strong>${roleTitle}</strong>
-                </div>
-            </div>
-
-            <form onsubmit="submitQuickApproval(event, '${escapeHtml(csId)}', '${activeStepRole}')">
-                <input type="hidden" name="form_number" value="${escapeHtml(csId)}">
-                <input type="hidden" name="role" value="${activeStepRole}">
-
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #1e293b; margin-bottom: 0.35rem;">Nama Penyetuju / Verifikator <span style="color: #ef4444;">*</span></label>
-                    <input type="text" id="qa_name" name="name" class="form-control" value="${escapeHtml(currentUserName)}" required style="height: 42px; border-radius: 8px; border: 1.5px solid #cbd5e1; padding: 0 0.85rem; font-size: 0.88rem; width: 100%;">
-                </div>
-
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #1e293b; margin-bottom: 0.35rem;">Catatan / Komentar Approval (Opsional)</label>
-                    <textarea id="qa_comment" name="comment" class="form-control" rows="2" placeholder="Cth: Disetujui sesuai spesifikasi pengajuan..." style="border-radius: 8px; border: 1.5px solid #cbd5e1; padding: 0.6rem 0.85rem; font-size: 0.88rem; width: 100%; resize: vertical;"></textarea>
-                </div>
-
-                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('quickApprovalModal')" style="padding: 0.6rem 1.25rem; font-weight: 700; border-radius: 8px;">Batal</button>
-                    <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.5rem; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 0.45rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;">
-                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        <span>Konfirmasi Setujui</span>
-                    </button>
-                </div>
-            </form>
-        `;
-
-        openModal('quickApprovalModal');
-    }
-
-    async function submitQuickApproval(event, csId, roleKey) {
-        event.preventDefault();
-        const formEl = event.target;
-        const nameVal = formEl.querySelector('#qa_name')?.value || currentUserName;
-        const commentVal = formEl.querySelector('#qa_comment')?.value || 'Disetujui.';
 
         try {
             const response = await fetch('{{ route("form-registrasi.approve") }}', {
@@ -735,14 +665,13 @@
                 body: JSON.stringify({
                     form_number: csId,
                     role: roleKey,
-                    name: nameVal,
-                    comment: commentVal
+                    name: currentUserName,
+                    comment: 'Disetujui.'
                 })
             });
 
             const res = await response.json();
             if (response.ok && res.success) {
-                closeModal('quickApprovalModal');
                 showToast(res.message || 'Form berhasil disetujui!', 'success');
                 
                 // Update local model
@@ -755,10 +684,20 @@
                 renderApprovalMonitoringTable();
             } else {
                 alert(res.message || 'Gagal menyetujui form. Pastikan Anda memiliki wewenang.');
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.style.opacity = '1';
+                    btnEl.innerHTML = originalContent;
+                }
             }
         } catch (err) {
             console.error(err);
             alert('Terjadi kesalahan jaringan saat mengirim persetujuan.');
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.style.opacity = '1';
+                btnEl.innerHTML = originalContent;
+            }
         }
     }
 
