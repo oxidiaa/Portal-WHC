@@ -116,7 +116,7 @@ class UserController extends Controller
             'department' => 'required|string|max:100',
             'role'       => 'required|string|max:100',
             'status'     => 'nullable|string|in:active,inactive,Aktif,Nonaktif',
-            'password'   => 'required|string|min:6',
+            'password'   => 'required|string|min:4',
         ], [
             'name.required'       => 'Nama lengkap wajib diisi.',
             'username.required'   => 'Username wajib diisi.',
@@ -127,8 +127,8 @@ class UserController extends Controller
             'email.unique'        => 'Email tersebut sudah terdaftar.',
             'department.required' => 'Departemen wajib dipilih.',
             'role.required'       => 'Role pengguna wajib dipilih.',
-            'password.required'   => 'Password wajib diisi minimal 6 karakter.',
-            'password.min'        => 'Password minimal harus 6 karakter.',
+            'password.required'   => 'Password wajib diisi minimal 4 karakter.',
+            'password.min'        => 'Password minimal harus 4 karakter.',
         ]);
 
         $statusValue = in_array(strtolower($validated['status'] ?? 'active'), ['active', 'aktif']) ? 'active' : 'inactive';
@@ -161,7 +161,7 @@ class UserController extends Controller
             'department' => 'required|string|max:100',
             'role'       => 'required|string|max:100',
             'status'     => 'required|string|in:active,inactive,Aktif,Nonaktif',
-            'password'   => 'nullable|string|min:6',
+            'password'   => 'nullable|string|min:4',
         ], [
             'name.required'       => 'Nama lengkap wajib diisi.',
             'username.required'   => 'Username wajib diisi.',
@@ -172,7 +172,7 @@ class UserController extends Controller
             'email.unique'        => 'Email tersebut sudah digunakan oleh user lain.',
             'department.required' => 'Departemen wajib dipilih.',
             'role.required'       => 'Role pengguna wajib dipilih.',
-            'password.min'        => 'Password minimal harus 6 karakter.',
+            'password.min'        => 'Password minimal harus 4 karakter.',
         ]);
 
         $statusValue = in_array(strtolower($validated['status']), ['active', 'aktif']) ? 'active' : 'inactive';

@@ -406,7 +406,7 @@
                             Password <span id="passwordRequiredStar" style="color: #ef4444;">*</span>
                         </label>
                         <div style="position: relative;">
-                            <input type="password" name="password" id="user_password" class="form-control" placeholder="Minimal 6 karakter" style="height: 42px; padding-right: 2.75rem;">
+                            <input type="password" name="password" id="user_password" class="form-control" placeholder="Minimal 4 karakter" style="height: 42px; padding-right: 2.75rem;">
                             <button type="button" onclick="togglePasswordVisibility('user_password', 'togglePasswordIcon')" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; padding: 0.25rem;">
                                 <svg id="togglePasswordIcon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
