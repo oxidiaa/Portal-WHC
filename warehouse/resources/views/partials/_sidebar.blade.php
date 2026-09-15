@@ -67,7 +67,7 @@
                     </a>
                     @endif
 
-                    @if($isMasterOrAdmin || $user->hasPermission('mars.outstanding.view'))
+                    @if($isMasterOrAdmin)
                     <a href="{{ route('mars.item_outstanding.index') }}" class="sub-tree-link {{ request()->routeIs('mars.item_outstanding.*') || request()->routeIs('item_outstanding.*') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('mars.item_outstanding.*') || request()->routeIs('item_outstanding.*'))<span class="active-bar-indicator"></span>@endif
                         <span class="sub-tree-text">Item Outstanding</span>
