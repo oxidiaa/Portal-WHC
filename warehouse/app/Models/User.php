@@ -86,7 +86,6 @@ class User extends Authenticatable
             str_contains($userRoleLower, 'purchasing') => 'purchasing',
             str_contains($userRoleLower, 'staff') => 'staff',
             str_contains($userRoleLower, 'accounting') || str_contains($userRoleLower, 'acc') => 'accounting',
-            str_contains($userRoleLower, 'maintenance') => 'maintenance',
             str_contains($userRoleLower, 'guest') => 'guest',
             str_contains($userRoleLower, 'user') || str_contains($userRoleLower, 'production') || str_contains($userRoleLower, 'dies') => 'user',
             default => null,

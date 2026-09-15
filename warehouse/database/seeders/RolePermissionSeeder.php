@@ -85,11 +85,6 @@ class RolePermissionSeeder extends Seeder
                 'description' => 'Pembuatan form registrasi & unregistrasi item consumable dan cek stok minim',
             ],
             [
-                'name' => 'Maintenance',
-                'slug' => 'maintenance',
-                'description' => 'Pembuatan form registrasi barang maintenance dan cek status stok',
-            ],
-            [
                 'name' => 'Guest / Viewer',
                 'slug' => 'guest',
                 'description' => 'Akses read-only ke dashboard dan informasi stok',
@@ -132,11 +127,6 @@ class RolePermissionSeeder extends Seeder
                     'dashboard.view', 'saturnus.directory.view', 'saturnus.registrasi.view',
                     'saturnus.registrasi.create', 'saturnus.unregistrasi.view', 'saturnus.unregistrasi.create',
                     'mars.minim.view'
-                ])->pluck('id'));
-            } elseif ($r['slug'] === 'maintenance') {
-                $role->permissions()->sync(Permission::whereIn('slug', [
-                    'dashboard.view', 'saturnus.directory.view', 'saturnus.registrasi.view',
-                    'saturnus.unregistrasi.view', 'mars.minim.view'
                 ])->pluck('id'));
             } elseif ($r['slug'] === 'guest') {
                 $role->permissions()->sync(Permission::whereIn('slug', [
