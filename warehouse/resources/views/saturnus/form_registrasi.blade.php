@@ -6,6 +6,7 @@
 @php
     $userDeptTag = strtoupper(Auth::user()->department ?? Auth::user()->name ?? 'PRODUCTION');
     $userRoleRaw = strtoupper(trim(Auth::user()->role ?? 'USER'));
+    $isMaster = in_array($userRoleRaw, ['MASTER', 'ADMIN']) || (Auth::user() && method_exists(Auth::user(), 'isMaster') && Auth::user()->isMaster());
     $canViewAllDept = in_array($userRoleRaw, ['MASTER', 'ADMIN'])
         || str_contains($userRoleRaw, 'ACCOUNTING')
         || str_contains($userRoleRaw, 'ACC')
@@ -502,7 +503,9 @@
                         <th rowspan="2" class="th-center" style="width:6%;">LEAD TIME</th>
                         <th rowspan="2" class="th-center" style="width:8%;">ASET / NO ASET</th>
                         <th colspan="2" class="th-center" style="width:10%;">KATEGORI</th>
+                        @if($isMaster)
                         <th rowspan="2" class="th-center table-action-col no-print" style="width:5%;">AKSI</th>
+                        @endif
                     </tr>
                     <tr>
                         <th class="th-center" style="width:4.5%;">B3</th>
@@ -562,7 +565,7 @@
                         <td class="td-center" style="vertical-align: middle;">
                             @if($item->kategori_aset === 'ASET')
                                 <span class="badge-asset-yes">
-                                    <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                     <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                     ASET
                                 </span>
                             @else
@@ -583,6 +586,7 @@
                                 </div>
                             @endif
                         </td>
+                        @if($isMaster)
                         <td class="td-center table-action-col no-print">
                             <form action="{{ route('saturnus.form_registrasi.item.delete', $item->id) }}" method="POST" onsubmit="return confirm('Hapus item \'{{ $item->nama_barang }}\' dari formulir ini?');" style="display:inline;">
                                 @csrf
@@ -592,11 +596,12 @@
                                 </button>
                             </form>
                         </td>
+                        @endif
                     </tr>
                     @empty
                     <!-- Web View Empty State -->
                     <tr class="empty-state-row no-print">
-                        <td colspan="15" style="padding: 0; border: none;">
+                        <td colspan="{{ $isMaster ? 15 : 14 }}" style="padding: 0; border: none;">
                             <div class="empty-state-wrapper">
                                 <div class="empty-state-card">
                                     <div class="empty-state-icon-container">

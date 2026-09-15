@@ -663,18 +663,11 @@ class ItemController extends Controller
         $item = FormItem::findOrFail($id);
         $currentUser = auth()->user();
         $currentUserRole = strtoupper(trim($currentUser->role ?? ''));
-        $isMaster = in_array($currentUserRole, ['MASTER', 'ADMIN']);
+        $isMaster = in_array($currentUserRole, ['MASTER', 'ADMIN']) || (method_exists($currentUser, 'isMaster') && $currentUser->isMaster());
 
         if (!$isMaster) {
-            $itemDept = strtoupper(trim($item->created_by_dept ?? $item->user?->department ?? ''));
-            if (!$itemDept && str_contains($item->form_number, '/')) {
-                $parts = explode('/', $item->form_number);
-                $itemDept = isset($parts[1]) ? strtoupper(trim($parts[1])) : '';
-            }
-            if ($itemDept && !$this->isDepartmentAllowed($currentUser, $itemDept)) {
-                return redirect()->route('saturnus.form_registrasi')
-                    ->with('error', 'Akses ditolak: Anda tidak memiliki wewenang menghapus barang dari departemen lain.');
-            }
+            return redirect()->route('saturnus.form_registrasi', ['form' => $item->form_number])
+                ->with('error', 'Akses ditolak: Hanya role Admin yang memiliki hak akses untuk menghapus item barang.');
         }
 
         $name = $item->nama_barang;
