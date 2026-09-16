@@ -831,11 +831,11 @@
                         Welcome<br>Back
                     </h1>
                 </div>
-                <h2 class="welcome-saturnus" style="color: black;">
-                    SATURNUS
-                </h2>
+                <!-- <h2 class="welcome-saturnus" style="color: black;">
+                    WAREHOUSE CONSUMABLE SYSTEM
+                </h2> -->
                 <p class="welcome-desc" style="color: black;">
-                    Smart Asset Tracking, Registration & Unregistration Network Utility System
+                    WAREHOUSE CONSUMABLE SYSTEM
                 </p>
             </div>
 
