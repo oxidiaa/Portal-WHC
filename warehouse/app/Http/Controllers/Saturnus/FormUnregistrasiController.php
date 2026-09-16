@@ -9,6 +9,12 @@ use App\Models\UnregistrasiApproval;
 use App\Models\UnregistrasiComment;
 use App\Models\FormItem;
 use App\Models\User;
+use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class FormUnregistrasiController extends Controller
 {
@@ -52,9 +58,9 @@ class FormUnregistrasiController extends Controller
     }
 
     /**
-     * Show the main Unregistrasi Consumable page.
+     * Shared helper to retrieve and filter unregistrasi form data.
      */
-    public function formUnregistrasi(Request $request)
+    private function getUnregistrasiFormData(Request $request): array
     {
         $this->cleanupOrphanFormRecords();
 
@@ -158,7 +164,42 @@ class FormUnregistrasiController extends Controller
             })->values();
         }
 
-        return view('saturnus.form_unregistrasi', compact('formItems', 'formApprovals', 'formComments', 'activeFormNoParam', 'users', 'allRegisteredCodes', 'allUnregisteredCodes'));
+        return compact(
+            'formItems',
+            'formApprovals',
+            'formComments',
+            'activeFormNoParam',
+            'users',
+            'allRegisteredCodes',
+            'allUnregisteredCodes'
+        );
+    }
+
+    /**
+     * Show the main Unregistrasi Consumable page (Lembar Cetak / Sheet View).
+     */
+    public function formUnregistrasi(Request $request)
+    {
+        $data = $this->getUnregistrasiFormData($request);
+        return view('saturnus.form_unregistrasi', $data);
+    }
+
+    /**
+     * Show the dedicated Proses Approval Unregistrasi page.
+     */
+    public function prosesApproval(Request $request)
+    {
+        $data = $this->getUnregistrasiFormData($request);
+        return view('saturnus.unregistrasi_approval', $data);
+    }
+
+    /**
+     * Show the dedicated History & Data Explorer Unregistrasi page.
+     */
+    public function history(Request $request)
+    {
+        $data = $this->getUnregistrasiFormData($request);
+        return view('saturnus.unregistrasi_history', $data);
     }
 
     /**
@@ -361,8 +402,12 @@ class FormUnregistrasiController extends Controller
             ]);
         }
 
-        return redirect()->route('saturnus.form_unregistrasi', ['tab' => 'proses-approval', 'form' => $formNo])
-            ->with('success', $msg);
+        $redirectTo = $request->input('redirect_to', 'form');
+        if ($redirectTo === 'approval') {
+            return redirect()->route('saturnus.unregistrasi_approval')->with('success', $msg);
+        }
+
+        return redirect()->route('saturnus.form_unregistrasi', ['form' => $formNo])->with('success', $msg);
     }
 
     /**
@@ -374,7 +419,7 @@ class FormUnregistrasiController extends Controller
 
         $formNo = $request->input('form_number');
         if (!$formNo) {
-            return redirect()->route('saturnus.form_unregistrasi', ['tab' => 'data-view'])->with('error', 'Form number tidak valid.');
+            return redirect()->route('saturnus.form_unregistrasi')->with('error', 'Form number tidak valid.');
         }
 
         $currentUser = auth()->user();
@@ -382,7 +427,7 @@ class FormUnregistrasiController extends Controller
         $isMaster = in_array($currentUserRole, ['MASTER', 'ADMIN']);
 
         if (!$isMaster) {
-            return redirect()->route('saturnus.form_unregistrasi', ['tab' => 'data-view'])
+            return redirect()->route('saturnus.form_unregistrasi')
                 ->with('error', 'Akses ditolak: Hanya Role Master yang memiliki wewenang untuk menghapus form unregistrasi.');
         }
 
@@ -391,7 +436,7 @@ class FormUnregistrasiController extends Controller
         UnregistrasiComment::where('form_number', $formNo)->delete();
         $this->cleanupOrphanFormRecords();
 
-        return redirect()->route('saturnus.form_unregistrasi', ['tab' => 'data-view'])
+        return redirect()->route('saturnus.form_unregistrasi')
             ->with('success', 'Formulir Unregistrasi "' . $formNo . '" berhasil dihapus secara permanen.');
     }
 
@@ -448,85 +493,135 @@ class FormUnregistrasiController extends Controller
         $commentText = trim($request->input('comment'));
         $currentUser = auth()->user();
 
-        $userRole = strtoupper(trim($currentUser->role ?? 'USER'));
-        $canViewAllDepartments = in_array($userRole, ['MASTER', 'ADMIN'])
-            || str_contains($userRole, 'ACCOUNTING')
-            || str_contains($userRole, 'ACC')
-            || str_contains($userRole, 'WAREHOUSE');
-
-        if (!$canViewAllDepartments) {
-            $parts = explode('/', $formNo);
-            $formDept = (count($parts) >= 2 && !empty($parts[1])) ? strtoupper(trim($parts[1])) : '';
-            if ($formDept && !$this->isDepartmentAllowed($currentUser, $formDept)) {
-                if ($request->wantsJson() || $request->ajax()) {
-                    return response()->json(['success' => false, 'message' => 'Akses ditolak untuk formulir departemen lain.'], 403);
-                }
-                return back()->with('error', 'Akses ditolak untuk formulir departemen lain.');
-            }
-        }
-
-        $comment = UnregistrasiComment::create([
-            'form_number' => $formNo,
-            'user_id'     => $currentUser->id,
-            'user_name'   => $currentUser->name ?? 'User',
-            'user_dept'   => $currentUser->department ?? 'Production',
-            'user_role'   => $currentUser->role ?? 'User',
-            'comment'     => $commentText,
-        ]);
+        $comment = new UnregistrasiComment();
+        $comment->form_number = $formNo;
+        $comment->user_id     = $currentUser->id;
+        $comment->user_name   = $currentUser->name ?? 'User';
+        $comment->user_dept   = $currentUser->department ?? 'Production';
+        $comment->user_role   = $currentUser->role ?? 'User';
+        $comment->comment     = $commentText;
+        $comment->save();
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Komentar berhasil ditambahkan.',
+                'message' => 'Catatan berhasil ditambahkan.',
                 'comment' => [
-                    'id'             => $comment->id,
-                    'form_number'    => $comment->form_number,
-                    'user_id'        => $comment->user_id,
-                    'user_name'      => $comment->user_name,
-                    'user_dept'      => $comment->user_dept,
-                    'user_role'      => $comment->user_role,
-                    'comment'        => $comment->comment,
-                    'created_at_raw' => $comment->created_at?->toISOString() ?? now()->toISOString(),
-                    'created_at'     => $comment->created_at?->toISOString() ?? now()->toISOString(),
-                    'can_delete'     => in_array(strtoupper(trim($currentUser->role ?? '')), ['MASTER', 'ADMIN']),
-                ],
+                    'id'         => $comment->id,
+                    'user_name'  => $comment->user_name,
+                    'user_dept'  => $comment->user_dept,
+                    'user_role'  => $comment->user_role,
+                    'comment'    => $comment->comment,
+                    'created_at' => $comment->created_at->format('d M Y, H:i'),
+                ]
             ]);
         }
 
-        return redirect()->route('saturnus.form_unregistrasi', ['form' => $formNo])
-            ->with('success', 'Komentar berhasil ditambahkan.');
+        return redirect()->back()->with('success', 'Catatan berhasil ditambahkan ke form ' . $formNo . '.');
     }
 
     /**
-     * Delete an unregistrasi comment.
+     * Delete a comment on an unregistrasi form.
      */
-    public function deleteComment(Request $request, $id)
+    public function deleteComment($id)
     {
         $this->abortIfGuest();
 
         $comment = UnregistrasiComment::findOrFail($id);
         $currentUser = auth()->user();
-        $userRole = strtoupper(trim($currentUser->role ?? 'USER'));
-        $isMaster = in_array($userRole, ['MASTER', 'ADMIN']);
+        $currentUserRole = strtoupper(trim($currentUser->role ?? ''));
+        $isMaster = in_array($currentUserRole, ['MASTER', 'ADMIN']);
 
-        if (!$isMaster) {
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Akses Ditolak: Hanya Role Master yang memiliki hak untuk menghapus komentar.'], 403);
-            }
-            return back()->with('error', 'Akses Ditolak: Hanya Role Master yang memiliki hak untuk menghapus komentar.');
+        if (!$isMaster && $comment->user_id !== $currentUser->id) {
+            return redirect()->back()->with('error', 'Akses ditolak: Anda hanya dapat menghapus komentar Anda sendiri.');
         }
 
         $formNo = $comment->form_number;
         $comment->delete();
 
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Komentar berhasil dihapus.',
-            ]);
+        return redirect()->back()->with('success', 'Komentar berhasil dihapus.');
+    }
+
+    /**
+     * Export unregistrasi history to Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        $data = $this->getUnregistrasiFormData($request);
+        $formItems = $data['formItems'];
+        $formApprovals = $data['formApprovals'];
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('History Unregistrasi');
+
+        $headers = [
+            'No',
+            'No. Form Unregistrasi',
+            'Tanggal Pengajuan',
+            'Departemen',
+            'Pembuat Form',
+            'Kode Barang',
+            'Nama Barang',
+            'Spesifikasi',
+            'Kategori',
+            'Alasan Discontinue / Keterangan',
+            'Status Approval',
+            'Staff Approver',
+            'Tgl Staff Approval',
+            'Warehouse Signer',
+            'Tgl Warehouse Discontinue'
+        ];
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '0284C7']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
+        ];
+
+        $columnLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
+        
+        foreach ($headers as $index => $header) {
+            $colLetter = $columnLetters[$index];
+            $sheet->setCellValue($colLetter . '1', $header);
+            $sheet->getStyle($colLetter . '1')->applyFromArray($headerStyle);
+            $sheet->getColumnDimension($colLetter)->setAutoSize(true);
         }
 
-        return redirect()->route('saturnus.form_unregistrasi', ['form' => $formNo])
-            ->with('success', 'Komentar berhasil dihapus.');
+        $rowNumber = 2;
+        $no = 1;
+
+        foreach ($formItems as $item) {
+            $approval = $formApprovals->firstWhere('form_number', $item->form_number);
+
+            $sheet->setCellValue('A' . $rowNumber, $no++);
+            $sheet->setCellValue('B' . $rowNumber, $item->form_number ?? '-');
+            $sheet->setCellValue('C' . $rowNumber, $item->created_at ? $item->created_at->format('d/m/Y') : '-');
+            $sheet->setCellValue('D' . $rowNumber, $item->created_by_dept ?? '-');
+            $sheet->setCellValue('E' . $rowNumber, $item->created_by_name ?? '-');
+            $sheet->setCellValue('F' . $rowNumber, $item->kode_barang ?? '-');
+            $sheet->setCellValue('G' . $rowNumber, $item->nama_barang ?? '-');
+            $sheet->setCellValue('H' . $rowNumber, $item->spesifikasi ?? '-');
+            $sheet->setCellValue('I' . $rowNumber, $item->kategori ?? '-');
+            $sheet->setCellValue('J' . $rowNumber, $item->keterangan ?? '-');
+            $sheet->setCellValue('K' . $rowNumber, $approval?->status ?? 'Butuh Approval');
+            $sheet->setCellValue('L' . $rowNumber, $approval?->staff_signer_name ?? '-');
+            $sheet->setCellValue('M' . $rowNumber, $approval?->staff_signed_at ? Carbon::parse($approval->staff_signed_at)->format('d/m/Y H:i') : '-');
+            $sheet->setCellValue('N' . $rowNumber, $approval?->warehouse_signer_name ?? '-');
+            $sheet->setCellValue('O' . $rowNumber, $approval?->warehouse_signed_at ? Carbon::parse($approval->warehouse_signed_at)->format('d/m/Y H:i') : '-');
+
+            $rowNumber++;
+        }
+
+        $fileName = 'History_Unregistrasi_SATURNUS_' . date('Ymd_His') . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
     }
 }

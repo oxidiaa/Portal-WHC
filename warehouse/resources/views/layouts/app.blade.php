@@ -475,6 +475,86 @@
             padding-left: 8px !important;
         }
 
+        /* Saturnus Category Section Badges & Icons */
+        .simple-tree-sidebar .sidebar-category-label {
+            display: flex !important;
+            align-items: center !important;
+            margin-top: 0.65rem !important;
+            margin-bottom: 0.25rem !important;
+            padding: 0.1rem 0.25rem !important;
+        }
+
+        .simple-tree-sidebar .badge-category {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            font-size: 0.62rem !important;
+            font-weight: 800 !important;
+            letter-spacing: 0.06em !important;
+            text-transform: uppercase !important;
+            padding: 2px 7px !important;
+            border-radius: 5px !important;
+            line-height: 1.3 !important;
+        }
+
+        .simple-tree-sidebar .category-mini-icon {
+            width: 10px !important;
+            height: 10px !important;
+        }
+
+        .simple-tree-sidebar .badge-category-reg {
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+            border: 1px solid #bfdbfe !important;
+        }
+
+        .simple-tree-sidebar .badge-category-unreg {
+            background: #fff7ed !important;
+            color: #c2410c !important;
+            border: 1px solid #fed7aa !important;
+        }
+
+        .simple-tree-sidebar .sub-link-icon {
+            width: 13.5px !important;
+            height: 13.5px !important;
+            margin-right: 6px !important;
+            flex-shrink: 0 !important;
+            opacity: 0.75 !important;
+            transition: all 0.15s ease !important;
+        }
+
+        .simple-tree-sidebar .sub-tree-link:hover .sub-link-icon {
+            opacity: 1 !important;
+        }
+
+        .simple-tree-sidebar .sub-link-reg .sub-link-icon {
+            color: #2563eb !important;
+        }
+
+        .simple-tree-sidebar .sub-link-unreg .sub-link-icon {
+            color: #ea580c !important;
+        }
+
+        .simple-tree-sidebar .sub-tree-link.active-tree-reg {
+            background: #ffffff !important;
+            border: 1px solid #bfdbfe !important;
+            color: #1d4ed8 !important;
+        }
+
+        .simple-tree-sidebar .sub-tree-link.active-tree-reg .bar-reg {
+            background: #2563eb !important;
+        }
+
+        .simple-tree-sidebar .sub-tree-link.active-tree-unreg {
+            background: #ffffff !important;
+            border: 1px solid #fed7aa !important;
+            color: #c2410c !important;
+        }
+
+        .simple-tree-sidebar .sub-tree-link.active-tree-unreg .bar-unreg {
+            background: #ea580c !important;
+        }
+
         /* Minimal User Profile Bottom Bar */
         .simple-tree-sidebar .sidebar-user-footer-simple {
             padding: 0.75rem 1rem !important;

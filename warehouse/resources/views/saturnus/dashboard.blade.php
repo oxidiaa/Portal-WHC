@@ -160,30 +160,39 @@
     </div>
 
     <!-- Floating Sci-Fi Command Dock (Clean Bottom Quick Launcher) -->
-    <div class="saturn-floating-dock">
+    <div class="saturn-floating-dock" style="display: flex; gap: 0.65rem; flex-wrap: wrap; justify-content: center;">
         <a href="{{ route('saturnus.form_registrasi') }}" class="dock-launcher-btn primary">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            <span>+ Form Registrasi Baru</span>
+            <span>+ Form Registrasi</span>
         </a>
 
-        <a href="{{ route('saturnus.proses_approval') }}" class="dock-launcher-btn secondary">
+        <a href="{{ route('saturnus.form_unregistrasi') }}" class="dock-launcher-btn secondary">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
             </svg>
-            <span>Proses Approval</span>
+            <span>- Form Unregistrasi</span>
         </a>
 
-        <a href="{{ route('saturnus.data_view') }}" class="dock-launcher-btn secondary">
+        <a href="{{ route('saturnus.unregistrasi_approval') }}" class="dock-launcher-btn secondary">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
-                <line x1="8" y1="6" x2="21" y2="6"></line>
-                <line x1="8" y1="12" x2="21" y2="12"></line>
-                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <polyline points="17 11 19 13 23 9"></polyline>
             </svg>
-            <span>Data View Explorer</span>
+            <span>Approval Unregistrasi</span>
+        </a>
+
+        <a href="{{ route('saturnus.unregistrasi_history') }}" class="dock-launcher-btn secondary">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>History Discontinue</span>
         </a>
     </div>
 </div>

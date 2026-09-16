@@ -122,8 +122,13 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/form-registrasi/comment', [Saturnus\ItemController::class, 'storeComment'])->name('form_registrasi.comment.store')->middleware('permission:saturnus.registrasi.view,saturnus.*');
         Route::delete('/form-registrasi/comment/{id}', [Saturnus\ItemController::class, 'deleteComment'])->name('form_registrasi.comment.delete')->middleware('permission:saturnus.registrasi.view,saturnus.*');
 
-        // Form Unregistrasi
+        // Form Unregistrasi & Dedicated Views
         Route::get('/form-unregistrasi', [Saturnus\FormUnregistrasiController::class, 'formUnregistrasi'])->name('form_unregistrasi')->middleware('permission:saturnus.unregistrasi.view,saturnus.*');
+        Route::get('/unregistrasi-approval', [Saturnus\FormUnregistrasiController::class, 'prosesApproval'])->name('unregistrasi_approval')->middleware('permission:saturnus.unregistrasi.approve,saturnus.unregistrasi.view,saturnus.*');
+        Route::get('/unregistrasi/approval', [Saturnus\FormUnregistrasiController::class, 'prosesApproval'])->name('unregistrasi.approval')->middleware('permission:saturnus.unregistrasi.approve,saturnus.unregistrasi.view,saturnus.*');
+        Route::get('/unregistrasi-history', [Saturnus\FormUnregistrasiController::class, 'history'])->name('unregistrasi_history')->middleware('permission:saturnus.unregistrasi.view,saturnus.*');
+        Route::get('/unregistrasi/history', [Saturnus\FormUnregistrasiController::class, 'history'])->name('unregistrasi.history')->middleware('permission:saturnus.unregistrasi.view,saturnus.*');
+        Route::get('/unregistrasi/export-excel', [Saturnus\FormUnregistrasiController::class, 'exportExcel'])->name('unregistrasi.export')->middleware('permission:saturnus.unregistrasi.view,saturnus.*');
         Route::post('/form-unregistrasi/item', [Saturnus\FormUnregistrasiController::class, 'storeFormItem'])->name('form_unregistrasi.item.store')->middleware('permission:saturnus.unregistrasi.create,saturnus.*');
         Route::post('/form-unregistrasi/approve', [Saturnus\FormUnregistrasiController::class, 'approveForm'])->name('form_unregistrasi.approve')->middleware('permission:saturnus.unregistrasi.approve,saturnus.*');
         Route::match(['delete', 'post'], '/form-unregistrasi/delete-checksheet', [Saturnus\FormUnregistrasiController::class, 'deleteFormChecksheet'])->name('form_unregistrasi.delete_checksheet')->middleware('permission:saturnus.unregistrasi.create,saturnus.*');
@@ -289,6 +294,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware(['permission:saturnus.unregistrasi.view,saturnus.*'])->group(function() {
         Route::get('/form-unregistrasi', fn(Illuminate\Http\Request $req) => redirect()->route('saturnus.form_unregistrasi', $req->query()))->name('form-unregistrasi');
+        Route::get('/unregistrasi-approval', fn(Illuminate\Http\Request $req) => redirect()->route('saturnus.unregistrasi_approval', $req->query()));
+        Route::get('/unregistrasi-history', fn(Illuminate\Http\Request $req) => redirect()->route('saturnus.unregistrasi_history', $req->query()));
         Route::post('/form-unregistrasi', [Saturnus\FormUnregistrasiController::class, 'storeFormItem'])->name('form-unregistrasi.store');
         Route::post('/form-unregistrasi/store-item', [Saturnus\FormUnregistrasiController::class, 'storeFormItem']);
         Route::post('/form-unregistrasi/approve', [Saturnus\FormUnregistrasiController::class, 'approveForm'])->name('form-unregistrasi.approve');

@@ -502,6 +502,32 @@ html[data-sidebar="dark"] .simple-tree-sidebar .sub-tree-link.active-tree-item {
 html[data-sidebar="dark"] .simple-tree-sidebar .sub-tree-link::before {
     border-color: #334155 !important;
 }
+html[data-sidebar="dark"] .simple-tree-sidebar .badge-category-reg {
+    background: rgba(37, 99, 235, 0.18) !important;
+    color: #60a5fa !important;
+    border-color: rgba(59, 130, 246, 0.3) !important;
+}
+html[data-sidebar="dark"] .simple-tree-sidebar .badge-category-unreg {
+    background: rgba(234, 88, 12, 0.18) !important;
+    color: #fb923c !important;
+    border-color: rgba(251, 146, 60, 0.3) !important;
+}
+html[data-sidebar="dark"] .simple-tree-sidebar .sub-link-reg .sub-link-icon {
+    color: #60a5fa !important;
+}
+html[data-sidebar="dark"] .simple-tree-sidebar .sub-link-unreg .sub-link-icon {
+    color: #fb923c !important;
+}
+html[data-sidebar="dark"] .simple-tree-sidebar .sub-tree-link.active-tree-reg {
+    background: #1e293b !important;
+    color: #60a5fa !important;
+    border: 1px solid rgba(59, 130, 246, 0.4) !important;
+}
+html[data-sidebar="dark"] .simple-tree-sidebar .sub-tree-link.active-tree-unreg {
+    background: #1e293b !important;
+    color: #fb923c !important;
+    border: 1px solid rgba(251, 146, 60, 0.4) !important;
+}
 
 /* 2. LIGHT SIDEBAR */
 html[data-sidebar="light"] .simple-tree-sidebar,
@@ -531,6 +557,32 @@ html[data-sidebar="light"] .simple-tree-sidebar .sub-tree-link.active-tree-item 
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
     color: #1d4ed8 !important;
+}
+html[data-sidebar="light"] .simple-tree-sidebar .badge-category-reg {
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border: 1px solid #bfdbfe !important;
+}
+html[data-sidebar="light"] .simple-tree-sidebar .badge-category-unreg {
+    background: #fff7ed !important;
+    color: #c2410c !important;
+    border: 1px solid #fed7aa !important;
+}
+html[data-sidebar="light"] .simple-tree-sidebar .sub-link-reg .sub-link-icon {
+    color: #2563eb !important;
+}
+html[data-sidebar="light"] .simple-tree-sidebar .sub-link-unreg .sub-link-icon {
+    color: #ea580c !important;
+}
+html[data-sidebar="light"] .simple-tree-sidebar .sub-tree-link.active-tree-reg {
+    background: #ffffff !important;
+    border: 1px solid #bfdbfe !important;
+    color: #1d4ed8 !important;
+}
+html[data-sidebar="light"] .simple-tree-sidebar .sub-tree-link.active-tree-unreg {
+    background: #ffffff !important;
+    border: 1px solid #fed7aa !important;
+    color: #c2410c !important;
 }
 
 /* 3. COSMIC SIDEBAR */
@@ -563,6 +615,34 @@ html[data-sidebar="cosmic"] .simple-tree-sidebar .sub-tree-link.active-tree-item
     border: 1px solid rgba(0, 173, 239, 0.4) !important;
     box-shadow: 0 0 12px rgba(0, 173, 239, 0.25) !important;
 }
+html[data-sidebar="cosmic"] .simple-tree-sidebar .badge-category-reg {
+    background: rgba(0, 173, 239, 0.15) !important;
+    color: #38bdf8 !important;
+    border: 1px solid rgba(0, 173, 239, 0.35) !important;
+}
+html[data-sidebar="cosmic"] .simple-tree-sidebar .badge-category-unreg {
+    background: rgba(244, 63, 94, 0.15) !important;
+    color: #fb7185 !important;
+    border: 1px solid rgba(244, 63, 94, 0.35) !important;
+}
+html[data-sidebar="cosmic"] .simple-tree-sidebar .sub-link-reg .sub-link-icon {
+    color: #38bdf8 !important;
+}
+html[data-sidebar="cosmic"] .simple-tree-sidebar .sub-link-unreg .sub-link-icon {
+    color: #fb7185 !important;
+}
+html[data-sidebar="cosmic"] .simple-tree-sidebar .sub-tree-link.active-tree-reg {
+    background: rgba(0, 173, 239, 0.18) !important;
+    color: #38bdf8 !important;
+    border: 1px solid rgba(0, 173, 239, 0.5) !important;
+    box-shadow: 0 0 10px rgba(0, 173, 239, 0.25) !important;
+}
+html[data-sidebar="cosmic"] .simple-tree-sidebar .sub-tree-link.active-tree-unreg {
+    background: rgba(244, 63, 94, 0.18) !important;
+    color: #fb7185 !important;
+    border: 1px solid rgba(244, 63, 94, 0.5) !important;
+    box-shadow: 0 0 10px rgba(244, 63, 94, 0.25) !important;
+}
 
 /* 4. BLUE NAVY SIDEBAR */
 html[data-sidebar="blue"] .simple-tree-sidebar,
@@ -592,6 +672,32 @@ html[data-sidebar="blue"] .simple-tree-sidebar .sub-tree-link.active-tree-item {
     background: rgba(255, 255, 255, 0.2) !important;
     color: #ffffff !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+html[data-sidebar="blue"] .simple-tree-sidebar .badge-category-reg {
+    background: rgba(147, 197, 253, 0.15) !important;
+    color: #93c5fd !important;
+    border: 1px solid rgba(147, 197, 253, 0.3) !important;
+}
+html[data-sidebar="blue"] .simple-tree-sidebar .badge-category-unreg {
+    background: rgba(253, 186, 116, 0.15) !important;
+    color: #fdba74 !important;
+    border: 1px solid rgba(253, 186, 116, 0.3) !important;
+}
+html[data-sidebar="blue"] .simple-tree-sidebar .sub-link-reg .sub-link-icon {
+    color: #93c5fd !important;
+}
+html[data-sidebar="blue"] .simple-tree-sidebar .sub-link-unreg .sub-link-icon {
+    color: #fdba74 !important;
+}
+html[data-sidebar="blue"] .simple-tree-sidebar .sub-tree-link.active-tree-reg {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #93c5fd !important;
+    border: 1px solid rgba(147, 197, 253, 0.4) !important;
+}
+html[data-sidebar="blue"] .simple-tree-sidebar .sub-tree-link.active-tree-unreg {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #fdba74 !important;
+    border: 1px solid rgba(253, 186, 116, 0.4) !important;
 }
 
 /* Sidebar Brand Logo Dark/Light Theme Switching */
