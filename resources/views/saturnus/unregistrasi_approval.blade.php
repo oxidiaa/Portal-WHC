@@ -84,6 +84,45 @@
 @endphp
 
 <style>
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .toast-container {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        z-index: 9999;
+        pointer-events: none;
+    }
+
+    .toast {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.9rem 1.25rem;
+        background: #ffffff;
+        color: #0f172a;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        border: 1px solid #e2e8f0;
+        font-size: 0.88rem;
+        font-weight: 600;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        pointer-events: auto;
+    }
+
+    .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
     .saturnus-page-wrapper {
         padding: 1.5rem 2rem;
     }
@@ -639,7 +678,7 @@
                                     {{-- Quick Approve Button if action needed --}}
                                     @if($form['needs_my_action'])
                                         <button type="button" class="btn-appr-action btn-appr-primary" 
-                                                onclick="openApprovalModal('{{ $form['form_number'] }}', '{{ $form['is_staff_done'] ? 'warehouse' : 'staff' }}', '{{ $form['dept'] }}', '{{ $firstItem?->nama_barang ?? '' }}')">
+                                                onclick="directApproveUnreg('{{ $form['form_number'] }}', '{{ $form['is_staff_done'] ? 'warehouse' : 'staff' }}', this)">
                                             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
                                                 <polyline points="20 6 9 17 4 12"></polyline>
                                             </svg>
@@ -686,59 +725,6 @@
         </div>
     </div>
 
-</div>
-
-{{-- MODAL APPROVAL UNREGISTRASI --}}
-<div class="modal" id="modalApprovalUnreg">
-    <div class="modal-content-custom">
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <div class="d-flex align-items-center gap-2">
-                <div style="width: 36px; height: 36px; border-radius: 10px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center;">
-                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                </div>
-                <div>
-                    <h5 style="font-weight: 800; color: #0f172a; margin: 0; font-size: 1.15rem;">Persetujuan Unregistrasi</h5>
-                    <div style="font-size: 0.775rem; color: #64748b;" id="modalApprSubTitle">Form No: -</div>
-                </div>
-            </div>
-            <button type="button" class="btn-close" onclick="closeApprovalModal()" style="border: none; background: none; font-size: 1.25rem; cursor: pointer; color: #94a3b8;">&times;</button>
-        </div>
-
-        <form action="{{ route('saturnus.form_unregistrasi.approve') }}" method="POST" id="formApprovalUnregAction">
-            @csrf
-            <input type="hidden" name="form_number" id="apprFormNo">
-            <input type="hidden" name="role" id="apprRole">
-            <input type="hidden" name="redirect_to" value="approval">
-
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem;">
-                <div style="font-size: 0.775rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Barang yang akan di-discontinue:</div>
-                <div style="font-weight: 800; color: #0f172a; font-size: 0.95rem; margin-top: 0.25rem;" id="modalApprItemName">-</div>
-                <div style="font-size: 0.8rem; color: #475569; margin-top: 0.25rem;" id="modalApprDeptName">Departemen: -</div>
-            </div>
-
-            <div class="mb-3">
-                <label style="font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem; display: block;">Nama Penandatangan / Approver:</label>
-                <input type="text" name="name" class="form-control" value="{{ Auth::user()->name ?? '' }}" required style="width: 100%; height: 40px; border-radius: 10px; border: 1.5px solid #cbd5e1; padding: 0.5rem 0.85rem; font-size: 0.875rem;">
-            </div>
-
-            <div class="mb-3">
-                <label style="font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem; display: block;">Catatan / Komentar Persetujuan (Opsional):</label>
-                <textarea name="comment" rows="3" class="form-control" placeholder="Contoh: Disetujui untuk discontinue karena item telah digantikan oleh spesifikasi baru." style="width: 100%; border-radius: 10px; border: 1.5px solid #cbd5e1; padding: 0.5rem 0.85rem; font-size: 0.875rem;">Disetujui.</textarea>
-            </div>
-
-            <div class="d-flex align-items-center justify-content-end gap-2 mt-4">
-                <button type="button" class="btn-appr-action btn-appr-outline" onclick="closeApprovalModal()">Batal</button>
-                <button type="submit" class="btn-appr-action btn-appr-primary" id="btnSubmitAppr">
-                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    <span>Konfirmasi Tanda Tangan &amp; Approve</span>
-                </button>
-            </div>
-        </form>
-    </div>
 </div>
 
 {{-- MODAL DETAIL UNREGISTRASI --}}
@@ -880,18 +866,82 @@
         }
     });
 
-    // Modal Approval Helpers
-    function openApprovalModal(formNo, role, dept, itemName) {
-        document.getElementById('apprFormNo').value = formNo;
-        document.getElementById('apprRole').value = role;
-        document.getElementById('modalApprSubTitle').innerText = 'Formulir: ' + formNo + ' (' + (role === 'staff' ? 'Tahap 1: Staff' : 'Tahap 2: Warehouse') + ')';
-        document.getElementById('modalApprItemName').innerText = itemName || 'Barang Unregistrasi';
-        document.getElementById('modalApprDeptName').innerText = 'Departemen Pemohon: ' + dept;
-        document.getElementById('modalApprovalUnreg').classList.add('show');
+    function showToast(message, type = 'success') {
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const iconSvg = type === 'success' 
+            ? `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#10b981" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+            : `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#ef4444" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+
+        toast.innerHTML = `${iconSvg}<span>${message}</span>`;
+        container.appendChild(toast);
+
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 400);
+        }, 3500);
     }
 
-    function closeApprovalModal() {
-        document.getElementById('modalApprovalUnreg').classList.remove('show');
+    async function directApproveUnreg(formNo, roleKey, btnEl) {
+        let originalContent = '';
+        if (btnEl) {
+            originalContent = btnEl.innerHTML;
+            btnEl.disabled = true;
+            btnEl.style.opacity = '0.75';
+            btnEl.innerHTML = `
+                <svg style="animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 3px;" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path></svg>
+                <span>Menyetujui...</span>
+            `;
+        }
+
+        try {
+            const response = await fetch('{{ route("saturnus.form_unregistrasi.approve") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    form_number: formNo,
+                    role: roleKey,
+                    name: '{{ Auth::user()->name ?? "User" }}',
+                    comment: 'Disetujui.'
+                })
+            });
+
+            const res = await response.json();
+            if (response.ok && res.success) {
+                showToast(res.message || 'Formulir berhasil disetujui!', 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            } else {
+                alert(res.message || 'Gagal menyetujui form. Pastikan Anda memiliki wewenang.');
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.style.opacity = '1';
+                    btnEl.innerHTML = originalContent;
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Terjadi kesalahan jaringan saat mengirim persetujuan.');
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.style.opacity = '1';
+                btnEl.innerHTML = originalContent;
+            }
+        }
     }
 
     // Modal Detail Helpers
@@ -924,9 +974,7 @@
 
     // Close on outside click
     window.addEventListener('click', function(e) {
-        const apprModal = document.getElementById('modalApprovalUnreg');
         const dtModal = document.getElementById('modalDetailUnreg');
-        if (e.target === apprModal) closeApprovalModal();
         if (e.target === dtModal) closeDetailModal();
     });
 </script>

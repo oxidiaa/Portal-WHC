@@ -1098,22 +1098,7 @@
     </div>
 </div>
 
-{{-- ===== MODAL: QUICK APPROVAL ===== --}}
-<div class="modal" id="quickApprovalModal">
-    <div class="modal-content" style="max-width: 540px; padding: 1.75rem; border-radius: var(--radius-lg);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 0.75rem;">
-            <h3 style="font-family: var(--font-heading); font-weight: 700; margin: 0; color: var(--text-primary); font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
-                <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--color-primary)" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                Persetujuan Form Unregistrasi
-            </h3>
-            <button class="btn-close" onclick="closeModal('quickApprovalModal')">&times;</button>
-        </div>
-
-        <div id="quick-approval-modal-body">
-            {{-- Rendered dynamically via openQuickApprovalModal() --}}
-        </div>
-    </div>
-</div>
+{{-- Quick approval is direct 1-click without modal --}}
 
 {{-- ===== MODAL: TAMBAH DATA UNREGISTRASI ===== --}}
 <div class="modal" id="addItemModal">
@@ -1910,7 +1895,7 @@
             } else if (userRoleType === 'staff') {
                 if (stageKey === 'staff') {
                     actionBtnHtml = `
-                        <button class="btn btn-primary btn-sm" onclick="openQuickApprovalModal('${cs.formNo}')" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.3rem; background: linear-gradient(135deg, #2563eb, #1d4ed8);">
+                        <button class="btn btn-primary btn-sm" onclick="openQuickApprovalModal('${cs.formNo}', this)" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.3rem; background: linear-gradient(135deg, #2563eb, #1d4ed8);">
                             <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
                             Setujui (Staff)
                         </button>
@@ -1933,7 +1918,7 @@
                     `;
                 } else if (stageKey === 'warehouse') {
                     actionBtnHtml = `
-                        <button class="btn btn-primary btn-sm" onclick="openQuickApprovalModal('${cs.formNo}')" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.3rem; background: linear-gradient(135deg, #059669, #047857);">
+                        <button class="btn btn-primary btn-sm" onclick="openQuickApprovalModal('${cs.formNo}', this)" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.3rem; background: linear-gradient(135deg, #059669, #047857);">
                             <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                             Discontinue
                         </button>
@@ -1949,7 +1934,7 @@
                     adminBg = 'linear-gradient(135deg, #059669, #047857)';
                 }
                 actionBtnHtml = `
-                    <button class="btn btn-primary btn-sm" onclick="openQuickApprovalModal('${cs.formNo}')" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.3rem; background: ${adminBg};">
+                    <button class="btn btn-primary btn-sm" onclick="openQuickApprovalModal('${cs.formNo}', this)" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.3rem; background: ${adminBg};">
                         <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         ${adminBtnLabel}
                     </button>
@@ -2000,7 +1985,7 @@
         if (elWh) elWh.innerText = statWarehouse;
     }
 
-    function openQuickApprovalModal(csId) {
+    async function openQuickApprovalModal(csId, btnEl) {
         selectedChecksheetId = csId;
         const cs = checksheets[csId];
         const data = stepperData[csId];
@@ -2034,122 +2019,22 @@
         }
 
         let currentRoleKey = 'staff';
-        let roleBadgeTitle = 'Staff Approver (Approval Tahap 1)';
-        let roleBadgeColor = '#2563eb';
-        let actionBtnText = '✓ Setujui sebagai Staff';
-        let infoHelperText = `Memverifikasi pengajuan discontinue barang yang diajukan oleh <strong>${cs.requestor}</strong>.`;
-
         if (activeStepIndex === 2) {
             currentRoleKey = 'warehouse';
-            roleBadgeTitle = 'Warehouse Consumable (Final Discontinue)';
-            roleBadgeColor = '#059669';
-            actionBtnText = '✓ Konfirmasi Discontinue (Warehouse)';
-            infoHelperText = `Memverifikasi penghapusan / discontinue barang consumable dari master inventaris setelah persetujuan oleh Staff (<strong>${cs.signatures.staff || 'Staff'}</strong>).`;
         }
 
         const curUserName = authUserName || '{{ Auth::user()->name ?? "User" }}';
-        const modalBody = document.getElementById('quick-approval-modal-body');
+        const comment = 'Disetujui.';
 
-        if (modalBody) {
-            modalBody.innerHTML = `
-                <div style="background: rgba(79, 70, 229, 0.04); border: 1px solid rgba(79, 70, 229, 0.12); padding: 0.85rem 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: 800; font-size: 1rem; color: var(--color-primary);">${cs.formNo}</span>
-                        <span class="badge" style="background-color: var(--color-warning-light); color: var(--color-warning);">${data.statusText}</span>
-                    </div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem;">
-                        <strong>Requestor:</strong> ${cs.requestor} &nbsp;|&nbsp; <strong>Items:</strong> ${cs.items ? cs.items.length : 0} Item
-                    </div>
-                </div>
-
-                {{-- Horizontal Stepper Visual --}}
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; background: #f8fafc; padding: 0.75rem; border-radius: var(--radius-md);">
-                    ${data.steps.map((st, i) => `
-                        <div style="display: flex; flex-direction: column; align-items: center; gap: 0.2rem; flex: 1; text-align: center;">
-                            <div style="width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; ${st.completed ? 'background: var(--color-success); color: white;' : (st.active ? 'background: var(--color-primary); color: white; box-shadow: 0 0 0 3px var(--color-primary-light);' : 'background: #e2e8f0; color: #64748b;')}">
-                                ${st.completed ? '✓' : (i + 1)}
-                            </div>
-                            <span style="font-size: 0.7rem; font-weight: 600; color: ${st.active ? 'var(--color-primary)' : (st.completed ? 'var(--color-success)' : 'var(--text-muted)')};">${i === 0 ? 'User' : (i === 1 ? 'Staff' : 'Warehouse')}</span>
-                        </div>
-                    `).join('<div style="width: 25px; height: 2px; background: #e2e8f0; margin-bottom: 1rem;"></div>')}
-                </div>
-
-                <div style="background: #f1f5f9; border-left: 3px solid ${roleBadgeColor}; padding: 0.65rem 0.85rem; border-radius: 6px; margin-bottom: 1.25rem; font-size: 0.8rem; color: #334155;">
-                    ${infoHelperText}
-                </div>
-
-                <form onsubmit="submitQuickApproval(event, '${csId}', '${currentRoleKey}')">
-                    <input type="hidden" id="qa-role" value="${currentRoleKey}">
-
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label style="font-weight: 700; font-size: 0.82rem; margin-bottom: 0.3rem; display: block;">Peran Verifikator (Terkunci Sesuai Hak Akses):</label>
-                        <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.6rem 0.85rem; border-radius: 6px; font-size: 0.85rem; font-weight: 700; color: ${roleBadgeColor}; display: flex; align-items: center; gap: 0.4rem;">
-                            <span style="width: 8px; height: 8px; border-radius: 50%; background: ${roleBadgeColor}; display: inline-block;"></span>
-                            ${roleBadgeTitle}
-                        </div>
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 1rem;">
-                        <label style="font-weight: 700; font-size: 0.82rem; margin-bottom: 0.3rem; display: block;">Nama Penandatangan:</label>
-                        <input type="text" id="qa-name" class="form-control" style="height: 38px; font-size: 0.85rem;" value="${curUserName}" required>
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 1.25rem;">
-                        <label style="font-weight: 700; font-size: 0.82rem; margin-bottom: 0.3rem; display: block;">Catatan Verifikasi (Opsional):</label>
-                        <input type="text" id="qa-comment" class="form-control" style="height: 38px; font-size: 0.85rem;" placeholder="Cth: Disetujui untuk discontinue." value="Disetujui.">
-                    </div>
-
-                    <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem;">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('quickApprovalModal')">Batal</button>
-                        <button type="submit" class="btn btn-primary" style="font-weight: 700; padding: 0.6rem 1.2rem; display: flex; align-items: center; gap: 0.4rem; background: ${roleBadgeColor}; border-color: ${roleBadgeColor};">
-                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            ${actionBtnText}
-                        </button>
-                    </div>
-                </form>
+        let origBtnHtml = '';
+        if (btnEl) {
+            origBtnHtml = btnEl.innerHTML;
+            btnEl.disabled = true;
+            btnEl.style.opacity = '0.75';
+            btnEl.innerHTML = `
+                <svg style="animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 3px;" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path></svg>
+                <span>Menyetujui...</span>
             `;
-        }
-
-        openModal('quickApprovalModal');
-    }
-
-    async function submitQuickApproval(event, csId, defaultRoleKey) {
-        event.preventDefault();
-        const cs = checksheets[csId];
-        const steps = stepperData[csId] ? stepperData[csId].steps : null;
-        if (!cs || !steps) return;
-
-        const role = document.getElementById('qa-role').value;
-        const name = document.getElementById('qa-name').value.trim();
-        const comment = document.getElementById('qa-comment').value.trim() || 'Disetujui.';
-
-        if (!name) {
-            alert('Harap isi nama penandatangan!');
-            return;
-        }
-
-        if (role === 'staff' && userRoleType !== 'admin') {
-            const formDept = getCsDepartment(cs, csId);
-            if (formDept && !isDeptAllowed(formDept)) {
-                alert(`Akses Ditolak: Anda login sebagai Staff Departemen ${authUserDept}. Anda hanya berwenang menyetujui formulir dari departemen Anda sendiri.`);
-                return;
-            }
-            if (!steps[0].completed) {
-                alert('Akses Gagal: Form harus dibuat dan diajukan oleh User terlebih dahulu!');
-                return;
-            }
-        } else if (role === 'warehouse') {
-            if (!steps[1].completed && userRoleType !== 'admin') {
-                alert('Akses Gagal: Approval Staff harus diselesaikan terlebih dahulu sebelum Discontinue Warehouse!');
-                return;
-            }
-        }
-
-        const submitBtn = event.target.querySelector('button[type="submit"]');
-        const origBtnHtml = submitBtn ? submitBtn.innerHTML : '';
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<svg class="spinner" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle></svg> Menyimpan...';
         }
 
         try {
@@ -2162,71 +2047,71 @@
                 },
                 body: JSON.stringify({
                     form_number: csId,
-                    role: role,
-                    name: name,
+                    role: currentRoleKey,
+                    name: curUserName,
                     comment: comment
                 })
             });
 
-            const data = await response.json();
+            const resData = await response.json();
 
-            if (!response.ok || !data.success) {
-                alert('Gagal menyimpan approval: ' + (data.message || 'Terjadi kesalahan sistem.'));
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = origBtnHtml;
+            if (!response.ok || !resData.success) {
+                alert('Gagal menyimpan approval: ' + (resData.message || 'Terjadi kesalahan sistem.'));
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.style.opacity = '1';
+                    btnEl.innerHTML = origBtnHtml;
                 }
                 return;
             }
 
             const todayStr = '{{ date("d-m-Y") }}';
 
-            if (role === 'staff') {
-                cs.signatures.staff = name + ' (Tgl: ' + todayStr + ')';
+            if (currentRoleKey === 'staff') {
+                cs.signatures.staff = curUserName + ' (Tgl: ' + todayStr + ')';
                 cs.comments.staff = comment;
 
-                steps[1].completed = true;
-                steps[1].active = false;
-                steps[1].details = name + ' (Staff / Section Head - Tanggal: ' + todayStr + ')';
-                steps[1].status = 'Disetujui oleh Staff / Section Head.';
-                steps[1].color = 'var(--color-success)';
+                data.steps[1].completed = true;
+                data.steps[1].active = false;
+                data.steps[1].details = curUserName + ' (Staff / Section Head - Tanggal: ' + todayStr + ')';
+                data.steps[1].status = 'Disetujui oleh Staff / Section Head.';
+                data.steps[1].color = 'var(--color-success)';
 
-                steps[2].active = true;
-                steps[2].details = 'Menunggu verifikasi discontinue oleh Warehouse...';
-                steps[2].status = 'Butuh Verifikasi Warehouse Consumable.';
-                steps[2].color = 'var(--color-primary)';
+                data.steps[2].active = true;
+                data.steps[2].details = 'Menunggu verifikasi discontinue oleh Warehouse...';
+                data.steps[2].status = 'Butuh Verifikasi Warehouse Consumable.';
+                data.steps[2].color = 'var(--color-primary)';
 
                 cs.status = 'Butuh Verifikasi Warehouse Consumable';
-                stepperData[csId].statusText = 'Butuh Verifikasi Warehouse Consumable';
-                stepperData[csId].statusClass = 'badge-primary';
-            } else if (role === 'warehouse') {
-                cs.signatures.warehouse = name + ' (Tgl: ' + todayStr + ')';
+                data.statusText = 'Butuh Verifikasi Warehouse Consumable';
+                data.statusClass = 'badge-primary';
+            } else if (currentRoleKey === 'warehouse') {
+                cs.signatures.warehouse = curUserName + ' (Tgl: ' + todayStr + ')';
                 cs.comments.warehouse = comment;
 
-                steps[2].completed = true;
-                steps[2].active = false;
-                steps[2].details = name + ' (Warehouse Consumable - Tanggal: ' + todayStr + ')';
-                steps[2].status = 'Telah Discontinue.';
-                steps[2].color = 'var(--color-success)';
+                data.steps[2].completed = true;
+                data.steps[2].active = false;
+                data.steps[2].details = curUserName + ' (Warehouse Consumable - Tanggal: ' + todayStr + ')';
+                data.steps[2].status = 'Telah Discontinue.';
+                data.steps[2].color = 'var(--color-success)';
 
                 cs.status = 'Telah Discontinue';
-                stepperData[csId].statusText = 'Telah Discontinue';
-                stepperData[csId].statusClass = 'badge-success';
+                data.statusText = 'Telah Discontinue';
+                data.statusClass = 'badge-success';
             }
 
-            closeModal('quickApprovalModal');
             viewChecksheet(csId, false);
             renderApprovalMonitoringTable();
             renderDataViewTable();
-            showToast(`Persetujuan (${role.toUpperCase()}) berhasil disimpan!`, 'success');
+            showToast(`Persetujuan Form ${csId} (${currentRoleKey.toUpperCase()}) berhasil disimpan!`, 'success');
 
         } catch (err) {
             console.error('Approval error:', err);
             alert('Terjadi kesalahan koneksi saat memproses approval.');
-        } finally {
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = origBtnHtml;
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.style.opacity = '1';
+                btnEl.innerHTML = origBtnHtml;
             }
         }
     }
