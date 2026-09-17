@@ -17,8 +17,8 @@
                 <span class="pulse-beacon"></span>
                 <span>MAI CONSUMABLE REGISTRY & WORKSPACE</span>
             </div>
-            <h1 class="galactic-title" style="font-size: 1.6rem; margin-bottom: 0.2rem;">Data View Explorer Form Registrasi</h1>
-            <p class="galactic-subtitle">Pusat pencarian, monitoring, dan arsip seluruh formulir pendaftaran barang consumable.</p>
+            <h1 class="galactic-title" style="font-size: 1.6rem; margin-bottom: 0.2rem;">Data Registrasi (History & Explorer)</h1>
+            <p class="galactic-subtitle">Pusat arsip, riwayat, dan data seluruh formulir pendaftaran barang consumable yang telah selesai diregistrasi maupun dalam proses.</p>
         </div>
     </div>
 
@@ -58,7 +58,7 @@
                 </svg>
             </div>
             <div>
-                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500; display: block; text-transform: uppercase; letter-spacing: 0.05em;">Proses Approval</span>
+                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500; display: block; text-transform: uppercase; letter-spacing: 0.05em;">Outstanding (Proses)</span>
                 <span style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary);" id="stat-process-checksheets">0</span>
             </div>
         </div>
@@ -69,10 +69,10 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
             <div>
                 <h3 style="font-family: var(--font-heading); font-weight: 700; color: var(--text-primary); margin: 0; font-size: 1.15rem;">
-                    Daftar Formulir Registrasi (Checksheet Explorer)
+                    Daftar Formulir Registrasi (Checksheet Explorer & History)
                 </h3>
                 <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.2rem; margin-bottom: 0;">
-                    Klik tombol <strong>Lihat Lembar</strong> untuk membuka dokumen formulir atau <strong>Cetak</strong> untuk mencetak langsung.
+                    Klik tombol <strong>Lihat Lembar</strong> untuk membuka dokumen formulir atau mencetak data registrasi.
                 </p>
             </div>
             
@@ -81,6 +81,13 @@
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                     Filter:
                 </span>
+                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                    <select id="filter-status-dataview" class="form-control" style="width: 175px; height: 38px; font-size: 0.85rem; padding: 0 0.6rem;" onchange="renderDataViewTable()">
+                        <option value="">Semua Status</option>
+                        <option value="completed">✓ Selesai (Registrasi WH)</option>
+                        <option value="outstanding">⏳ Outstanding (Proses)</option>
+                    </select>
+                </div>
                 <div style="display: flex; align-items: center; gap: 0.35rem;">
                     <select id="filter-month-dataview" class="form-control" style="width: 140px; height: 38px; font-size: 0.85rem; padding: 0 0.6rem;" onchange="renderDataViewTable()">
                         <option value="">Semua Bulan</option>
@@ -192,6 +199,7 @@
         const tbody = document.getElementById('dataview-tbody');
         if (!tbody) return;
 
+        const selStatus = document.getElementById('filter-status-dataview')?.value || '';
         const selMonth = document.getElementById('filter-month-dataview')?.value || '';
         const selYear = document.getElementById('filter-year-dataview')?.value || '';
 
@@ -251,8 +259,15 @@
         if (elAppr) elAppr.textContent = approvedCount;
         if (elProc) elProc.textContent = processCount;
 
-        // Apply Month & Year filter
+        // Apply Status, Month & Year filter
         const filtered = checksheets.filter(cs => {
+            const dbAppr = serverFormApprovals.find(a => a.form_number === cs.formNo);
+            const status = dbAppr?.status || 'Butuh Approval Staff / Section Head';
+            const whDone = Boolean(dbAppr?.warehouse_signed_at || status === 'Item Telah didaftarkan' || status === 'SELESAI');
+
+            if (selStatus === 'completed' && !whDone) return false;
+            if (selStatus === 'outstanding' && whDone) return false;
+
             let itemMonth = '';
             let itemYear = '';
 
@@ -282,16 +297,16 @@
         });
 
         if (filtered.length === 0) {
-            const isFiltered = Boolean(selMonth || selYear);
+            const isFiltered = Boolean(selStatus || selMonth || selYear);
             tbody.innerHTML = `
                 <tr>
                     <td colspan="${isMasterUser ? 8 : 7}" style="text-align: center; padding: 3rem 1.5rem; color: var(--text-muted);">
                         <div style="font-size: 2.25rem; margin-bottom: 0.65rem;">📂</div>
                         <h4 class="empty-state-title" style="font-size: 1rem; font-weight: 700; color: #475569;">
-                            ${isFiltered ? 'Tidak Ada Form Registrasi pada Periode Ini' : 'Belum Ada Form Registrasi Berisi Data'}
+                            ${isFiltered ? 'Tidak Ada Form Registrasi pada Kriteria Ini' : 'Belum Ada Form Registrasi Berisi Data'}
                         </h4>
                         <p class="empty-state-desc" style="font-size: 0.82rem; margin: 0;">
-                            ${isFiltered ? 'Tidak ditemukan data formulir pendaftaran barang untuk filter Bulan / Tahun yang dipilih.' : 'Formulir registrasi akan tampil secara otomatis di sini setelah Anda menambahkan item barang.'}
+                            ${isFiltered ? 'Tidak ditemukan data formulir pendaftaran barang untuk filter yang dipilih.' : 'Formulir registrasi akan tampil secara otomatis di sini setelah Anda menambahkan item barang.'}
                         </p>
                     </td>
                 </tr>
@@ -308,8 +323,10 @@
             let statusBadge = '';
             if (whDone) {
                 statusBadge = '<span class="status-badge" style="background: rgba(16,185,129,0.15); color: #059669; font-weight: 700; border: 1px solid rgba(16,185,129,0.3); padding: 0.35rem 0.65rem; border-radius: 8px; font-size: 0.78rem;">✓ Telah Diregistrasi (WH)</span>';
-            } else if (dbAppr?.staff_signed_at) {
+            } else if (dbAppr?.accounting_signed_at) {
                 statusBadge = '<span class="status-badge" style="background: rgba(16,185,129,0.1); color: #059669; font-weight: 700; border: 1px solid rgba(16,185,129,0.25); padding: 0.35rem 0.65rem; border-radius: 8px; font-size: 0.78rem;">⏳ Butuh WH Consumable</span>';
+            } else if (dbAppr?.staff_signed_at) {
+                statusBadge = '<span class="status-badge" style="background: rgba(59,130,246,0.1); color: #2563eb; font-weight: 700; border: 1px solid rgba(59,130,246,0.25); padding: 0.35rem 0.65rem; border-radius: 8px; font-size: 0.78rem;">⏳ Butuh Accounting</span>';
             } else {
                 statusBadge = '<span class="status-badge" style="background: rgba(245,158,11,0.1); color: #d97706; font-weight: 700; border: 1px solid rgba(245,158,11,0.25); padding: 0.35rem 0.65rem; border-radius: 8px; font-size: 0.78rem;">⏳ Butuh Staff / Section</span>';
             }

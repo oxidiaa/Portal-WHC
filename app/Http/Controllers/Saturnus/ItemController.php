@@ -622,6 +622,11 @@ class ItemController extends Controller
             ]);
         }
 
+        if ($role === 'warehouse') {
+            return redirect()->route('saturnus.data_view')
+                ->with('success', $msg);
+        }
+
         return redirect()->route('saturnus.proses_approval', ['form' => $formNo])
             ->with('success', $msg);
     }

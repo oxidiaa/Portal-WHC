@@ -168,7 +168,7 @@
                 <span>MAI CONSUMABLE REGISTRY & WORKSPACE</span>
             </div>
             <h1 class="galactic-title" style="font-size: 1.6rem; margin-bottom: 0.2rem;">Proses Approval Form Registrasi</h1>
-            <p class="galactic-subtitle">Monitoring tahapan persetujuan formulir pendaftaran barang consumable 4-tahap.</p>
+            <p class="galactic-subtitle">Monitoring formulir pendaftaran barang consumable yang masih dalam proses approval (Outstanding PP).</p>
         </div>
     </div>
 
@@ -182,7 +182,7 @@
                 </svg>
             </div>
             <div>
-                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Total Form (Proses)</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Total Form (Outstanding)</span>
                 <span style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);" id="approval-stat-total">0</span>
             </div>
         </div>
@@ -247,17 +247,17 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
             <div>
                 <h3 style="font-family: var(--font-heading); font-weight: 700; color: var(--text-primary); margin: 0; font-size: 1.15rem;">
-                    Daftar Form dan Tahap Approval
+                    Daftar Form Outstanding PP (Dalam Proses Approval)
                 </h3>
                 <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.2rem; margin-bottom: 0;">
-                    Alur persetujuan: <strong>User (Pembuat)</strong> ➔ <strong>Staff / Section Head</strong> ➔ <strong>Accounting</strong> ➔ <strong>Warehouse Consumable (Registrasi)</strong>.
+                    Alur persetujuan: <strong>User (Pembuat)</strong> ➔ <strong>Staff / Section Head</strong> ➔ <strong>Accounting</strong> ➔ <strong>Warehouse Consumable (Registrasi)</strong>. Formulir yang selesai otomatis berpindah ke <a href="{{ route('saturnus.data_view') }}" style="color: var(--color-primary); font-weight: 700; text-decoration: underline;">Data Registrasi (History)</a>.
                 </p>
             </div>
 
             {{-- Quick Stage Filter Pills --}}
             <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="approval-filter-pills">
                 <button class="btn btn-sm btn-primary filter-pill-btn active" onclick="filterApprovalStage('', this)" style="border-radius: 20px; font-size: 0.78rem; font-weight: 600; padding: 0.35rem 0.85rem;">
-                    Semua Form (Proses)
+                    Semua Form (Outstanding)
                 </button>
                 <button class="btn btn-sm btn-secondary filter-pill-btn" onclick="filterApprovalStage('staff', this)" style="border-radius: 20px; font-size: 0.78rem; font-weight: 600; padding: 0.35rem 0.85rem;">
                     Butuh Staff / Section Head
@@ -424,6 +424,13 @@
         renderApprovalMonitoringTable();
     }
 
+    function isFormWhDone(cs) {
+        const fNo = cs.formNo;
+        const dbAppr = serverFormApprovals.find(a => a.form_number === fNo);
+        const status = dbAppr?.status || '';
+        return Boolean(dbAppr?.warehouse_signed_at || status === 'Item Telah didaftarkan' || status === 'SELESAI');
+    }
+
     function renderApprovalMonitoringTable() {
         const tbody = document.getElementById('approval-monitoring-tbody');
         if (!tbody) return;
@@ -458,22 +465,30 @@
             }
         });
 
-        const checksheets = Object.values(formMap);
+        const allChecksheets = Object.values(formMap);
 
-        // Stats Counters
-        let statTotal = 0;
+        // Filter ONLY outstanding forms (forms that are NOT yet completed / not yet registered by WH)
+        const outstandingChecksheets = allChecksheets.filter(cs => !isFormWhDone(cs));
+
+        // Stats Counters strictly for outstanding forms
+        let statTotal = outstandingChecksheets.length;
         let statStaff = 0;
         let statAccounting = 0;
         let statWarehouse = 0;
 
-        checksheets.forEach(cs => {
+        outstandingChecksheets.forEach(cs => {
             const fNo = cs.formNo;
             const dbAppr = serverFormApprovals.find(a => a.form_number === fNo);
-            const status = dbAppr?.status || 'Butuh Approval Staff / Section Head';
-            statTotal++;
-            if (status.includes('Staff') || status.includes('Pending Staff')) statStaff++;
-            else if (status.includes('Accounting') || status.includes('Pending Accounting')) statAccounting++;
-            else if (status.includes('Warehouse') || status.includes('REGISTRASI')) statWarehouse++;
+            const staffDone = Boolean(dbAppr?.staff_signed_at);
+            const accDone = Boolean(dbAppr?.accounting_signed_at);
+
+            if (!staffDone) {
+                statStaff++;
+            } else if (!accDone) {
+                statAccounting++;
+            } else {
+                statWarehouse++;
+            }
         });
 
         const elTotal = document.getElementById('approval-stat-total');
@@ -485,38 +500,53 @@
         if (elAcc) elAcc.textContent = statAccounting;
         if (elWh) elWh.textContent = statWarehouse;
 
-        // Apply filter
-        let filtered = checksheets;
+        // Apply stage filter
+        let filtered = outstandingChecksheets;
         if (currentApprovalFilterStage === 'staff') {
-            filtered = checksheets.filter(cs => {
+            filtered = outstandingChecksheets.filter(cs => {
                 const dbAppr = serverFormApprovals.find(a => a.form_number === cs.formNo);
-                const s = dbAppr?.status || 'Butuh Approval Staff / Section Head';
-                return s.includes('Staff') || s.includes('Pending Staff');
+                return !dbAppr?.staff_signed_at;
             });
         } else if (currentApprovalFilterStage === 'accounting') {
-            filtered = checksheets.filter(cs => {
+            filtered = outstandingChecksheets.filter(cs => {
                 const dbAppr = serverFormApprovals.find(a => a.form_number === cs.formNo);
-                const s = dbAppr?.status || '';
-                return s.includes('Accounting') || s.includes('Pending Accounting');
+                return dbAppr?.staff_signed_at && !dbAppr?.accounting_signed_at;
             });
         } else if (currentApprovalFilterStage === 'warehouse') {
-            filtered = checksheets.filter(cs => {
+            filtered = outstandingChecksheets.filter(cs => {
                 const dbAppr = serverFormApprovals.find(a => a.form_number === cs.formNo);
-                const s = dbAppr?.status || '';
-                return s.includes('Warehouse') || s.includes('REGISTRASI');
+                return dbAppr?.accounting_signed_at && !dbAppr?.warehouse_signed_at;
             });
         }
 
         if (filtered.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
-                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
-                        <h4 style="font-size: 1rem; font-weight: 700; color: #475569; margin-bottom: 0.25rem;">Tidak Ada Data Formulir</h4>
-                        <p style="font-size: 0.82rem; margin: 0;">Tidak ditemukan form registrasi untuk filter tahap yang dipilih.</p>
-                    </td>
-                </tr>
-            `;
+            if (outstandingChecksheets.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 3.5rem 1.5rem; color: var(--text-muted);">
+                            <div style="font-size: 2.75rem; margin-bottom: 0.75rem;">✨</div>
+                            <h4 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 0.35rem;">Semua Formulir Telah Selesai Diproses</h4>
+                            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.35rem; max-width: 520px; margin-left: auto; margin-right: auto;">
+                                Tidak ada formulir registrasi yang sedang outstanding PP. Semua formulir yang telah diregistrasi oleh Warehouse Consumable dapat dilihat pada menu <strong>Data Registrasi (History)</strong>.
+                            </p>
+                            <a href="{{ route('saturnus.data_view') }}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 10px; font-weight: 700; font-size: 0.85rem; padding: 0.55rem 1.35rem; text-decoration: none; background: linear-gradient(135deg, #1a3fa8 0%, #00adef 100%); border: none; color: #fff; box-shadow: 0 4px 14px rgba(26, 63, 168, 0.25);">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                Buka Data Registrasi (History)
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+                            <h4 style="font-size: 1rem; font-weight: 700; color: #475569; margin-bottom: 0.25rem;">Tidak Ada Data Formulir</h4>
+                            <p style="font-size: 0.82rem; margin: 0;">Tidak ditemukan formulir outstanding untuk filter tahap yang dipilih.</p>
+                        </td>
+                    </tr>
+                `;
+            }
             return;
         }
 
@@ -563,9 +593,7 @@
 
             // Status Badge
             let statusBadge = '';
-            if (whDone) {
-                statusBadge = '<span class="status-badge" style="background: rgba(16,185,129,0.15); color: #059669; font-weight: 700; border: 1px solid rgba(16,185,129,0.3); padding: 0.35rem 0.65rem; border-radius: 8px; font-size: 0.78rem;">✓ Telah Diregistrasi (WH)</span>';
-            } else if (isWhActive) {
+            if (isWhActive) {
                 statusBadge = '<span class="status-badge" style="background: rgba(16,185,129,0.1); color: #059669; font-weight: 700; border: 1px solid rgba(16,185,129,0.25); padding: 0.35rem 0.65rem; border-radius: 8px; font-size: 0.78rem;">⏳ Butuh WH Consumable</span>';
             } else if (isAccActive) {
                 statusBadge = '<span class="status-badge" style="background: rgba(59,130,246,0.1); color: #2563eb; font-weight: 700; border: 1px solid rgba(59,130,246,0.25); padding: 0.35rem 0.65rem; border-radius: 8px; font-size: 0.78rem;">⏳ Butuh Accounting</span>';
@@ -577,50 +605,40 @@
             let actionBtn = '';
             const formUrl = `{{ route('saturnus.form_registrasi') }}?form=${encodeURIComponent(fNo)}`;
 
-            if (whDone) {
-                actionBtn = `
-                    <div style="display: flex; gap: 0.35rem; justify-content: center;">
-                        <a href="${formUrl}" class="btn btn-sm btn-secondary" style="font-size: 0.75rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 8px; text-decoration: none;">
-                            Lihat Form
-                        </a>
-                    </div>
-                `;
-            } else {
-                let canApprove = false;
-                let targetRole = '';
-                let roleLabel = '';
+            let canApprove = false;
+            let targetRole = '';
+            let roleLabel = '';
 
-                if (isStaffActive) {
-                    targetRole = 'staff';
-                    roleLabel = 'Approve (Staff)';
-                    canApprove = isMasterUser || (currentUserRole.includes('staff') && isDeptAllowed(fDept));
-                } else if (isAccActive) {
-                    targetRole = 'accounting';
-                    roleLabel = 'Approve (Acc)';
-                    canApprove = isMasterUser || currentUserRole.includes('acc') || currentUserRole.includes('accounting');
-                } else if (isWhActive) {
-                    targetRole = 'warehouse';
-                    roleLabel = 'Selesaikan (WH)';
-                    canApprove = isMasterUser || currentUserRole.includes('warehouse');
-                }
-
-                actionBtn = `
-                    <div style="display: flex; gap: 0.35rem; justify-content: center; align-items: center; flex-wrap: wrap;">
-                        <a href="${formUrl}" class="btn btn-sm btn-secondary" style="font-size: 0.75rem; font-weight: 700; padding: 0.35rem 0.65rem; border-radius: 8px; text-decoration: none;" title="Buka Lembar Cetak">
-                            Lihat
-                        </a>
-                        ${canApprove ? `
-                            <button class="btn btn-sm btn-primary" onclick="directApproveForm('${escapeHtml(fNo)}', '${targetRole}', this)" style="font-size: 0.75rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 8px; background: linear-gradient(135deg, #1a3fa8 0%, #00adef 100%); border: none; cursor: pointer;">
-                                ${roleLabel}
-                            </button>
-                        ` : `
-                            <button class="btn btn-sm btn-secondary" disabled style="font-size: 0.75rem; font-weight: 600; padding: 0.35rem 0.65rem; border-radius: 8px; opacity: 0.6;" title="Menunggu wewenang role terkait">
-                                ${roleLabel || 'Proses'}
-                            </button>
-                        `}
-                    </div>
-                `;
+            if (isStaffActive) {
+                targetRole = 'staff';
+                roleLabel = 'Approve (Staff)';
+                canApprove = isMasterUser || (currentUserRole.includes('staff') && isDeptAllowed(fDept));
+            } else if (isAccActive) {
+                targetRole = 'accounting';
+                roleLabel = 'Approve (Acc)';
+                canApprove = isMasterUser || currentUserRole.includes('acc') || currentUserRole.includes('accounting');
+            } else if (isWhActive) {
+                targetRole = 'warehouse';
+                roleLabel = 'Selesaikan (WH)';
+                canApprove = isMasterUser || currentUserRole.includes('warehouse');
             }
+
+            actionBtn = `
+                <div style="display: flex; gap: 0.35rem; justify-content: center; align-items: center; flex-wrap: wrap;">
+                    <a href="${formUrl}" class="btn btn-sm btn-secondary" style="font-size: 0.75rem; font-weight: 700; padding: 0.35rem 0.65rem; border-radius: 8px; text-decoration: none;" title="Buka Lembar Cetak">
+                        Lihat
+                    </a>
+                    ${canApprove ? `
+                        <button class="btn btn-sm btn-primary" onclick="directApproveForm('${escapeHtml(fNo)}', '${targetRole}', this)" style="font-size: 0.75rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 8px; background: linear-gradient(135deg, #1a3fa8 0%, #00adef 100%); border: none; cursor: pointer;">
+                            ${roleLabel}
+                        </button>
+                    ` : `
+                        <button class="btn btn-sm btn-secondary" disabled style="font-size: 0.75rem; font-weight: 600; padding: 0.35rem 0.65rem; border-radius: 8px; opacity: 0.6;" title="Menunggu wewenang role terkait">
+                            ${roleLabel || 'Proses'}
+                        </button>
+                    `}
+                </div>
+            `;
 
             return `
                 <tr>
@@ -672,7 +690,11 @@
 
             const res = await response.json();
             if (response.ok && res.success) {
-                showToast(res.message || 'Form berhasil disetujui!', 'success');
+                if (roleKey === 'warehouse') {
+                    showToast(`Form ${csId} telah berhasil diregistrasi oleh Warehouse Consumable dan dipindahkan ke Data Registrasi (History)!`, 'success');
+                } else {
+                    showToast(res.message || 'Form berhasil disetujui!', 'success');
+                }
                 
                 // Update local model
                 const exist = serverFormApprovals.find(a => a.form_number === csId);
