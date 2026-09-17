@@ -50,15 +50,20 @@
         $isStaffApproved = (bool)($approval && ($approval->staff_signed_at || $approval->staff_signer_name));
         $isWhApproved = (bool)($approval && ($approval->warehouse_signed_at || $approval->warehouse_signer_name));
 
+        // Form yang telah di-discontinue oleh Warehouse Consumable berpindah ke History Discontinue
+        if ($isWhApproved) {
+            continue;
+        }
+
         // Determine if action needed by current user
         $needsMyAction = false;
         if (in_array($curRole, ['master', 'admin'])) {
-            $needsMyAction = !$isWhApproved;
+            $needsMyAction = true;
         } elseif (str_contains($curRole, 'staff')) {
             $isDeptMatch = str_contains(strtoupper($userDeptTag), $dept) || str_contains($dept, strtoupper($userDeptTag));
             $needsMyAction = !$isStaffApproved && $isDeptMatch;
         } elseif (str_contains($curRole, 'warehouse')) {
-            $needsMyAction = $isStaffApproved && !$isWhApproved;
+            $needsMyAction = $isStaffApproved;
         }
 
         $groupedForms[] = [
@@ -78,8 +83,7 @@
 
     $totalForms = count($groupedForms);
     $pendingStaffCount = collect($groupedForms)->where('is_staff_done', false)->count();
-    $pendingWhCount = collect($groupedForms)->where('is_staff_done', true)->where('is_wh_done', false)->count();
-    $completedCount = collect($groupedForms)->where('is_wh_done', true)->count();
+    $pendingWhCount = collect($groupedForms)->where('is_staff_done', true)->count();
     $myActionCount = collect($groupedForms)->where('needs_my_action', true)->count();
 @endphp
 
@@ -474,13 +478,25 @@
     <div class="stat-card-grid">
         <div class="stat-card-glass">
             <div class="stat-card-info">
-                <div class="stat-card-label">Total Pengajuan</div>
-                <div class="stat-card-value">{{ $totalForms }}</div>
+                <div class="stat-card-label">Total Form (Outstanding)</div>
+                <div class="stat-card-value" style="color: #0284c7;">{{ $totalForms }}</div>
             </div>
             <div class="stat-card-icon blue">
                 <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                     <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+            </div>
+        </div>
+
+        <div class="stat-card-glass">
+            <div class="stat-card-info">
+                <div class="stat-card-label">Butuh Tindakan Saya</div>
+                <div class="stat-card-value" style="color: #2563eb;">{{ $myActionCount }}</div>
+            </div>
+            <div class="stat-card-icon blue" style="background: #eff6ff; color: #2563eb;">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                 </svg>
             </div>
         </div>
@@ -501,24 +517,11 @@
         <div class="stat-card-glass">
             <div class="stat-card-info">
                 <div class="stat-card-label">Menunggu Warehouse (Tahap 2)</div>
-                <div class="stat-card-value" style="color: #9333ea;">{{ $pendingWhCount }}</div>
-            </div>
-            <div class="stat-card-icon purple">
-                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                </svg>
-            </div>
-        </div>
-
-        <div class="stat-card-glass">
-            <div class="stat-card-info">
-                <div class="stat-card-label">Selesai Discontinue</div>
-                <div class="stat-card-value" style="color: #16a34a;">{{ $completedCount }}</div>
+                <div class="stat-card-value" style="color: #059669;">{{ $pendingWhCount }}</div>
             </div>
             <div class="stat-card-icon green">
                 <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                 </svg>
             </div>
         </div>
@@ -546,7 +549,7 @@
         <div class="table-toolbar">
             <div class="filter-pills-row">
                 <button type="button" class="filter-pill active" data-filter="all">
-                    <span>Semua Formulir</span>
+                    <span>Semua Form (Outstanding)</span>
                     <span class="pill-badge">{{ $totalForms }}</span>
                 </button>
                 <button type="button" class="filter-pill" data-filter="my-action">
@@ -561,10 +564,10 @@
                     <span>Menunggu Warehouse</span>
                     <span class="pill-badge">{{ $pendingWhCount }}</span>
                 </button>
-                <button type="button" class="filter-pill" data-filter="completed">
-                    <span>Selesai Discontinue</span>
-                    <span class="pill-badge">{{ $completedCount }}</span>
-                </button>
+                <a href="{{ route('saturnus.unregistrasi_history') }}" class="filter-pill" style="text-decoration: none; color: #0284c7; background: #f0f9ff; border: 1px solid rgba(2,132,199,0.3); font-weight: 700;">
+                    <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" style="vertical-align: -2px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <span>History Discontinue</span>
+                </a>
             </div>
 
             <div class="search-input-wrapper">
@@ -667,7 +670,7 @@
                                         {{ $form['is_wh_done'] ? '✓ WHC' : ($form['is_staff_done'] ? '⏳ WHC' : '○ WHC') }}
                                     </span>
                                 </div>
-                                <div style="font-size: 0.75rem; font-weight: 600; color: {{ $form['is_wh_done'] ? '#16a34a' : ($form['is_staff_done'] ? '#9333ea' : '#d97706') }};">
+                                <div style="font-size: 0.75rem; font-weight: 600; color: {{ $form['is_wh_done'] ? '#16a34a' : ($form['is_staff_done'] ? '#059669' : '#d97706') }};">
                                     {{ $form['status'] }}
                                 </div>
                             </td>
@@ -709,14 +712,16 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 3rem 1rem; color: #94a3b8;">
-                                <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none" style="margin-bottom: 0.75rem; color: #cbd5e1;">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="15" y1="9" x2="9" y2="15"></line>
-                                    <line x1="9" y1="9" x2="15" y2="15"></line>
-                                </svg>
-                                <div style="font-weight: 700; color: #475569; font-size: 1rem;">Belum Ada Pengajuan Unregistrasi</div>
-                                <p style="font-size: 0.85rem; margin-top: 0.25rem;">Klik tombol "+ Buat Form Baru" untuk memulai pengajuan unregistrasi item consumable.</p>
+                            <td colspan="6" style="text-align: center; padding: 3.5rem 1.5rem; color: #64748b;">
+                                <div style="font-size: 2.75rem; margin-bottom: 0.75rem;">✨</div>
+                                <h4 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 0.35rem;">Semua Formulir Unregistrasi Telah Selesai Diproses</h4>
+                                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1.35rem; max-width: 520px; margin-left: auto; margin-right: auto;">
+                                    Tidak ada formulir unregistrasi yang sedang outstanding PP. Semua formulir yang telah di-discontinue oleh Warehouse Consumable dapat dilihat pada menu <strong>History Discontinue</strong>.
+                                </p>
+                                <a href="{{ route('saturnus.unregistrasi_history') }}" class="btn-appr-action btn-appr-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 10px; font-weight: 700; font-size: 0.85rem; padding: 0.55rem 1.35rem; text-decoration: none; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: none; color: #fff; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                    Buka History Discontinue
+                                </a>
                             </td>
                         </tr>
                     @endforelse
@@ -921,10 +926,14 @@
 
             const res = await response.json();
             if (response.ok && res.success) {
-                showToast(res.message || 'Formulir berhasil disetujui!', 'success');
+                if (roleKey === 'warehouse') {
+                    showToast(`Form ${formNo} telah berhasil di-discontinue oleh Warehouse Consumable dan dipindahkan ke History Discontinue!`, 'success');
+                } else {
+                    showToast(res.message || 'Formulir berhasil disetujui!', 'success');
+                }
                 setTimeout(() => {
                     window.location.reload();
-                }, 500);
+                }, 600);
             } else {
                 alert(res.message || 'Gagal menyetujui form. Pastikan Anda memiliki wewenang.');
                 if (btnEl) {
