@@ -132,10 +132,17 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/form-unregistrasi/item', [Saturnus\FormUnregistrasiController::class, 'storeFormItem'])->name('form_unregistrasi.item.store')->middleware('permission:saturnus.unregistrasi.create');
         Route::post('/form-unregistrasi/approve', [Saturnus\FormUnregistrasiController::class, 'approveForm'])->name('form_unregistrasi.approve')->middleware('permission:saturnus.unregistrasi.approve');
         Route::match(['delete', 'post'], '/form-unregistrasi/delete-checksheet', [Saturnus\FormUnregistrasiController::class, 'deleteFormChecksheet'])->name('form_unregistrasi.delete_checksheet')->middleware('permission:saturnus.unregistrasi.create');
-        Route::delete('/form-unregistrasi/item/{id}', [Saturnus\FormUnregistrasiController::class, 'deleteFormItem'])->name('form_unregistrasi.item.delete')->middleware('permission:saturnus.unregistrasi.create');
         Route::post('/form-unregistrasi/comment', [Saturnus\FormUnregistrasiController::class, 'storeComment'])->name('form_unregistrasi.comment.store')->middleware('permission:saturnus.unregistrasi.view');
         Route::delete('/form-unregistrasi/comment/{id}', [Saturnus\FormUnregistrasiController::class, 'deleteComment'])->name('form_unregistrasi.comment.delete')->middleware('permission:saturnus.unregistrasi.view');
+
+        // Email Reminder & Notification Routes
+        Route::get('/email-reminder', [\App\Http\Controllers\EmailReminderController::class, 'index'])->name('email_reminder');
+        Route::post('/email-reminder/send', [\App\Http\Controllers\EmailReminderController::class, 'send'])->name('email_reminder.send');
+        Route::post('/email-reminder/preview', [\App\Http\Controllers\EmailReminderController::class, 'preview'])->name('email_reminder.preview');
+        Route::get('/email-reminder/pending-for-user/{userId}', [\App\Http\Controllers\EmailReminderController::class, 'getPendingForUser'])->name('email_reminder.pending_for_user');
     });
+
+    Route::get('/email-reminder', fn() => redirect()->route('saturnus.email_reminder'));
 
     /*
     |--------------------------------------------------------------------------

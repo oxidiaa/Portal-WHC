@@ -1589,6 +1589,23 @@
                 </button>
                 @endif
             </div>
+
+            <!-- Launch 7: Kirim Pengingat Email -->
+            <div class="launchpad-card">
+                <div>
+                    <div class="launchpad-card-top">
+                        <div class="launchpad-icon-box" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8;">
+                            ✉️
+                        </div>
+                        <h3>Pengingat Email Approval</h3>
+                    </div>
+                    <p>Kirim notifikasi email otomatis ke approver terkait formulir pending approval.</p>
+                </div>
+                <a href="{{ route('saturnus.email_reminder') }}" class="launchpad-btn primary">
+                    <span>Kirim Pengingat Email</span>
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </a>
+            </div>
         </div>
     </div>
 </div>

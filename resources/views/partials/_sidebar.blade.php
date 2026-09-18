@@ -189,6 +189,19 @@
                     </a>
                     @endif
                     @endif
+
+                    {{-- 📧 NOTIFIKASI & EMAIL REMINDER --}}
+                    <div class="sidebar-category-label text-cyan" style="font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; padding: 0.45rem 0.75rem 0.2rem; color: #38bdf8;">
+                        <span class="badge-category" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; padding: 2px 6px; font-size: 0.65rem;">
+                            <i data-feather="mail" class="category-mini-icon"></i> NOTIFIKASI
+                        </span>
+                    </div>
+
+                    <a href="{{ route('saturnus.email_reminder') }}" class="sub-tree-link {{ request()->routeIs('saturnus.email_reminder*') ? 'active-tree-item' : '' }}">
+                        @if(request()->routeIs('saturnus.email_reminder*'))<span class="active-bar-indicator" style="background: #38bdf8;"></span>@endif
+                        <i data-feather="send" class="sub-link-icon"></i>
+                        <span class="sub-tree-text">Kirim Pengingat Email</span>
+                    </a>
                 </div>
             </div>
         </div>
