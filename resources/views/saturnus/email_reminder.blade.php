@@ -464,7 +464,7 @@
 
         <div class="smtp-live-badge">
             <span class="pulse-beacon" style="background:#10b981; box-shadow:0 0 10px #10b981;"></span>
-            <span>SMTP AKTIF: noreply@metalart-astra.co.id (TLS 587)</span>
+            <span>SMTP AKTIF: noreply@metalart-astra.co.id (Office 365 TLS 587)</span>
         </div>
     </div>
 
