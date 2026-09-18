@@ -12,9 +12,17 @@ use App\Models\FormItem;
 use App\Models\UnregistrasiApproval;
 use App\Models\UnregistrasiItem;
 use App\Mail\PendingApprovalReminderMail;
+use App\Services\BroadcastSchedulerService;
 
 class EmailReminderController extends Controller
 {
+    protected BroadcastSchedulerService $schedulerService;
+
+    public function __construct(BroadcastSchedulerService $schedulerService)
+    {
+        $this->schedulerService = $schedulerService;
+    }
+
     /**
      * Display the Email Reminder compose & management page.
      */
@@ -34,12 +42,10 @@ class EmailReminderController extends Controller
         if (class_exists(FormApproval::class)) {
             $regApprovals = FormApproval::all();
             foreach ($regApprovals as $appr) {
-                // Check if completed
                 if ($appr->warehouse_signed_at) {
                     continue; // Already finished
                 }
 
-                // Determine pending stage
                 $stage = 'Staff / Section Head (Tahap 1)';
                 $stageKey = 'staff';
                 if ($appr->staff_signed_at && !$appr->accounting_signed_at) {
@@ -50,11 +56,9 @@ class EmailReminderController extends Controller
                     $stageKey = 'warehouse';
                 }
 
-                // Get items count
                 $itemCount = FormItem::where('form_number', $appr->form_number)->count();
                 $itemsSample = FormItem::where('form_number', $appr->form_number)->limit(3)->pluck('nama_barang')->toArray();
 
-                // Extract department
                 $dept = $appr->requestor_dept;
                 if (!$dept && $appr->form_number) {
                     $parts = explode('/', $appr->form_number);
@@ -83,7 +87,6 @@ class EmailReminderController extends Controller
         if (class_exists(UnregistrasiApproval::class)) {
             $unregApprovals = UnregistrasiApproval::all();
             foreach ($unregApprovals as $appr) {
-                // Check if completed
                 if ($appr->warehouse_signed_at) {
                     continue; // Finished
                 }
@@ -134,14 +137,18 @@ class EmailReminderController extends Controller
             'pending_warehouse' => count(array_filter($allPendingForms, fn($f) => $f['stage_key'] === 'warehouse')),
         ];
 
-        // Retrieve recent email logs from session
+        // Retrieve recent email logs from session & scheduler service
         $recentLogs = session('email_reminder_logs', []);
+        $scheduleSettings = $this->schedulerService->getSettings();
+        $scheduleLogs = $this->schedulerService->getLogs();
 
         return view('saturnus.email_reminder', compact(
             'users',
             'allPendingForms',
             'stats',
             'recentLogs',
+            'scheduleSettings',
+            'scheduleLogs',
             'currentUser'
         ));
     }
@@ -168,10 +175,8 @@ class EmailReminderController extends Controller
             $fDept = strtoupper(trim($form['department']));
 
             if ($isMasterAdmin) {
-                // Master/Admin sees all pending
                 $filtered[] = $form;
             } elseif (str_contains($userRole, 'STAFF')) {
-                // Staff only sees stage 1 of their department
                 if ($form['stage_key'] === 'staff') {
                     if (str_contains($userDept, 'PRODUCTION') && (str_contains($fDept, 'PRODUCTION') || str_contains($fDept, 'DIES ASSY'))) {
                         $filtered[] = $form;
@@ -180,17 +185,14 @@ class EmailReminderController extends Controller
                     }
                 }
             } elseif (str_contains($userRole, 'ACC') || str_contains($userRole, 'ACCOUNTING')) {
-                // Accounting only sees stage 2
                 if ($form['stage_key'] === 'accounting') {
                     $filtered[] = $form;
                 }
             } elseif (str_contains($userRole, 'WAREHOUSE')) {
-                // Warehouse sees stage 3 (reg) & stage 2 (unreg)
                 if ($form['stage_key'] === 'warehouse') {
                     $filtered[] = $form;
                 }
             } else {
-                // Regular user
                 if (str_contains($fDept, $userDept)) {
                     $filtered[] = $form;
                 }
@@ -233,7 +235,6 @@ class EmailReminderController extends Controller
                 return in_array($f['form_number'], $selectedFormNumbers);
             });
         } else {
-            // If none explicitly selected, take first 3 as sample
             $pendingForms = array_slice($allPending, 0, 3);
         }
 
@@ -286,7 +287,7 @@ class EmailReminderController extends Controller
         $failedCount = 0;
         $errors = [];
 
-        // Check if broadcast mode (Send to all approvers with pending tasks)
+        // Check if broadcast mode
         if ($request->boolean('broadcast_mode')) {
             $approvers = User::whereNotNull('email')
                 ->where('email', '!=', '')
@@ -294,10 +295,9 @@ class EmailReminderController extends Controller
                 ->get();
 
             foreach ($approvers as $approver) {
-                // Filter pending forms for this approver
                 $userForms = $this->getPendingFormsForUserInternal($approver, $selectedPendingForms);
                 if (empty($userForms)) {
-                    continue; // No pending forms for this approver
+                    continue;
                 }
 
                 try {
@@ -377,6 +377,69 @@ class EmailReminderController extends Controller
                 'message' => "Gagal mengirim email: " . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Save timing schedule configuration settings.
+     */
+    public function saveScheduleSettings(Request $request)
+    {
+        $request->validate([
+            'start_time' => 'required|string',
+            'end_time' => 'required|string',
+            'interval_hours' => 'required|numeric|min:1|max:24',
+            'active_days' => 'nullable|array',
+            'priority' => 'nullable|string',
+            'custom_message' => 'nullable|string|max:2000',
+            'is_enabled' => 'nullable|boolean',
+        ]);
+
+        $userName = Auth::user()->name ?? 'Administrator';
+
+        $saved = $this->schedulerService->saveSettings([
+            'is_enabled' => $request->boolean('is_enabled', true),
+            'start_time' => $request->input('start_time', '08:00'),
+            'end_time' => $request->input('end_time', '16:00'),
+            'interval_hours' => (int)$request->input('interval_hours', 3),
+            'active_days' => (array)$request->input('active_days', ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']),
+            'priority' => $request->input('priority', 'Urgent'),
+            'custom_message' => $request->input('custom_message'),
+            'include_registrasi' => $request->boolean('include_registrasi', true),
+            'include_unregistrasi' => $request->boolean('include_unregistrasi', true),
+        ], $userName);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Konfigurasi jadwal otomatisasi berhasil disimpan!',
+            'settings' => $saved,
+        ]);
+    }
+
+    /**
+     * Trigger manual immediate execution of scheduled broadcast.
+     */
+    public function runScheduleNow(Request $request)
+    {
+        $userName = Auth::user()->name ?? 'Administrator';
+        $result = $this->schedulerService->executeBroadcast(true, "Manual ($userName)");
+
+        return response()->json($result);
+    }
+
+    /**
+     * Get live status of scheduler.
+     */
+    public function getScheduleStatus()
+    {
+        $settings = $this->schedulerService->getSettings();
+        $logs = $this->schedulerService->getLogs();
+
+        return response()->json([
+            'success' => true,
+            'settings' => $settings,
+            'logs' => array_slice($logs, 0, 10),
+            'now' => now()->toDateTimeString(),
+        ]);
     }
 
     /**

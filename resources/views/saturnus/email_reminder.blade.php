@@ -1,12 +1,24 @@
 @extends('layouts.app')
 
-@section('title', 'Kirim Pengingat Email Approval — SATURNUS')
+@section('title', 'Kirim Pengingat Email & Jadwal Broadcast — SATURNUS')
 
 @section('content')
 @php
     $user = auth()->user();
     $userRole = strtoupper(trim($user->role ?? 'GUEST'));
     $isMasterOrAdmin = in_array($userRole, ['MASTER', 'ADMIN']) || ($user && $user->isMaster());
+
+    $schedule = $scheduleSettings ?? [];
+    $isScheduleEnabled = !empty($schedule['is_enabled']);
+    $startTime = $schedule['start_time'] ?? '08:00';
+    $endTime = $schedule['end_time'] ?? '16:00';
+    $intervalHours = (int)($schedule['interval_hours'] ?? 3);
+    $activeDays = $schedule['active_days'] ?? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+    $schedulePriority = $schedule['priority'] ?? 'Urgent';
+    $scheduleMessage = $schedule['custom_message'] ?? 'Pengingat otomatis sistem SATURNUS: Mohon kesediaannya untuk segera meninjau dan menyetujui formulir pending terlampir yang sedang menunggu persetujuan Anda.';
+    $nextRunAt = $schedule['next_run_at'] ?? null;
+    $lastRunAt = $schedule['last_run_at'] ?? null;
+    $totalAutoSent = $schedule['total_broadcasts_sent'] ?? 0;
 @endphp
 
 <style>
@@ -46,7 +58,7 @@
         align-items: flex-start;
         justify-content: space-between;
         gap: 1.5rem;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         flex-wrap: wrap;
     }
 
@@ -67,19 +79,40 @@
         margin: 0;
     }
 
+    .header-badges-cluster {
+        display: flex;
+        gap: 0.65rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
     .smtp-live-badge {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
         background: rgba(16, 185, 129, 0.12);
         border: 1px solid rgba(16, 185, 129, 0.35);
-        padding: 0.5rem 1rem;
+        padding: 0.45rem 0.95rem;
         border-radius: 30px;
-        font-size: 0.78rem;
+        font-size: 0.76rem;
         font-weight: 700;
         color: #34d399;
         letter-spacing: 0.03em;
         box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+    }
+
+    .scheduler-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(56, 189, 248, 0.12);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        padding: 0.45rem 0.95rem;
+        border-radius: 30px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #38bdf8;
+        letter-spacing: 0.03em;
     }
 
     .pulse-dot-green {
@@ -91,27 +124,78 @@
         animation: pulseGreen 2s infinite;
     }
 
+    .pulse-dot-amber {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #f59e0b;
+        box-shadow: 0 0 10px #f59e0b;
+        animation: pulseGreen 2s infinite;
+    }
+
     @keyframes pulseGreen {
         0%, 100% { transform: scale(1); opacity: 1; }
         50% { transform: scale(1.3); opacity: 0.6; }
     }
 
+    /* Main Navigation Tabs */
+    .page-main-tabs {
+        display: flex;
+        gap: 0.65rem;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(56, 189, 248, 0.2);
+        padding: 0.45rem;
+        border-radius: 16px;
+        margin-bottom: 1.8rem;
+        overflow-x: auto;
+    }
+
+    .main-tab-btn {
+        flex: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 12px;
+        color: #94a3b8;
+        font-size: 0.85rem;
+        font-weight: 700;
+        border: 1px solid transparent;
+        background: transparent;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        white-space: nowrap;
+    }
+
+    .main-tab-btn:hover {
+        color: #ffffff;
+        background: rgba(56, 189, 248, 0.1);
+    }
+
+    .main-tab-btn.active {
+        color: #ffffff;
+        background: linear-gradient(135deg, #1a3fa8 0%, #00adef 100%);
+        border-color: rgba(56, 189, 248, 0.5);
+        box-shadow: 0 4px 15px rgba(0, 173, 239, 0.35);
+    }
+
     /* Stat Cards Grid */
     .stat-rem-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.25rem;
-        margin-bottom: 2rem;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 1.15rem;
+        margin-bottom: 1.8rem;
     }
 
     .stat-rem-box {
         background: rgba(15, 23, 42, 0.6);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 16px;
-        padding: 1.25rem;
+        padding: 1.15rem;
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.95rem;
         transition: all 0.25s ease;
     }
 
@@ -121,18 +205,18 @@
     }
 
     .stat-rem-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 14px;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.35rem;
+        font-size: 1.3rem;
         flex-shrink: 0;
     }
 
     .stat-rem-info .num {
-        font-size: 1.45rem;
+        font-size: 1.35rem;
         font-weight: 800;
         color: #ffffff;
         line-height: 1.1;
@@ -140,7 +224,7 @@
     }
 
     .stat-rem-info .lbl {
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         color: #94a3b8;
         font-weight: 600;
         margin-top: 0.2rem;
@@ -434,6 +518,17 @@
         color: #ffffff;
     }
 
+    .btn-rem-action.emerald {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        color: #ffffff;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-rem-action.emerald:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+    }
+
     /* Modal Live Preview */
     .preview-modal-body {
         max-height: 75vh;
@@ -448,6 +543,157 @@
         border: none;
         background: transparent;
     }
+
+    /* ==========================================================================
+       ⏱️ SMART TIMING SCHEDULER STYLES
+       ========================================================================== */
+    .timing-toggle-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(2, 6, 23, 0.6);
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        padding: 1rem 1.25rem;
+        border-radius: 14px;
+        margin-bottom: 1.5rem;
+    }
+
+    .toggle-switch-large {
+        position: relative;
+        display: inline-block;
+        width: 56px;
+        height: 30px;
+    }
+
+    .toggle-switch-large input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #334155;
+        transition: .3s;
+        border-radius: 30px;
+        border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    .toggle-switch-large input:checked + .toggle-slider {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        border-color: #34d399;
+    }
+
+    .toggle-switch-large input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+    }
+
+    /* Interval Radio Cards */
+    .interval-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 0.65rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .interval-card-opt {
+        background: rgba(2, 6, 23, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 0.75rem 0.65rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .interval-card-opt:hover {
+        border-color: rgba(56, 189, 248, 0.4);
+        background: rgba(2, 6, 23, 0.85);
+    }
+
+    .interval-card-opt.active {
+        background: rgba(2, 132, 199, 0.25);
+        border-color: #00adef;
+        box-shadow: 0 0 15px rgba(0, 173, 239, 0.25);
+    }
+
+    .interval-card-opt .int-title {
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: #ffffff;
+    }
+
+    .interval-card-opt .int-sub {
+        font-size: 0.68rem;
+        color: #94a3b8;
+        margin-top: 2px;
+    }
+
+    /* Days Checkbox Grid */
+    .days-pill-grid {
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.25rem;
+    }
+
+    .day-pill-item {
+        background: rgba(2, 6, 23, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 0.45rem 0.85rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #94a3b8;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        user-select: none;
+    }
+
+    .day-pill-item.active {
+        background: rgba(56, 189, 248, 0.2);
+        border-color: #38bdf8;
+        color: #ffffff;
+    }
+
+    /* Live Telemetry Card */
+    .countdown-display-card {
+        background: radial-gradient(circle at 50% 0%, rgba(2, 132, 199, 0.25) 0%, rgba(2, 6, 23, 0.85) 100%);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 0 30px rgba(0, 173, 239, 0.15);
+    }
+
+    .countdown-timer-val {
+        font-size: 2rem;
+        font-weight: 900;
+        color: #38bdf8;
+        font-family: var(--font-tech, monospace);
+        letter-spacing: 0.05em;
+        text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+        margin: 0.4rem 0;
+    }
 </style>
 
 <div class="email-reminder-page">
@@ -457,18 +703,40 @@
         <div class="rem-title-group">
             <h1>
                 <span>✉️</span>
-                <span>Kirim Pengingat Email Approval</span>
+                <span>Pusat Notifikasi &amp; Broadcast Email Approval</span>
             </h1>
-            <p>Kirimkan notifikasi dan rekap formulir yang belum disetujui secara langsung ke alamat email approver</p>
+            <p>Kirimkan pengingat instan atau atur jadwal timing broadcast otomatis (08:00 - 16:00 berkala) ke seluruh approver</p>
         </div>
 
-        <div class="smtp-live-badge">
-            <span class="pulse-beacon" style="background:#10b981; box-shadow:0 0 10px #10b981;"></span>
-            <span>SMTP AKTIF: noreply@metalart-astra.co.id (Office 365 TLS 587)</span>
+        <div class="header-badges-cluster">
+            <div class="smtp-live-badge">
+                <span class="pulse-dot-green"></span>
+                <span>SMTP LIVE: noreply@metalart-astra.co.id (Office 365 587)</span>
+            </div>
+
+            <div class="scheduler-status-badge">
+                <span class="{{ $isScheduleEnabled ? 'pulse-dot-green' : 'pulse-dot-amber' }}" id="telemetryDotScheduler"></span>
+                <span id="telemetryTextScheduler">{{ $isScheduleEnabled ? "SCHEDULER: AKTIF ({$startTime}-{$endTime} @{$intervalHours}j)" : "SCHEDULER: NONAKTIF" }}</span>
+            </div>
         </div>
     </div>
 
-    <!-- 2. Statistics Bar -->
+    <!-- 2. Main Page Tab Navigation -->
+    <div class="page-main-tabs">
+        <button type="button" class="main-tab-btn active" id="tabBtnManualSend" onclick="switchMainTab('manual')">
+            <span>📤</span>
+            <span>Kirim Email &amp; Broadcast Langsung (Instant Send)</span>
+        </button>
+        <button type="button" class="main-tab-btn" id="tabBtnScheduler" onclick="switchMainTab('scheduler')">
+            <span>⏱️</span>
+            <span>Jadwal Otomatisasi Broadcast (Smart Timing Scheduler)</span>
+            @if($isScheduleEnabled)
+                <span class="badge bg-success" style="font-size: 0.65rem; padding: 2px 6px;">AKTIF</span>
+            @endif
+        </button>
+    </div>
+
+    <!-- 3. Statistics Bar -->
     <div class="stat-rem-grid">
         <div class="stat-rem-box">
             <div class="stat-rem-icon" style="background: rgba(244, 63, 94, 0.15); color: #fb7185;">
@@ -521,230 +789,472 @@
         </div>
     </div>
 
-    <!-- 3. Main Composer & Form Selector Grid -->
-    <div class="composer-grid">
-        
-        <!-- Left Box: Compose Form -->
-        <div class="rem-card-glass">
-            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-secondary border-opacity-25">
-                <h3 style="font-size: 1.15rem; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                    <span>📝</span>
-                    <span>Formulir Pengirim Email</span>
-                </h3>
-                <span style="font-size: 0.75rem; color: #94a3b8;">Pengirim: <strong>{{ $currentUser->name ?? 'User' }}</strong> ({{ $currentUser->department ?? 'MAI' }})</span>
-            </div>
-
-            <!-- Target Selection Mode -->
-            <div class="target-mode-ribbon">
-                <button type="button" class="mode-tab-btn active" id="btnModeApprover" onclick="setTargetMode('approver')">
-                    <span>👤</span>
-                    <span>Pilih Approver Terdaftar</span>
-                </button>
-                <button type="button" class="mode-tab-btn" id="btnModeManual" onclick="setTargetMode('manual')">
-                    <span>✏️</span>
-                    <span>Input Email Manual</span>
-                </button>
-                <button type="button" class="mode-tab-btn" id="btnModeBroadcast" onclick="setTargetMode('broadcast')">
-                    <span>📢</span>
-                    <span>Broadcast Semua Approver</span>
-                </button>
-            </div>
-
-            <form id="emailReminderForm" onsubmit="handleSendEmail(event)">
-                @csrf
-                <input type="hidden" name="broadcast_mode" id="broadcastModeInput" value="0">
-
-                <!-- 1. Approver Selection Dropdown (Mode: Approver) -->
-                <div class="form-group-custom" id="fieldApproverSelect">
-                    <label for="approverSelect">Target Approver Penerima <span class="text-danger">*</span></label>
-                    <select id="approverSelect" name="user_id" class="custom-select" onchange="onApproverSelected(this.value)">
-                        <option value="">-- Pilih Approver / Pengguna --</option>
-                        @foreach($users->groupBy('role') as $roleName => $roleUsers)
-                            <optgroup label="ROLE: {{ strtoupper($roleName) }}">
-                                @foreach($roleUsers as $u)
-                                    <option value="{{ $u->id }}" data-name="{{ $u->name }}" data-email="{{ $u->email }}" data-dept="{{ $u->department }}" data-role="{{ $u->role }}">
-                                        {{ $u->name }} ({{ $u->department ?? 'General' }}) — {{ $u->email }}
-                                    </option>
-                                @endforeach
-                            </optgroup>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- 2. Manual Recipient Fields (Mode: Manual) -->
-                <div class="row g-2" id="fieldManualInputs" style="display: none;">
-                    <div class="col-md-6 form-group-custom">
-                        <label for="recipientNameInput">Nama Penerima</label>
-                        <input type="text" id="recipientNameInput" name="recipient_name" class="custom-input" placeholder="Contoh: Bpk. Hendra">
-                    </div>
-                    <div class="col-md-6 form-group-custom">
-                        <label for="recipientEmailInput">Alamat Email Penerima <span class="text-danger">*</span></label>
-                        <input type="email" id="recipientEmailInput" name="recipient_email" class="custom-input" placeholder="penerima@metalart-astra.co.id">
-                    </div>
-                </div>
-
-                <!-- Broadcast Alert Info (Mode: Broadcast) -->
-                <div class="alert alert-info py-2 px-3 mb-3 border-info border-opacity-25 text-white" id="fieldBroadcastInfo" style="display: none; background: rgba(2, 132, 199, 0.15); font-size: 0.8rem; border-radius: 10px;">
-                    <strong>📢 Mode Broadcast Aktif:</strong> Sistem akan otomatis memfilter dan mengirimkan email pengingat terpisah ke <strong>masing-masing Approver</strong> (Staff Dept, Accounting, Warehouse) sesuai dengan daftar formulir yang sedang menunggu persetujuan mereka!
-                </div>
-
-                <!-- 3. Subject Input -->
-                <div class="form-group-custom">
-                    <label for="subjectInput">Subjek Email</label>
-                    <input type="text" id="subjectInput" name="subject" class="custom-input" value="[PENGINGAT] Formulir Menunggu Persetujuan Anda — SATURNUS MAI">
-                </div>
-
-                <!-- 4. Priority Selector -->
-                <div class="form-group-custom">
-                    <label>Tingkat Prioritas Pengingat</label>
-                    <input type="hidden" name="priority" id="priorityInput" value="Normal">
-                    <div class="priority-pills">
-                        <div class="priority-pill normal active" onclick="setPriority('Normal', this)">
-                            <span>🔵 Normal</span>
-                        </div>
-                        <div class="priority-pill urgent" onclick="setPriority('Urgent', this)">
-                            <span>⚠️ Urgent / Mendesak</span>
-                        </div>
-                        <div class="priority-pill final" onclick="setPriority('Final Notice', this)">
-                            <span>🚨 Final Reminder</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 5. Custom Message Textarea & Quick Templates -->
-                <div class="form-group-custom">
-                    <label for="customMessageInput">Pesan / Catatan Tambahan (Opsional)</label>
-                    <textarea id="customMessageInput" name="custom_message" class="custom-textarea" rows="3" placeholder="Tuliskan catatan khusus ke approver..."></textarea>
-                    
-                    <div class="template-chips">
-                        <span class="template-chip" onclick="insertTemplate('Mohon bantuannya untuk segera melakukan approval karena barang consumable ini sangat dibutuhkan untuk kelancaran operasional produksi.')">⚡ Segera Dibutuhkan Produksi</span>
-                        <span class="template-chip" onclick="insertTemplate('Pengingat berkala: mohon persetujuan pada formulir terlampir agar proses penerbitan PO dapat dilanjutkan.')">⏱️ Pengingat Rutin PO</span>
-                        <span class="template-chip" onclick="insertTemplate('Catatan revisi pada formulir telah diperbaiki oleh user terkait. Mohon kesediaannya untuk melakukan verifikasi ulang.')">✍️ Konfirmasi Selesai Revisi</span>
-                    </div>
-                </div>
-
-                <!-- Form Action Buttons -->
-                <div class="d-flex gap-2 pt-2">
-                    <button type="button" class="btn-rem-action secondary" onclick="openPreviewModal()" style="flex: 1;">
-                        <span>👁️</span>
-                        <span>Preview Email</span>
-                    </button>
-                    <button type="submit" class="btn-rem-action primary" id="btnSubmitSend" style="flex: 1.5;">
-                        <span>🚀</span>
-                        <span>Kirim Email Sekarang</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Right Box: Pending Forms Selection List -->
-        <div class="rem-card-glass">
-            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-secondary border-opacity-25 flex-wrap gap-2">
-                <div>
+    <!-- ======================================================================
+         TAB 1: INSTANT EMAIL COMPOSER & PENDING FORMS SELECTION
+         ====================================================================== -->
+    <div id="tabPaneManualSend" class="tab-pane-content">
+        <div class="composer-grid">
+            
+            <!-- Left Box: Compose Form -->
+            <div class="rem-card-glass">
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-secondary border-opacity-25">
                     <h3 style="font-size: 1.15rem; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                        <span>📋</span>
-                        <span>Pilih Formulir yang Dilampirkan</span>
+                        <span>📝</span>
+                        <span>Formulir Pengirim Email</span>
                     </h3>
-                    <span style="font-size: 0.75rem; color: #94a3b8;" id="selectedCountText">
-                        Terpilih: <strong class="text-cyan" id="selectedCountNum">{{ count($allPendingForms) }}</strong> dari {{ count($allPendingForms) }} formulir pending
-                    </span>
+                    <span style="font-size: 0.75rem; color: #94a3b8;">Pengirim: <strong>{{ $currentUser->name ?? 'User' }}</strong> ({{ $currentUser->department ?? 'MAI' }})</span>
                 </div>
 
-                <div class="d-flex gap-1">
-                    <button type="button" class="btn btn-sm btn-outline-info py-1 px-2" style="font-size: 0.72rem; border-radius: 8px;" onclick="toggleSelectAll(true)">Pilih Semua</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.72rem; border-radius: 8px;" onclick="toggleSelectAll(false)">Batal</button>
+                <!-- Target Selection Mode -->
+                <div class="target-mode-ribbon">
+                    <button type="button" class="mode-tab-btn active" id="btnModeApprover" onclick="setTargetMode('approver')">
+                        <span>👤</span>
+                        <span>Pilih Approver Terdaftar</span>
+                    </button>
+                    <button type="button" class="mode-tab-btn" id="btnModeManual" onclick="setTargetMode('manual')">
+                        <span>✏️</span>
+                        <span>Input Email Manual</span>
+                    </button>
+                    <button type="button" class="mode-tab-btn" id="btnModeBroadcast" onclick="setTargetMode('broadcast')">
+                        <span>📢</span>
+                        <span>Broadcast Semua Approver</span>
+                    </button>
                 </div>
-            </div>
 
-            <!-- Filter Pills for Form List -->
-            <div class="d-flex gap-1 mb-3 overflow-auto pb-1" style="scrollbar-width: none;">
-                <button type="button" class="btn btn-sm btn-primary py-0 px-2 filter-form-tab active" data-filter="all" onclick="filterFormList('all', this)" style="border-radius: 15px; font-size: 0.75rem;">Semua ({{ count($allPendingForms) }})</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 filter-form-tab text-white" data-filter="registrasi" onclick="filterFormList('registrasi', this)" style="border-radius: 15px; font-size: 0.75rem;">Registrasi ({{ $stats['pending_reg'] }})</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 filter-form-tab text-white" data-filter="unregistrasi" onclick="filterFormList('unregistrasi', this)" style="border-radius: 15px; font-size: 0.75rem;">Unregistrasi ({{ $stats['pending_unreg'] }})</button>
-            </div>
+                <form id="emailReminderForm" onsubmit="handleSendEmail(event)">
+                    @csrf
+                    <input type="hidden" name="broadcast_mode" id="broadcastModeInput" value="0">
 
-            <!-- Dynamic List Container -->
-            <div class="pending-list-container" id="pendingFormsContainer">
-                @forelse($allPendingForms as $f)
-                <div class="pending-item-card selected form-item-row" data-module="{{ $f['module_key'] }}" data-fnumber="{{ $f['form_number'] }}" data-dept="{{ $f['department'] }}" data-stage="{{ $f['stage_key'] }}" onclick="toggleFormCard(this, event)">
-                    <input type="checkbox" name="selected_forms[]" value="{{ $f['form_number'] }}" class="form-check-custom form-checkbox" checked onclick="event.stopPropagation(); onCheckboxChanged();">
-                    
-                    <div class="form-item-body">
-                        <div class="form-item-header">
-                            <span class="form-fnumber">{{ $f['form_number'] }}</span>
-                            <span class="form-badge-module {{ $f['module_key'] == 'registrasi' ? 'reg' : 'unreg' }}">
-                                {{ $f['module_key'] == 'registrasi' ? 'REG' : 'UNREG' }}
-                            </span>
+                    <!-- 1. Approver Selection Dropdown (Mode: Approver) -->
+                    <div class="form-group-custom" id="fieldApproverSelect">
+                        <label for="approverSelect">Target Approver Penerima <span class="text-danger">*</span></label>
+                        <select id="approverSelect" name="user_id" class="custom-select" onchange="onApproverSelected(this.value)">
+                            <option value="">-- Pilih Approver / Pengguna --</option>
+                            @foreach($users->groupBy('role') as $roleName => $roleUsers)
+                                <optgroup label="ROLE: {{ strtoupper($roleName) }}">
+                                    @foreach($roleUsers as $u)
+                                        <option value="{{ $u->id }}" data-name="{{ $u->name }}" data-email="{{ $u->email }}" data-dept="{{ $u->department }}" data-role="{{ $u->role }}">
+                                            {{ $u->name }} ({{ $u->department ?? 'General' }}) — {{ $u->email }}
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- 2. Manual Recipient Fields (Mode: Manual) -->
+                    <div class="row g-2" id="fieldManualInputs" style="display: none;">
+                        <div class="col-md-6 form-group-custom">
+                            <label for="recipientNameInput">Nama Penerima</label>
+                            <input type="text" id="recipientNameInput" name="recipient_name" class="custom-input" placeholder="Contoh: Bpk. Hendra">
                         </div>
+                        <div class="col-md-6 form-group-custom">
+                            <label for="recipientEmailInput">Alamat Email Penerima <span class="text-danger">*</span></label>
+                            <input type="email" id="recipientEmailInput" name="recipient_email" class="custom-input" placeholder="penerima@metalart-astra.co.id">
+                        </div>
+                    </div>
+
+                    <!-- Broadcast Alert Info (Mode: Broadcast) -->
+                    <div class="alert alert-info py-2 px-3 mb-3 border-info border-opacity-25 text-white" id="fieldBroadcastInfo" style="display: none; background: rgba(2, 132, 199, 0.15); font-size: 0.8rem; border-radius: 10px;">
+                        <strong>📢 Mode Broadcast Aktif:</strong> Sistem akan otomatis memfilter dan mengirimkan email pengingat terpisah ke <strong>masing-masing Approver</strong> (Staff Dept, Accounting, Warehouse) sesuai dengan daftar formulir yang sedang menunggu persetujuan mereka!
+                    </div>
+
+                    <!-- 3. Subject Input -->
+                    <div class="form-group-custom">
+                        <label for="subjectInput">Subjek Email</label>
+                        <input type="text" id="subjectInput" name="subject" class="custom-input" value="[PENGINGAT] Formulir Menunggu Persetujuan Anda — SATURNUS MAI">
+                    </div>
+
+                    <!-- 4. Priority Selector -->
+                    <div class="form-group-custom">
+                        <label>Tingkat Prioritas Pengingat</label>
+                        <input type="hidden" name="priority" id="priorityInput" value="Normal">
+                        <div class="priority-pills">
+                            <div class="priority-pill normal active" onclick="setPriority('Normal', this)">
+                                <span>🔵 Normal</span>
+                            </div>
+                            <div class="priority-pill urgent" onclick="setPriority('Urgent', this)">
+                                <span>⚠️ Urgent / Mendesak</span>
+                            </div>
+                            <div class="priority-pill final" onclick="setPriority('Final Notice', this)">
+                                <span>🚨 Final Reminder</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. Custom Message Textarea & Quick Templates -->
+                    <div class="form-group-custom">
+                        <label for="customMessageInput">Pesan / Catatan Tambahan (Opsional)</label>
+                        <textarea id="customMessageInput" name="custom_message" class="custom-textarea" rows="3" placeholder="Tuliskan catatan khusus ke approver..."></textarea>
                         
-                        <div class="form-item-meta">
-                            <span>🏢 {{ $f['department'] }}</span>
-                            <span>📅 {{ $f['date'] }}</span>
-                            <span>📦 {{ $f['item_count'] }} Item</span>
+                        <div class="template-chips">
+                            <span class="template-chip" onclick="insertTemplate('Mohon bantuannya untuk segera melakukan approval karena barang consumable ini sangat dibutuhkan untuk kelancaran operasional produksi.')">⚡ Segera Dibutuhkan Produksi</span>
+                            <span class="template-chip" onclick="insertTemplate('Pengingat berkala: mohon persetujuan pada formulir terlampir agar proses penerbitan PO dapat dilanjutkan.')">⏱️ Pengingat Rutin PO</span>
+                            <span class="template-chip" onclick="insertTemplate('Catatan revisi pada formulir telah diperbaiki oleh user terkait. Mohon kesediaannya untuk melakukan verifikasi ulang.')">✍️ Konfirmasi Selesai Revisi</span>
+                        </div>
+                    </div>
+
+                    <!-- Form Action Buttons -->
+                    <div class="d-flex gap-2 pt-2">
+                        <button type="button" class="btn-rem-action secondary" onclick="openPreviewModal()" style="flex: 1;">
+                            <span>👁️</span>
+                            <span>Preview Email</span>
+                        </button>
+                        <button type="submit" class="btn-rem-action primary" id="btnSubmitSend" style="flex: 1.5;">
+                            <span>🚀</span>
+                            <span>Kirim Email Sekarang</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Box: Pending Forms Selection List -->
+            <div class="rem-card-glass">
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-secondary border-opacity-25 flex-wrap gap-2">
+                    <div>
+                        <h3 style="font-size: 1.15rem; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>📋</span>
+                            <span>Pilih Formulir yang Dilampirkan</span>
+                        </h3>
+                        <span style="font-size: 0.75rem; color: #94a3b8;" id="selectedCountText">
+                            Terpilih: <strong class="text-cyan" id="selectedCountNum">{{ count($allPendingForms) }}</strong> dari {{ count($allPendingForms) }} formulir pending
+                        </span>
+                    </div>
+
+                    <div class="d-flex gap-1">
+                        <button type="button" class="btn btn-sm btn-outline-info py-1 px-2" style="font-size: 0.72rem; border-radius: 8px;" onclick="toggleSelectAll(true)">Pilih Semua</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.72rem; border-radius: 8px;" onclick="toggleSelectAll(false)">Batal</button>
+                    </div>
+                </div>
+
+                <!-- Filter Pills for Form List -->
+                <div class="d-flex gap-1 mb-3 overflow-auto pb-1" style="scrollbar-width: none;">
+                    <button type="button" class="btn btn-sm btn-primary py-0 px-2 filter-form-tab active" data-filter="all" onclick="filterFormList('all', this)" style="border-radius: 15px; font-size: 0.75rem;">Semua ({{ count($allPendingForms) }})</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 filter-form-tab text-white" data-filter="registrasi" onclick="filterFormList('registrasi', this)" style="border-radius: 15px; font-size: 0.75rem;">Registrasi ({{ $stats['pending_reg'] }})</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 filter-form-tab text-white" data-filter="unregistrasi" onclick="filterFormList('unregistrasi', this)" style="border-radius: 15px; font-size: 0.75rem;">Unregistrasi ({{ $stats['pending_unreg'] }})</button>
+                </div>
+
+                <!-- Dynamic List Container -->
+                <div class="pending-list-container" id="pendingFormsContainer">
+                    @forelse($allPendingForms as $f)
+                    <div class="pending-item-card selected form-item-row" data-module="{{ $f['module_key'] }}" data-fnumber="{{ $f['form_number'] }}" data-dept="{{ $f['department'] }}" data-stage="{{ $f['stage_key'] }}" onclick="toggleFormCard(this, event)">
+                        <input type="checkbox" name="selected_forms[]" value="{{ $f['form_number'] }}" class="form-check-custom form-checkbox" checked onclick="event.stopPropagation(); onCheckboxChanged();">
+                        
+                        <div class="form-item-body">
+                            <div class="form-item-header">
+                                <span class="form-fnumber">{{ $f['form_number'] }}</span>
+                                <span class="form-badge-module {{ $f['module_key'] == 'registrasi' ? 'reg' : 'unreg' }}">
+                                    {{ $f['module_key'] == 'registrasi' ? 'REG' : 'UNREG' }}
+                                </span>
+                            </div>
+                            
+                            <div class="form-item-meta">
+                                <span>🏢 {{ $f['department'] }}</span>
+                                <span>📅 {{ $f['date'] }}</span>
+                                <span>📦 {{ $f['item_count'] }} Item</span>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between mt-1">
+                                <span class="form-stage-badge {{ $f['stage_key'] }}">
+                                    ⏳ {{ $f['status_label'] }}
+                                </span>
+
+                                <a href="{{ $f['action_url'] }}" target="_blank" class="text-cyan" style="font-size: 0.72rem; text-decoration: none;" onclick="event.stopPropagation();">
+                                    Buka Form &rarr;
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="text-center py-5 text-muted">
+                        <p style="font-size: 0.9rem;">🎉 Luar biasa! Tidak ada formulir yang sedang pending approval saat ini.</p>
+                    </div>
+                    @endforelse
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Recent Email Activity Log -->
+        @if(!empty($recentLogs) && count($recentLogs) > 0)
+        <div class="rem-card-glass mt-4">
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>📜</span>
+                    <span>Riwayat Pengiriman Email Pengingat Terakhir (Sesi Ini)</span>
+                </h3>
+                <span class="badge bg-secondary">{{ count($recentLogs) }} Terkirim</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0" style="font-size: 0.8rem; background: transparent;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <th>Waktu</th>
+                            <th>Target Penerima</th>
+                            <th>Email</th>
+                            <th>Jumlah Form</th>
+                            <th>Prioritas</th>
+                            <th>Pengirim</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($recentLogs as $log)
+                        <tr>
+                            <td class="text-muted">{{ $log['sent_at'] }}</td>
+                            <td class="fw-bold text-white">{{ $log['recipient_name'] }}</td>
+                            <td class="text-cyan">{{ $log['recipient_email'] }}</td>
+                            <td><span class="badge bg-info text-dark">{{ $log['form_count'] }} Form</span></td>
+                            <td><span class="badge bg-secondary">{{ $log['priority'] }}</span></td>
+                            <td class="text-muted">{{ $log['sender'] }}</td>
+                            <td><span class="badge bg-success">✓ {{ $log['status'] }}</span></td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+    </div>
+
+    <!-- ======================================================================
+         TAB 2: SMART TIMING SCHEDULER & AUTOMATION SETTINGS
+         ====================================================================== -->
+    <div id="tabPaneScheduler" class="tab-pane-content" style="display: none;">
+        <div class="composer-grid">
+
+            <!-- Left Box: Schedule Configuration Form -->
+            <div class="rem-card-glass">
+                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+                    <h3 style="font-size: 1.15rem; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                        <span>⚙️</span>
+                        <span>Pengaturan Jadwal Timing Broadcast</span>
+                    </h3>
+                    <span class="badge bg-primary" style="font-size: 0.72rem;">SMART CRON SCHEDULER</span>
+                </div>
+
+                <form id="scheduleSettingsForm" onsubmit="handleSaveSchedule(event)">
+                    @csrf
+
+                    <!-- 1. Master Enable/Disable Toggle -->
+                    <div class="timing-toggle-box">
+                        <div>
+                            <div style="font-size: 0.95rem; font-weight: 800; color: #ffffff;">
+                                Aktifkan Otomatisasi Jadwal Broadcast
+                            </div>
+                            <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px;">
+                                Mengirim pengingat otomatis ke approver saat berada dalam rentang jam &amp; interval yang ditentukan.
+                            </div>
                         </div>
 
-                        <div class="d-flex align-items-center justify-content-between mt-1">
-                            <span class="form-stage-badge {{ $f['stage_key'] }}">
-                                ⏳ {{ $f['status_label'] }}
-                            </span>
+                        <label class="toggle-switch-large">
+                            <input type="checkbox" name="is_enabled" id="schedIsEnabledInput" value="1" {{ $isScheduleEnabled ? 'checked' : '' }} onchange="onScheduleToggleChanged(this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
 
-                            <a href="{{ $f['action_url'] }}" target="_blank" class="text-cyan" style="font-size: 0.72rem; text-decoration: none;" onclick="event.stopPropagation();">
-                                Buka Form &rarr;
-                            </a>
+                    <!-- 2. Operating Hours (Start Time & End Time) -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label style="font-size: 0.8rem; font-weight: 700; color: #e2e8f0; margin-bottom: 0.4rem; display: block;">
+                                🕒 Jam Mulai Aktif
+                            </label>
+                            <input type="time" name="start_time" id="schedStartTimeInput" class="custom-input" value="{{ $startTime }}" required>
+                            <small class="text-muted" style="font-size: 0.7rem;">Contoh: 08:00 (Awal jam kerja)</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label style="font-size: 0.8rem; font-weight: 700; color: #e2e8f0; margin-bottom: 0.4rem; display: block;">
+                                🕒 Jam Selesai Aktif
+                            </label>
+                            <input type="time" name="end_time" id="schedEndTimeInput" class="custom-input" value="{{ $endTime }}" required>
+                            <small class="text-muted" style="font-size: 0.7rem;">Contoh: 16:00 (Akhir jam kerja)</small>
+                        </div>
+                    </div>
+
+                    <!-- 3. Interval Frequency Selection -->
+                    <div class="form-group-custom">
+                        <label>⏳ Interval Frekuensi Pengiriman</label>
+                        <input type="hidden" name="interval_hours" id="schedIntervalInput" value="{{ $intervalHours }}">
+                        <div class="interval-cards-grid">
+                            <div class="interval-card-opt {{ $intervalHours == 1 ? 'active' : '' }}" onclick="setIntervalOption(1, this)">
+                                <div class="int-title">Setiap 1 Jam</div>
+                                <div class="int-sub">Sangat Cepat</div>
+                            </div>
+                            <div class="interval-card-opt {{ $intervalHours == 2 ? 'active' : '' }}" onclick="setIntervalOption(2, this)">
+                                <div class="int-title">Setiap 2 Jam</div>
+                                <div class="int-sub">Moderat</div>
+                            </div>
+                            <div class="interval-card-opt {{ $intervalHours == 3 ? 'active' : '' }}" onclick="setIntervalOption(3, this)">
+                                <div class="int-title">Setiap 3 Jam</div>
+                                <div class="int-sub">⭐ Rekomendasi</div>
+                            </div>
+                            <div class="interval-card-opt {{ $intervalHours == 4 ? 'active' : '' }}" onclick="setIntervalOption(4, this)">
+                                <div class="int-title">Setiap 4 Jam</div>
+                                <div class="int-sub">2x Sehari</div>
+                            </div>
+                            <div class="interval-card-opt {{ $intervalHours == 6 ? 'active' : '' }}" onclick="setIntervalOption(6, this)">
+                                <div class="int-title">Setiap 6 Jam</div>
+                                <div class="int-sub">Berkala</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Active Days Selection -->
+                    <div class="form-group-custom">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <label class="mb-0">📅 Hari Kerja Aktif</label>
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-link btn-sm text-cyan p-0" style="font-size: 0.72rem; text-decoration: none;" onclick="setDaysPreset('workdays')">Senin - Jumat</button>
+                                <span class="text-muted" style="font-size: 0.72rem;">·</span>
+                                <button type="button" class="btn btn-link btn-sm text-cyan p-0" style="font-size: 0.72rem; text-decoration: none;" onclick="setDaysPreset('all')">Setiap Hari</button>
+                            </div>
+                        </div>
+
+                        <div class="days-pill-grid">
+                            @php
+                                $daysList = [
+                                    'Mon' => 'Senin',
+                                    'Tue' => 'Selasa',
+                                    'Wed' => 'Rabu',
+                                    'Thu' => 'Kamis',
+                                    'Fri' => 'Jumat',
+                                    'Sat' => 'Sabtu',
+                                    'Sun' => 'Minggu',
+                                ];
+                            @endphp
+                            @foreach($daysList as $dayKey => $dayLabel)
+                            <div class="day-pill-item {{ in_array($dayKey, $activeDays) ? 'active' : '' }}" onclick="toggleDayPill('{{ $dayKey }}', this)">
+                                <input type="checkbox" name="active_days[]" value="{{ $dayKey }}" class="d-none day-checkbox" {{ in_array($dayKey, $activeDays) ? 'checked' : '' }}>
+                                <span>{{ $dayLabel }}</span>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <!-- 5. Automated Priority & Custom Message -->
+                    <div class="form-group-custom">
+                        <label>Tingkat Prioritas Email Otomatis</label>
+                        <select name="priority" id="schedPriorityInput" class="custom-select mb-3">
+                            <option value="Normal" {{ $schedulePriority == 'Normal' ? 'selected' : '' }}>🔵 Normal Reminder</option>
+                            <option value="Urgent" {{ $schedulePriority == 'Urgent' ? 'selected' : '' }}>⚠️ Urgent / Mendesak (Default)</option>
+                            <option value="Final Notice" {{ $schedulePriority == 'Final Notice' ? 'selected' : '' }}>🚨 Final Notice</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group-custom">
+                        <label for="schedMessageInput">Pesan Pengingat Otomatis</label>
+                        <textarea name="custom_message" id="schedMessageInput" class="custom-textarea" rows="2">{{ $scheduleMessage }}</textarea>
+                    </div>
+
+                    <!-- Form Scope Checkboxes -->
+                    <div class="d-flex gap-3 mb-4">
+                        <label class="d-flex align-items-center gap-2" style="font-size: 0.8rem; color: #cbd5e1; cursor: pointer;">
+                            <input type="checkbox" name="include_registrasi" value="1" {{ !empty($schedule['include_registrasi']) ? 'checked' : '' }} class="form-check-custom">
+                            <span>Sertakan Registrasi Consumable</span>
+                        </label>
+                        <label class="d-flex align-items-center gap-2" style="font-size: 0.8rem; color: #cbd5e1; cursor: pointer;">
+                            <input type="checkbox" name="include_unregistrasi" value="1" {{ !empty($schedule['include_unregistrasi']) ? 'checked' : '' }} class="form-check-custom">
+                            <span>Sertakan Unregistrasi Consumable</span>
+                        </label>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn-rem-action primary" id="btnSaveSchedule" style="flex: 1.5;">
+                            <span>💾</span>
+                            <span>Simpan Pengaturan Jadwal</span>
+                        </button>
+                        <button type="button" class="btn-rem-action emerald" id="btnRunScheduleNow" onclick="handleRunScheduleNow()" style="flex: 1.2;">
+                            <span>▶️</span>
+                            <span>Jalankan Sekarang (Test)</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Box: Telemetry Live Status & Auto Logs -->
+            <div>
+                <!-- Live Telemetry Countdown Card -->
+                <div class="countdown-display-card">
+                    <span class="badge {{ $isScheduleEnabled ? 'bg-success' : 'bg-secondary' }} px-3 py-1 mb-2" id="badgeSchedLiveState" style="font-size: 0.75rem; letter-spacing: 0.05em;">
+                        {{ $isScheduleEnabled ? '🟢 OTOMATISASI AKTIF' : '⚪ OTOMATISASI NONAKTIF' }}
+                    </span>
+
+                    <div style="font-size: 0.82rem; color: #cbd5e1; margin-top: 0.5rem;">
+                        WAKTU EKSEKUSI JADWAL BERIKUTNYA:
+                    </div>
+
+                    <div class="countdown-timer-val" id="countdownTimerVal">
+                        --:--:--
+                    </div>
+
+                    <div style="font-size: 0.78rem; color: #94a3b8;" id="nextRunTimestampText">
+                        Target: <strong>{{ $nextRunAt ?: 'Menunggu Jadwal' }}</strong>
+                    </div>
+
+                    <hr style="border-color: rgba(56, 189, 248, 0.2); margin: 1rem 0;">
+
+                    <div class="row g-2 text-start" style="font-size: 0.78rem;">
+                        <div class="col-6">
+                            <span class="text-muted d-block">Jam Operasional:</span>
+                            <strong class="text-white" id="statLiveHours">{{ $startTime }} - {{ $endTime }} WIB</strong>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block">Interval Timing:</span>
+                            <strong class="text-cyan" id="statLiveInterval">Setiap {{ $intervalHours }} Jam Sekali</strong>
+                        </div>
+                        <div class="col-6 mt-2">
+                            <span class="text-muted d-block">Terakhir Dijalankan:</span>
+                            <strong class="text-white" id="statLiveLastRun">{{ $lastRunAt ?: 'Belum pernah' }}</strong>
+                        </div>
+                        <div class="col-6 mt-2">
+                            <span class="text-muted d-block">Total Broadcast Terkirim:</span>
+                            <strong class="text-emerald" id="statLiveTotalSent">{{ $totalAutoSent }} Email</strong>
                         </div>
                     </div>
                 </div>
-                @empty
-                <div class="text-center py-5 text-muted">
-                    <p style="font-size: 0.9rem;">🎉 Luar biasa! Tidak ada formulir yang sedang pending approval saat ini.</p>
+
+                <!-- Automated Logs History Box -->
+                <div class="rem-card-glass">
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+                        <h4 style="font-size: 1rem; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 0.4rem;">
+                            <span>📜</span>
+                            <span>Riwayat Eksekusi Scheduler Otomatis</span>
+                        </h4>
+                        <button type="button" class="btn btn-sm btn-link text-cyan p-0" onclick="refreshScheduleStatus()" style="font-size: 0.75rem; text-decoration: none;">
+                            🔄 Refresh
+                        </button>
+                    </div>
+
+                    <div style="max-height: 280px; overflow-y: auto;" id="autoLogsContainer">
+                        @forelse($scheduleLogs ?? [] as $log)
+                        <div style="background: rgba(2, 6, 23, 0.55); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 0.75rem 0.9rem; margin-bottom: 0.6rem; font-size: 0.78rem;">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong class="text-white">{{ $log['executed_at'] ?? '-' }}</strong>
+                                <span class="badge {{ ($log['sent_count'] ?? 0) > 0 ? 'bg-success' : 'bg-secondary' }}" style="font-size: 0.68rem;">
+                                    {{ $log['status'] ?? 'Selesai' }}
+                                </span>
+                            </div>
+                            <div class="text-muted" style="font-size: 0.72rem;">
+                                {{ $log['message'] ?? 'Eksekusi selesai' }}
+                            </div>
+                            <div class="text-cyan mt-1" style="font-size: 0.7rem;">
+                                Tipe: {{ $log['type'] ?? 'Scheduled' }} (oleh {{ $log['triggered_by'] ?? 'System' }})
+                            </div>
+                        </div>
+                        @empty
+                        <div class="text-center py-4 text-muted" style="font-size: 0.8rem;">
+                            Belum ada riwayat eksekusi otomatis yang tercatat.
+                        </div>
+                        @endforelse
+                    </div>
                 </div>
-                @endforelse
+
             </div>
-        </div>
 
-    </div>
-
-    <!-- 4. Recent Email Activity Log -->
-    @if(!empty($recentLogs) && count($recentLogs) > 0)
-    <div class="rem-card-glass mt-4">
-        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-secondary border-opacity-25">
-            <h3 style="font-size: 1.1rem; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                <span>📜</span>
-                <span>Riwayat Pengiriman Email Pengingat Terakhir (Sesi Ini)</span>
-            </h3>
-            <span class="badge bg-secondary">{{ count($recentLogs) }} Terkirim</span>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table table-dark table-hover mb-0" style="font-size: 0.8rem; background: transparent;">
-                <thead>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <th>Waktu</th>
-                        <th>Target Penerima</th>
-                        <th>Email</th>
-                        <th>Jumlah Form</th>
-                        <th>Prioritas</th>
-                        <th>Pengirim</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($recentLogs as $log)
-                    <tr>
-                        <td class="text-muted">{{ $log['sent_at'] }}</td>
-                        <td class="fw-bold text-white">{{ $log['recipient_name'] }}</td>
-                        <td class="text-cyan">{{ $log['recipient_email'] }}</td>
-                        <td><span class="badge bg-info text-dark">{{ $log['form_count'] }} Form</span></td>
-                        <td><span class="badge bg-secondary">{{ $log['priority'] }}</span></td>
-                        <td class="text-muted">{{ $log['sender'] }}</td>
-                        <td><span class="badge bg-success">✓ {{ $log['status'] }}</span></td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
         </div>
     </div>
-    @endif
 
 </div>
 
@@ -789,8 +1299,235 @@
 @section('scripts')
 <script>
     let currentTargetMode = 'approver';
+    let targetNextRunTimestamp = "{{ $nextRunAt ? \Carbon\Carbon::parse($nextRunAt)->toISOString() : '' }}";
+    let isScheduleActiveGlobal = {{ $isScheduleEnabled ? 'true' : 'false' }};
 
-    // 1. Switch Target Mode
+    // =========================================================================
+    // 1. TAB SWITCHER (Instant Send vs Smart Scheduler)
+    // =========================================================================
+    function switchMainTab(tabKey) {
+        const btnManual = document.getElementById('tabBtnManualSend');
+        const btnSched = document.getElementById('tabBtnScheduler');
+        const paneManual = document.getElementById('tabPaneManualSend');
+        const paneSched = document.getElementById('tabPaneScheduler');
+
+        if (tabKey === 'manual') {
+            btnManual.classList.add('active');
+            btnSched.classList.remove('active');
+            paneManual.style.display = 'block';
+            paneSched.style.display = 'none';
+        } else {
+            btnSched.classList.add('active');
+            btnManual.classList.remove('active');
+            paneSched.style.display = 'block';
+            paneManual.style.display = 'none';
+        }
+    }
+
+    // =========================================================================
+    // 2. TIMING SCHEDULER CONTROLS & COUNTDOWN TICKER
+    // =========================================================================
+    function setIntervalOption(hours, el) {
+        document.getElementById('schedIntervalInput').value = hours;
+        document.querySelectorAll('.interval-card-opt').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    function toggleDayPill(dayKey, el) {
+        const cb = el.querySelector('.day-checkbox');
+        cb.checked = !cb.checked;
+        el.classList.toggle('active', cb.checked);
+    }
+
+    function setDaysPreset(preset) {
+        const pills = document.querySelectorAll('.day-pill-item');
+        pills.forEach(p => {
+            const cb = p.querySelector('.day-checkbox');
+            const val = cb.value;
+            if (preset === 'workdays') {
+                const isWork = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(val);
+                cb.checked = isWork;
+                p.classList.toggle('active', isWork);
+            } else if (preset === 'all') {
+                cb.checked = true;
+                p.classList.add('active');
+            }
+        });
+    }
+
+    function onScheduleToggleChanged(checked) {
+        isScheduleActiveGlobal = checked;
+        const badge = document.getElementById('badgeSchedLiveState');
+        const dot = document.getElementById('telemetryDotScheduler');
+        const text = document.getElementById('telemetryTextScheduler');
+
+        if (checked) {
+            badge.className = 'badge bg-success px-3 py-1 mb-2';
+            badge.innerText = '🟢 OTOMATISASI AKTIF';
+            dot.className = 'pulse-dot-green';
+            text.innerText = 'SCHEDULER: AKTIF';
+        } else {
+            badge.className = 'badge bg-secondary px-3 py-1 mb-2';
+            badge.innerText = '⚪ OTOMATISASI NONAKTIF';
+            dot.className = 'pulse-dot-amber';
+            text.innerText = 'SCHEDULER: NONAKTIF';
+        }
+    }
+
+    // Live Countdown Timer Loop
+    function updateCountdown() {
+        const timerEl = document.getElementById('countdownTimerVal');
+        if (!timerEl) return;
+
+        if (!isScheduleActiveGlobal || !targetNextRunTimestamp) {
+            timerEl.innerText = 'NONAKTIF';
+            timerEl.style.color = '#94a3b8';
+            return;
+        }
+
+        const now = new Date().getTime();
+        const target = new Date(targetNextRunTimestamp).getTime();
+        const diff = target - now;
+
+        if (diff <= 0) {
+            timerEl.innerText = '00:00:00 (EKSEKUSI SEGERA)';
+            timerEl.style.color = '#34d399';
+            return;
+        }
+
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        const pad = (n) => String(n).padStart(2, '0');
+        timerEl.innerText = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        timerEl.style.color = '#38bdf8';
+    }
+
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+
+    // Save Schedule Settings via AJAX
+    function handleSaveSchedule(e) {
+        e.preventDefault();
+
+        const btn = document.getElementById('btnSaveSchedule');
+        const origText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Menyimpan...`;
+
+        const form = document.getElementById('scheduleSettingsForm');
+        const formData = new FormData(form);
+
+        fetch('{{ route("saturnus.email_reminder.schedule_save") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = origText;
+
+            if (data.success) {
+                alert('✅ ' + data.message);
+                if (data.settings && data.settings.next_run_at) {
+                    targetNextRunTimestamp = data.settings.next_run_at;
+                    document.getElementById('nextRunTimestampText').innerHTML = `Target: <strong>${data.settings.next_run_at}</strong>`;
+                }
+                refreshScheduleStatus();
+            } else {
+                alert('❌ Gagal menyimpan jadwal: ' + (data.message || 'Error'));
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = origText;
+            alert('❌ Error: ' + err.message);
+        });
+    }
+
+    // Trigger Manual Immediate Run
+    function handleRunScheduleNow() {
+        if (!confirm('Apakah Anda yakin ingin menjalankan broadcast scheduler sekarang untuk semua approver yang memiliki formulir pending?')) {
+            return;
+        }
+
+        const btn = document.getElementById('btnRunScheduleNow');
+        const origText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Mengirim Broadcast...`;
+
+        const formData = new FormData();
+        formData.append('_token', '{{ csrf_token() }}');
+
+        fetch('{{ route("saturnus.email_reminder.schedule_run_now") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = origText;
+
+            alert('📢 ' + data.message);
+            refreshScheduleStatus();
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = origText;
+            alert('❌ Error: ' + err.message);
+        });
+    }
+
+    // Refresh Live Schedule Status
+    function refreshScheduleStatus() {
+        fetch('{{ route("saturnus.email_reminder.schedule_status") }}')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.settings) {
+                    const s = data.settings;
+                    isScheduleActiveGlobal = !!s.is_enabled;
+                    targetNextRunTimestamp = s.next_run_at || '';
+
+                    document.getElementById('statLiveHours').innerText = `${s.start_time} - ${s.end_time} WIB`;
+                    document.getElementById('statLiveInterval').innerText = `Setiap ${s.interval_hours} Jam Sekali`;
+                    document.getElementById('statLiveLastRun').innerText = s.last_run_at || 'Belum pernah';
+                    document.getElementById('statLiveTotalSent').innerText = `${s.total_broadcasts_sent || 0} Email`;
+                    document.getElementById('nextRunTimestampText').innerHTML = `Target: <strong>${s.next_run_at || 'Menunggu'}</strong>`;
+
+                    onScheduleToggleChanged(isScheduleActiveGlobal);
+                    updateCountdown();
+
+                    // Render logs
+                    if (data.logs && data.logs.length > 0) {
+                        const logsHtml = data.logs.map(log => `
+                            <div style="background: rgba(2, 6, 23, 0.55); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 0.75rem 0.9rem; margin-bottom: 0.6rem; font-size: 0.78rem;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <strong class="text-white">${log.executed_at || '-'}</strong>
+                                    <span class="badge ${log.sent_count > 0 ? 'bg-success' : 'bg-secondary'}" style="font-size: 0.68rem;">
+                                        ${log.status || 'Selesai'}
+                                    </span>
+                                </div>
+                                <div class="text-muted" style="font-size: 0.72rem;">${log.message || ''}</div>
+                                <div class="text-cyan mt-1" style="font-size: 0.7rem;">Tipe: ${log.type || 'Auto'} (${log.triggered_by || 'System'})</div>
+                            </div>
+                        `).join('');
+                        document.getElementById('autoLogsContainer').innerHTML = logsHtml;
+                    }
+                }
+            })
+            .catch(err => console.error('Failed to refresh status:', err));
+    }
+
+    // =========================================================================
+    // 3. INSTANT EMAIL SENDING LOGIC (Tab 1)
+    // =========================================================================
     function setTargetMode(mode) {
         currentTargetMode = mode;
         document.querySelectorAll('.mode-tab-btn').forEach(b => b.classList.remove('active'));
@@ -825,7 +1562,6 @@
         }
     }
 
-    // 2. Approver Selection Handler (Auto-filter relevant pending forms)
     function onApproverSelected(userId) {
         if (!userId) return;
 
@@ -833,13 +1569,10 @@
         const selectedOpt = select.options[select.selectedIndex];
         const email = selectedOpt.getAttribute('data-email');
         const name = selectedOpt.getAttribute('data-name');
-        const dept = selectedOpt.getAttribute('data-dept');
-        const role = selectedOpt.getAttribute('data-role');
 
         document.getElementById('recipientEmailInput').value = email || '';
         document.getElementById('recipientNameInput').value = name || '';
 
-        // Fetch dynamic relevant pending forms via AJAX
         fetch(`{{ url('/saturnus/email-reminder/pending-for-user') }}/${userId}`)
             .then(res => res.json())
             .then(data => {
@@ -850,7 +1583,6 @@
             .catch(err => console.error('Error fetching user pending:', err));
     }
 
-    // Highlight and select only relevant forms for the user
     function highlightRelevantForms(relevantForms) {
         const relevantNumbers = relevantForms.map(f => f.form_number);
         const rows = document.querySelectorAll('.form-item-row');
@@ -872,43 +1604,34 @@
         updateSelectedCount();
     }
 
-    // 3. Priority Selector
     function setPriority(level, el) {
         document.getElementById('priorityInput').value = level;
         document.querySelectorAll('.priority-pill').forEach(p => p.classList.remove('active'));
         el.classList.add('active');
 
-        // Update default subject template prefix
         const subInput = document.getElementById('subjectInput');
         const prefix = (level.toLowerCase() === 'urgent') ? '[URGENT] ' : ((level.toLowerCase().includes('final')) ? '[FINAL NOTICE] ' : '[PENGINGAT] ');
         subInput.value = prefix + "Formulir Menunggu Persetujuan Anda — SATURNUS MAI";
     }
 
-    // 4. Quick Template Insertion
     function insertTemplate(text) {
         const textarea = document.getElementById('customMessageInput');
         textarea.value = text;
         textarea.focus();
     }
 
-    // 5. Toggle Select All Checkboxes
     function toggleSelectAll(select) {
         const rows = document.querySelectorAll('.form-item-row');
         rows.forEach(row => {
             if (row.style.display !== 'none') {
                 const cb = row.querySelector('.form-checkbox');
                 cb.checked = select;
-                if (select) {
-                    row.classList.add('selected');
-                } else {
-                    row.classList.remove('selected');
-                }
+                row.classList.toggle('selected', select);
             }
         });
         updateSelectedCount();
     }
 
-    // 6. Filter Form List Tabs
     function filterFormList(moduleKey, btn) {
         document.querySelectorAll('.filter-form-tab').forEach(b => {
             b.classList.remove('active', 'btn-primary');
@@ -928,15 +1651,10 @@
         });
     }
 
-    // 7. Toggle Individual Form Card
     function toggleFormCard(card, event) {
         const cb = card.querySelector('.form-checkbox');
         cb.checked = !cb.checked;
-        if (cb.checked) {
-            card.classList.add('selected');
-        } else {
-            card.classList.remove('selected');
-        }
+        card.classList.toggle('selected', cb.checked);
         updateSelectedCount();
     }
 
@@ -944,11 +1662,7 @@
         const rows = document.querySelectorAll('.form-item-row');
         rows.forEach(row => {
             const cb = row.querySelector('.form-checkbox');
-            if (cb.checked) {
-                row.classList.add('selected');
-            } else {
-                row.classList.remove('selected');
-            }
+            row.classList.toggle('selected', cb.checked);
         });
         updateSelectedCount();
     }
@@ -958,7 +1672,6 @@
         document.getElementById('selectedCountNum').innerText = checked;
     }
 
-    // 8. Open Live Email Preview Modal
     function openPreviewModal() {
         const modal = new bootstrap.Modal(document.getElementById('modalEmailPreview'));
         modal.show();
@@ -968,7 +1681,6 @@
         spinner.style.display = 'block';
         iframe.style.display = 'none';
 
-        // Prepare preview payload
         let recipientName = 'Approver Terkait';
         let recipientEmail = 'approver@metalart-astra.co.id';
 
@@ -1024,14 +1736,12 @@
         document.getElementById('emailReminderForm').requestSubmit();
     }
 
-    // 9. Send Email Handler
     function handleSendEmail(e) {
         e.preventDefault();
 
         const btn = document.getElementById('btnSubmitSend');
         const origText = btn.innerHTML;
 
-        // Validation
         if (currentTargetMode === 'approver') {
             const select = document.getElementById('approverSelect');
             if (!select.value) {
@@ -1055,21 +1765,18 @@
             }
         }
 
-        // Disable button & show spinner
         btn.disabled = true;
         btn.innerHTML = `
             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-            <span>Mengirim Email via SMTP...</span>
+            <span>Mengirim Email via Microsoft 365...</span>
         `;
 
         const form = document.getElementById('emailReminderForm');
         const formData = new FormData(form);
 
-        // Append selected forms explicitly
         formData.delete('selected_forms[]');
         selectedForms.forEach(f => formData.append('selected_forms[]', f));
 
-        // Append recipient data
         if (currentTargetMode === 'approver') {
             const select = document.getElementById('approverSelect');
             const opt = select.options[select.selectedIndex];

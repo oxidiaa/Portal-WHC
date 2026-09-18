@@ -84,7 +84,7 @@ class PendingApprovalReminderMail extends Mailable
                 'pendingForms' => $this->pendingForms,
                 'totalForms' => count($this->pendingForms),
                 'appName' => config('app.name', 'MAI Warehouse Portal'),
-                'currentDate' => now()->translatedFormat('l, d F Y H:i') . ' WIB',
+                'currentDate' => \Carbon\Carbon::now('Asia/Jakarta')->locale('id')->translatedFormat('l, d F Y H:i') . ' WIB',
             ],
         );
     }

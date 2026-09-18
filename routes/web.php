@@ -140,6 +140,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/email-reminder/send', [\App\Http\Controllers\EmailReminderController::class, 'send'])->name('email_reminder.send');
         Route::post('/email-reminder/preview', [\App\Http\Controllers\EmailReminderController::class, 'preview'])->name('email_reminder.preview');
         Route::get('/email-reminder/pending-for-user/{userId}', [\App\Http\Controllers\EmailReminderController::class, 'getPendingForUser'])->name('email_reminder.pending_for_user');
+        Route::post('/email-reminder/schedule/save', [\App\Http\Controllers\EmailReminderController::class, 'saveScheduleSettings'])->name('email_reminder.schedule_save');
+        Route::post('/email-reminder/schedule/run-now', [\App\Http\Controllers\EmailReminderController::class, 'runScheduleNow'])->name('email_reminder.schedule_run_now');
+        Route::get('/email-reminder/schedule/status', [\App\Http\Controllers\EmailReminderController::class, 'getScheduleStatus'])->name('email_reminder.schedule_status');
     });
 
     Route::get('/email-reminder', fn() => redirect()->route('saturnus.email_reminder'));
