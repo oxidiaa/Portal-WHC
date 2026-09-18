@@ -31,6 +31,16 @@ class AuthController extends Controller
         $remember = $request->boolean('remember') || $request->filled('remember');
 
         if (empty($loginInput) || empty($password)) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Username/Email dan Password wajib diisi.',
+                    'errors' => [
+                        'username' => ['Username/Email dan Password wajib diisi.']
+                    ]
+                ], 422);
+            }
+
             return back()->withErrors([
                 'username' => 'Username/Email dan Password wajib diisi.',
                 'login'    => 'Username/Email dan Password wajib diisi.',
@@ -46,6 +56,16 @@ class AuthController extends Controller
 
         if ($user && Hash::check($password, $user->password)) {
             if (isset($user->status) && in_array(strtolower($user->status), ['nonaktif', 'inactive'])) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Akun Anda dinonaktifkan. Silakan hubungi Administrator.',
+                        'errors' => [
+                            'username' => ['Akun Anda dinonaktifkan. Silakan hubungi Administrator.']
+                        ]
+                    ], 422);
+                }
+
                 return back()->withErrors([
                     'username' => 'Akun Anda dinonaktifkan. Silakan hubungi Administrator.',
                     'login'    => 'Akun Anda dinonaktifkan. Silakan hubungi Administrator.',
@@ -55,8 +75,29 @@ class AuthController extends Controller
             Auth::login($user, $remember);
             $request->session()->regenerate();
 
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'redirect' => redirect()->intended(route('dashboard.index'))->getTargetUrl(),
+                    'user' => [
+                        'name' => $user->name,
+                        'role' => $user->role,
+                    ]
+                ]);
+            }
+
             return redirect()->intended(route('dashboard.index'))
                 ->with('success', 'Selamat datang kembali, ' . $user->name . '!');
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Username/Email atau Password yang Anda masukkan tidak sesuai.',
+                'errors' => [
+                    'username' => ['Username/Email atau Password yang Anda masukkan tidak sesuai.']
+                ]
+            ], 422);
         }
 
         return back()->withErrors([
@@ -84,6 +125,17 @@ class AuthController extends Controller
 
         Auth::login($guest, false);
         $request->session()->regenerate();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'redirect' => route('dashboard.index'),
+                'user' => [
+                    'name' => $guest->name,
+                    'role' => $guest->role,
+                ]
+            ]);
+        }
 
         return redirect()->route('dashboard.index')
             ->with('info', 'Anda masuk dalam mode Tamu (Guest Mode) dengan akses terbatas.');

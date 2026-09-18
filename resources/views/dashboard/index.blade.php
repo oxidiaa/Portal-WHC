@@ -86,6 +86,17 @@ html, body, .main-wrapper, .page-wrapper, .page-content {
     flex-direction: column;
     justify-content: space-between;
     user-select: none;
+    transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Cinematic Portal Entrance Transition from Galaxy Login */
+.orbit-universe-container.portal-entrance-init {
+    opacity: 0 !important;
+    transform: scale(0.98) !important;
+}
+.orbit-universe-container.portal-entrance-active {
+    opacity: 1 !important;
+    transform: scale(1) !important;
 }
 
 /* 3D WebGL Three.js Canvas */
@@ -1317,5 +1328,24 @@ function toggleSidebarDrawer() {
         sidebar.classList.toggle('mobile-open');
     }
 }
+
+// ── Cinematic Portal Entrance Reveal ──
+document.addEventListener('DOMContentLoaded', function () {
+    const universe = document.querySelector('.orbit-universe-container');
+    try {
+        if (universe && sessionStorage.getItem('mai_portal_transition') === '1') {
+            sessionStorage.removeItem('mai_portal_transition');
+            universe.classList.add('portal-entrance-init');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    universe.classList.add('portal-entrance-active');
+                    setTimeout(() => {
+                        universe.classList.remove('portal-entrance-init', 'portal-entrance-active');
+                    }, 800);
+                });
+            });
+        }
+    } catch (e) {}
+});
 </script>
 @endsection

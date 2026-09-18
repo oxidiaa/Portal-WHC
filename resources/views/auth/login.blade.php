@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Login | MAI Consumable System</title>
     <meta name="description" content="Silakan masuk untuk melanjutkan ke sistem dan kelola permintaan material dengan lebih efektif - PT. Metalart Astra Indonesia">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         /* ============================================================
@@ -790,6 +791,393 @@
                 gap: 1rem;
             }
         }
+
+        /* ============================================================
+           CINEMATIC GALAXY TRANSITION OVERLAY
+           ============================================================ */
+        .galaxy-transition-overlay {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 999999;
+            background-color: #03050a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+            transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s;
+        }
+
+        .galaxy-transition-overlay.is-active {
+            opacity: 1;
+            pointer-events: all;
+            visibility: visible;
+        }
+
+        /* Full-screen Galaxy Background Layer */
+        .galaxy-bg-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            transform: scale(1);
+            transform-origin: center center;
+            will-change: transform, filter;
+            transition: transform 0.85s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.85s ease;
+        }
+
+        /* Phase 4 zoom-in effect into galaxy luminous core */
+        .galaxy-transition-overlay.galaxy-zooming .galaxy-bg-layer {
+            transform: scale(1.45);
+            filter: brightness(1.22) contrast(1.12);
+        }
+
+        /* Subtle Cosmic Vignette & Depth Overlay */
+        .galaxy-depth-overlay {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(
+                circle at 50% 50%,
+                rgba(3, 7, 18, 0.15) 0%,
+                rgba(3, 7, 18, 0.45) 50%,
+                rgba(3, 7, 18, 0.82) 100%
+            );
+            pointer-events: none;
+        }
+
+        /* Soft Luminous Core Radial Pulse */
+        .galaxy-core-pulse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 600px;
+            height: 600px;
+            margin-top: -300px;
+            margin-left: -300px;
+            background: radial-gradient(
+                circle,
+                rgba(56, 189, 248, 0.25) 0%,
+                rgba(6, 182, 212, 0.12) 35%,
+                rgba(3, 7, 18, 0) 70%
+            );
+            border-radius: 50%;
+            pointer-events: none;
+            animation: galaxyCorePulseAnim 3.2s ease-in-out infinite;
+        }
+
+        @keyframes galaxyCorePulseAnim {
+            0%, 100% {
+                transform: scale(0.95);
+                opacity: 0.45;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+        }
+
+        /* Central Cinematic HUD & Typography Container */
+        .galaxy-hud-container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 820px;
+            padding: 2rem;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .galaxy-transition-overlay.is-active .galaxy-hud-container {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Phase 4 HUD exit fade */
+        .galaxy-transition-overlay.galaxy-exiting .galaxy-hud-container {
+            opacity: 0;
+            transform: scale(1.05);
+            transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Rotating Minimal HUD Ring */
+        .hud-ring-wrapper {
+            position: relative;
+            width: 380px;
+            height: 380px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .hud-circular-ring {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            animation: hudRingSpin 24s linear infinite;
+            filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.3));
+            pointer-events: none;
+        }
+
+        @keyframes hudRingSpin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Central Typography */
+        .hud-center-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 320px;
+        }
+
+        .hud-welcome-tag {
+            font-family: 'Outfit', 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 400;
+            letter-spacing: 0.45em;
+            text-transform: uppercase;
+            color: rgba(224, 242, 254, 0.9);
+            margin-bottom: 0.35rem;
+            padding-left: 0.45em;
+            text-shadow: 0 0 14px rgba(56, 189, 248, 0.6);
+        }
+
+        .hud-nova-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 4.5rem;
+            font-weight: 800;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            line-height: 1.05;
+            margin: 0 0 0.5rem 0;
+            padding-left: 0.22em;
+            background: linear-gradient(180deg, #ffffff 15%, #e0f2fe 55%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 24px rgba(56, 189, 248, 0.5));
+        }
+
+        .hud-subtitle {
+            font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 350;
+            letter-spacing: 0.14em;
+            color: rgba(203, 213, 225, 0.82);
+            margin: 0;
+            text-shadow: 0 0 8px rgba(14, 165, 233, 0.3);
+        }
+
+        /* Horizontal System Status Progress Sequence */
+        .hud-status-sequence-wrapper {
+            width: 100%;
+            max-width: 680px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.9rem;
+        }
+
+        .status-progress-track {
+            position: relative;
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .status-progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #38bdf8, #06b6d4, #22d3ee);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
+            transition: width 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .status-steps-grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
+            margin-top: -0.65rem;
+        }
+
+        .status-step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.65rem;
+            opacity: 0.32;
+            transition: all 0.4s ease;
+            flex: 1;
+            text-align: center;
+        }
+
+        .step-node-dot {
+            position: relative;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .node-pulse-ring {
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 1.5px solid #38bdf8;
+            opacity: 0;
+            transform: scale(0.8);
+            pointer-events: none;
+        }
+
+        .step-label {
+            font-family: 'Space Grotesk', 'Outfit', sans-serif;
+            font-size: 0.725rem;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.45);
+            transition: all 0.4s ease;
+            white-space: nowrap;
+        }
+
+        /* Active Step State */
+        .status-step-item.is-active {
+            opacity: 1;
+        }
+
+        .status-step-item.is-active .step-node-dot {
+            background: #38bdf8;
+            border-color: #ffffff;
+            box-shadow: 0 0 16px #38bdf8, 0 0 26px rgba(56, 189, 248, 0.85);
+            transform: scale(1.3);
+        }
+
+        .status-step-item.is-active .node-pulse-ring {
+            opacity: 1;
+            animation: stepNodePulse 1.4s ease-out infinite;
+        }
+
+        .status-step-item.is-active .step-label {
+            color: #ffffff;
+            text-shadow: 0 0 14px rgba(56, 189, 248, 0.95);
+            font-weight: 700;
+        }
+
+        /* Completed Step State */
+        .status-step-item.is-completed {
+            opacity: 0.85;
+        }
+
+        .status-step-item.is-completed .step-node-dot {
+            background: #0ea5e9;
+            border-color: #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            transform: scale(1.1);
+        }
+
+        .status-step-item.is-completed .step-label {
+            color: rgba(224, 242, 254, 0.85);
+        }
+
+        @keyframes stepNodePulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.9;
+            }
+            100% {
+                transform: scale(2.2);
+                opacity: 0;
+            }
+        }
+
+        /* Final Cinematic Exit Flash */
+        .galaxy-exit-flash {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(
+                circle at 50% 50%,
+                rgba(224, 242, 254, 0.95) 0%,
+                rgba(56, 189, 248, 0.8) 35%,
+                rgba(3, 5, 10, 0.95) 100%
+            );
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s ease-in;
+            z-index: 20;
+        }
+
+        .galaxy-transition-overlay.galaxy-flashing .galaxy-exit-flash {
+            opacity: 1;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .hud-ring-wrapper {
+                width: 300px;
+                height: 300px;
+                margin-bottom: 2rem;
+            }
+            .hud-nova-title {
+                font-size: 3.5rem;
+            }
+            .hud-subtitle {
+                font-size: 0.775rem;
+                letter-spacing: 0.08em;
+            }
+            .step-label {
+                font-size: 0.65rem;
+                letter-spacing: 0.08em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hud-ring-wrapper {
+                width: 260px;
+                height: 260px;
+                margin-bottom: 1.5rem;
+            }
+            .hud-welcome-tag {
+                font-size: 0.75rem;
+                letter-spacing: 0.3em;
+            }
+            .hud-nova-title {
+                font-size: 2.75rem;
+            }
+            .step-label {
+                font-size: 0.55rem;
+                letter-spacing: 0.04em;
+            }
+        }
     </style>
 </head>
 <body class="login-page">
@@ -985,6 +1373,96 @@
 
     </div>
 
+    <!-- ============================================================
+         CINEMATIC GALAXY TRANSITION OVERLAY
+         ============================================================ -->
+    <div id="galaxyTransitionOverlay" class="galaxy-transition-overlay" aria-hidden="true">
+        <!-- Full-screen Galaxy Background Layer -->
+        <div class="galaxy-bg-layer" id="galaxyBgLayer" style="background-image: url('{{ asset('assets/images/galaxy.png') }}');"></div>
+        
+        <!-- Subtle Cosmic Depth & Vignette Overlay -->
+        <div class="galaxy-depth-overlay"></div>
+
+        <!-- Soft Luminous Core Radial Pulse -->
+        <div class="galaxy-core-pulse"></div>
+
+        <!-- Central Cinematic HUD & Typography Container -->
+        <div class="galaxy-hud-container" id="galaxyHudContainer">
+            
+            <!-- Rotating Minimal Circular HUD Ring -->
+            <div class="hud-ring-wrapper">
+                <svg class="hud-circular-ring" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Outer subtle dashed track -->
+                    <circle cx="200" cy="200" r="185" stroke="rgba(56, 189, 248, 0.18)" stroke-width="1.2" stroke-dasharray="6 8" />
+                    <!-- Primary luminous ring arc -->
+                    <circle cx="200" cy="200" r="170" stroke="url(#hudCyanGradient)" stroke-width="1.5" stroke-dasharray="180 80 40 60" />
+                    <!-- Inner precision tick marks -->
+                    <circle cx="200" cy="200" r="155" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1" stroke-dasharray="2 16" />
+                    <!-- Decorative Cardinal HUD Crosshairs -->
+                    <line x1="200" y1="10" x2="200" y2="25" stroke="rgba(56, 189, 248, 0.5)" stroke-width="1.5" />
+                    <line x1="200" y1="375" x2="200" y2="390" stroke="rgba(56, 189, 248, 0.5)" stroke-width="1.5" />
+                    <line x1="10" y1="200" x2="25" y2="200" stroke="rgba(56, 189, 248, 0.5)" stroke-width="1.5" />
+                    <line x1="375" y1="200" x2="390" y2="200" stroke="rgba(56, 189, 248, 0.5)" stroke-width="1.5" />
+                    <defs>
+                        <linearGradient id="hudCyanGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.85" />
+                            <stop offset="50%" stop-color="#06b6d4" stop-opacity="0.3" />
+                            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.75" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                
+                <!-- Central Typography -->
+                <div class="hud-center-content">
+                    <span class="hud-welcome-tag">WELCOME TO</span>
+                    <h1 class="hud-nova-title">NOVA</h1>
+                    <p class="hud-subtitle">Initializing Warehouse Intelligence System...</p>
+                </div>
+            </div>
+
+            <!-- Horizontal System Status Progress Sequence -->
+            <div class="hud-status-sequence-wrapper">
+                <div class="status-progress-track">
+                    <div class="status-progress-fill" id="statusProgressFill"></div>
+                </div>
+                <div class="status-steps-grid">
+                    <!-- Step 1: CONNECTING -->
+                    <div class="status-step-item" id="stepConnecting" data-step="1">
+                        <div class="step-node-dot">
+                            <span class="node-pulse-ring"></span>
+                        </div>
+                        <span class="step-label">CONNECTING</span>
+                    </div>
+                    <!-- Step 2: AUTHENTICATING -->
+                    <div class="status-step-item" id="stepAuthenticating" data-step="2">
+                        <div class="step-node-dot">
+                            <span class="node-pulse-ring"></span>
+                        </div>
+                        <span class="step-label">AUTHENTICATING</span>
+                    </div>
+                    <!-- Step 3: SYNCHRONIZING -->
+                    <div class="status-step-item" id="stepSynchronizing" data-step="3">
+                        <div class="step-node-dot">
+                            <span class="node-pulse-ring"></span>
+                        </div>
+                        <span class="step-label">SYNCHRONIZING</span>
+                    </div>
+                    <!-- Step 4: SYSTEM READY -->
+                    <div class="status-step-item" id="stepSystemReady" data-step="4">
+                        <div class="step-node-dot">
+                            <span class="node-pulse-ring"></span>
+                        </div>
+                        <span class="step-label">SYSTEM READY</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Final Cinematic Flash / Luminous Transition Layer -->
+        <div class="galaxy-exit-flash" id="galaxyExitFlash"></div>
+    </div>
+
     <!-- JavaScript Interactivity -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -998,6 +1476,34 @@
                     setTimeout(() => toast.remove(), 350);
                 }, 5000);
             });
+
+            // ── Dynamic Toast Generator ──
+            function showToast(message, type = 'error') {
+                const container = document.getElementById('toastContainer') || (function() {
+                    const c = document.createElement('div');
+                    c.className = 'toast-container';
+                    c.id = 'toastContainer';
+                    document.body.appendChild(c);
+                    return c;
+                })();
+
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.setAttribute('role', 'alert');
+
+                const icon = type === 'success'
+                    ? `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#059669" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+                    : `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#dc2626" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+
+                toast.innerHTML = `${icon}<div class="toast-message">${message}</div>`;
+                container.appendChild(toast);
+
+                setTimeout(() => toast.classList.add('show'), 50);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 350);
+                }, 5000);
+            }
 
             // ── Password Visibility Toggle ──
             const passwordInput = document.getElementById('password');
@@ -1030,34 +1536,163 @@
                 });
             }
 
-            // ── Guest Login Action (Autofill or Demo Guidance) ──
-            const btnGuestLogin = document.getElementById('btnGuestLogin');
-            const usernameInput = document.getElementById('username');
-            if (btnGuestLogin && usernameInput && passwordInput) {
-                btnGuestLogin.addEventListener('click', function () {
-                    usernameInput.value = 'guest@metalart.co.id';
-                    passwordInput.value = 'guest123';
-                    
-                    // Add subtle glow effect to inputs
-                    usernameInput.closest('.input-group-pill')?.focus();
-                    
-                    // Show a helpful hint
-                    const existingToast = document.querySelector('.toast-container');
-                    if (existingToast) {
-                        const guestToast = document.createElement('div');
-                        guestToast.className = 'toast success';
-                        guestToast.innerHTML = `
-                            <svg viewBox="0 0 24 24" width="20" height="20" stroke="#059669" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                            <div class="toast-message">Kredensial Guest telah diisikan. Klik "Masuk" untuk melanjutkan.</div>
+            // ── Cinematic Galaxy Transition Controller ──
+            const transitionOverlay = document.getElementById('galaxyTransitionOverlay');
+            const progressFill = document.getElementById('statusProgressFill');
+            const step1 = document.getElementById('stepConnecting');
+            const step2 = document.getElementById('stepAuthenticating');
+            const step3 = document.getElementById('stepSynchronizing');
+            const step4 = document.getElementById('stepSystemReady');
+
+            function startGalaxyTransition(redirectUrl) {
+                if (!transitionOverlay) {
+                    window.location.href = redirectUrl || '{{ route("dashboard.index") }}';
+                    return;
+                }
+
+                // Activate Galaxy Transition Screen (Phase 1: Enter)
+                transitionOverlay.classList.add('is-active');
+                transitionOverlay.setAttribute('aria-hidden', 'false');
+
+                // Step 1: CONNECTING (0 - 25%)
+                if (step1) step1.classList.add('is-active');
+                if (progressFill) progressFill.style.width = '12%';
+
+                // Step 2: AUTHENTICATING (25 - 50%) at 700ms
+                setTimeout(() => {
+                    if (step1) {
+                        step1.classList.remove('is-active');
+                        step1.classList.add('is-completed');
+                    }
+                    if (step2) step2.classList.add('is-active');
+                    if (progressFill) progressFill.style.width = '38%';
+                }, 750);
+
+                // Step 3: SYNCHRONIZING (50 - 75%) at 1650ms
+                setTimeout(() => {
+                    if (step2) {
+                        step2.classList.remove('is-active');
+                        step2.classList.add('is-completed');
+                    }
+                    if (step3) step3.classList.add('is-active');
+                    if (progressFill) progressFill.style.width = '68%';
+                }, 1650);
+
+                // Step 4: SYSTEM READY (75 - 100%) at 2550ms (Phase 3: System Ready)
+                setTimeout(() => {
+                    if (step3) {
+                        step3.classList.remove('is-active');
+                        step3.classList.add('is-completed');
+                    }
+                    if (step4) {
+                        step4.classList.add('is-active');
+                        step4.classList.add('is-completed');
+                    }
+                    if (progressFill) progressFill.style.width = '100%';
+                }, 2550);
+
+                // Phase 4: ENTER DASHBOARD (Zoom into galaxy core + HUD fade) at 3250ms
+                setTimeout(() => {
+                    transitionOverlay.classList.add('galaxy-exiting');
+                    transitionOverlay.classList.add('galaxy-zooming');
+                }, 3250);
+
+                // Phase 4.5: Luminous Flash / Seamless fade at 3650ms
+                setTimeout(() => {
+                    transitionOverlay.classList.add('galaxy-flashing');
+                }, 3650);
+
+                // Navigate to Dashboard at 3850ms
+                setTimeout(() => {
+                    try {
+                        sessionStorage.setItem('mai_portal_transition', '1');
+                    } catch (e) {}
+                    window.location.href = redirectUrl || '{{ route("dashboard.index") }}';
+                }, 3850);
+            }
+
+            // ── AJAX Login Form Submission Handler ──
+            const loginForm = document.getElementById('loginForm');
+            const submitBtn = loginForm ? loginForm.querySelector('.btn-submit-primary') : null;
+            const originalBtnContent = submitBtn ? submitBtn.innerHTML : '';
+
+            if (loginForm) {
+                loginForm.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+
+                    const usernameVal = document.getElementById('username')?.value.trim();
+                    const passwordVal = document.getElementById('password')?.value;
+                    const rememberVal = document.getElementById('remember')?.checked ? 1 : 0;
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                                      loginForm.querySelector('input[name="_token"]')?.value;
+
+                    // Clear previous inline field errors
+                    document.querySelectorAll('.input-group-pill').forEach(el => el.classList.remove('has-error'));
+                    document.querySelectorAll('.field-error-text').forEach(el => el.remove());
+
+                    if (!usernameVal || !passwordVal) {
+                        showToast('Username/Email dan Password wajib diisi.', 'error');
+                        return;
+                    }
+
+                    // Button loading state
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.style.opacity = '0.85';
+                        submitBtn.innerHTML = `
+                            <span style="display:inline-block; width:16px; height:16px; border:2px solid #fff; border-right-color:transparent; border-radius:50%; animation:hudRingSpin 0.75s linear infinite; margin-right:8px;"></span>
+                            <span>Memverifikasi...</span>
                         `;
-                        existingToast.appendChild(guestToast);
-                        setTimeout(() => guestToast.classList.add('show'), 50);
-                        setTimeout(() => {
-                            guestToast.classList.remove('show');
-                            setTimeout(() => guestToast.remove(), 350);
-                        }, 4000);
+                    }
+
+                    try {
+                        const response = await fetch(loginForm.action || '{{ url("/login") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': csrfToken
+                            },
+                            body: JSON.stringify({
+                                username: usernameVal,
+                                login: usernameVal,
+                                password: passwordVal,
+                                remember: rememberVal,
+                                _token: csrfToken
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                            // Login Success -> Trigger Galaxy Cinematic Transition!
+                            startGalaxyTransition(data.redirect);
+                        } else {
+                            // Login Failed -> Restore button & show error notification
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.style.opacity = '1';
+                                submitBtn.innerHTML = originalBtnContent;
+                            }
+
+                            const errorMessage = data.message || (data.errors && (data.errors.username?.[0] || data.errors.login?.[0])) || 'Kredensial login tidak valid.';
+                            showToast(errorMessage, 'error');
+
+                            // Highlight inputs
+                            document.getElementById('username')?.closest('.input-group-pill')?.classList.add('has-error');
+                            document.getElementById('password')?.closest('.input-group-pill')?.classList.add('has-error');
+                        }
+                    } catch (err) {
+                        // Fallback to standard form submission if fetch completely fails
+                        console.error('AJAX login error:', err);
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.style.opacity = '1';
+                            submitBtn.innerHTML = originalBtnContent;
+                        }
+                        showToast('Terjadi kesalahan koneksi. Mencoba login normal...', 'error');
+                        loginForm.submit();
                     }
                 });
             }

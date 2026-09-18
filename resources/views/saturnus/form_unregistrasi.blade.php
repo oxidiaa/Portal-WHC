@@ -653,7 +653,7 @@
                 </div>
             </div>
             <div class="form-reg-header-center">
-                <h2 class="form-reg-title">FORM PENDAFTARAN UNREGISTRASI CONSUMABLE</h2>
+                <h2 class="form-reg-title">FORM PENGELUARAN BARANG CONSUMABLE</h2>
                 <p class="form-reg-nodoc" id="preview-docno">No Doc : W1-CDS-PP-20/F2 Rev 0 &nbsp;|&nbsp; No. Form: <span id="form-number-display" style="font-weight: 700; color: var(--color-primary);">{{ $currentFormNo }}</span></p>
             </div>
             <div class="form-reg-header-right"></div>

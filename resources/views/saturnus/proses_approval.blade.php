@@ -168,7 +168,7 @@
                 <span>MAI CONSUMABLE REGISTRY & WORKSPACE</span>
             </div>
             <h1 class="galactic-title" style="font-size: 1.6rem; margin-bottom: 0.2rem;">Proses Approval Form Registrasi</h1>
-            <p class="galactic-subtitle">Monitoring formulir pendaftaran barang consumable yang masih dalam proses approval (Outstanding PP).</p>
+            <p class="galactic-subtitle">Monitoring formulir pendaftaran barang consumable yang masih dalam proses approval (Outstanding).</p>
         </div>
     </div>
 
@@ -247,7 +247,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
             <div>
                 <h3 style="font-family: var(--font-heading); font-weight: 700; color: var(--text-primary); margin: 0; font-size: 1.15rem;">
-                    Daftar Form Outstanding PP (Dalam Proses Approval)
+                    Daftar Form Outstanding (Dalam Proses Approval)
                 </h3>
                 <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.2rem; margin-bottom: 0;">
                     Alur persetujuan: <strong>User (Pembuat)</strong> ➔ <strong>Staff / Section Head</strong> ➔ <strong>Accounting</strong> ➔ <strong>Warehouse Consumable (Registrasi)</strong>. Formulir yang selesai otomatis berpindah ke <a href="{{ route('saturnus.data_view') }}" style="color: var(--color-primary); font-weight: 700; text-decoration: underline;">Data Registrasi (History)</a>.
