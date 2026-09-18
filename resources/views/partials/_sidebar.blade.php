@@ -3,9 +3,9 @@
     $userRole = strtoupper(trim($user->role ?? 'GUEST'));
     $isMasterOrAdmin = in_array($userRole, ['MASTER', 'ADMIN']) || ($user && $user->isMaster());
     
-    $canAccessMars = $user && ($isMasterOrAdmin || $user->canAccessModule('mars') || $user->hasPermission('mars.*'));
-    $canAccessSaturnus = $user && ($isMasterOrAdmin || $user->canAccessModule('saturnus') || $user->hasPermission('saturnus.*'));
-    $canAccessSettings = $user && ($isMasterOrAdmin || $user->canAccessModule('settings') || $user->hasPermission('settings.*'));
+    $canAccessMars = $user && ($isMasterOrAdmin || $user->canAccessModule('mars'));
+    $canAccessSaturnus = $user && ($isMasterOrAdmin || $user->canAccessModule('saturnus'));
+    $canAccessSettings = $user && ($isMasterOrAdmin || $user->canAccessModule('settings'));
 
     $isMarsActive = request()->routeIs('mars.*') || request()->routeIs('item_master.*') || request()->routeIs('data_po.*') || request()->routeIs('item_minim.*') || request()->routeIs('item_outstanding.*') || request()->routeIs('kedatangan_barang.*') || request()->routeIs('history.*');
     $isSaturnusActive = request()->routeIs('saturnus.*') || request()->routeIs('form_registrasi*') || request()->routeIs('form-registrasi*') || request()->routeIs('form_unregistrasi*') || request()->routeIs('form-unregistrasi*') || request()->routeIs('proses-approval*') || request()->routeIs('data-view*') || request()->routeIs('unregistrasi*');
@@ -102,8 +102,8 @@
         {{-- 3. MONITORING / SATURNUS GROUP --}}
         @if($canAccessSaturnus)
         @php
-            $canRegistrasi = $isMasterOrAdmin || $user->hasPermission('saturnus.registrasi.view') || $user->hasPermission('saturnus.registrasi.approve') || $user->hasPermission('saturnus.*');
-            $canUnregistrasi = $isMasterOrAdmin || $user->hasPermission('saturnus.unregistrasi.view') || $user->hasPermission('saturnus.unregistrasi.approve') || $user->hasPermission('saturnus.*');
+            $canRegistrasi = $isMasterOrAdmin || $user->hasPermission('saturnus.registrasi.view') || $user->hasPermission('saturnus.registrasi.approve');
+            $canUnregistrasi = $isMasterOrAdmin || $user->hasPermission('saturnus.unregistrasi.view') || $user->hasPermission('saturnus.unregistrasi.approve');
         @endphp
         <div class="nav-tree-group">
             <div class="nav-tree-header" data-bs-toggle="collapse" data-bs-target="#collapseSaturnus" aria-expanded="{{ $isSaturnusActive ? 'true' : 'false' }}">
@@ -116,7 +116,7 @@
             
             <div class="collapse {{ $isSaturnusActive ? 'show' : '' }}" id="collapseSaturnus">
                 <div class="nav-tree-sublist saturnus-tree-sublist">
-                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.directory.view') || $user->hasPermission('saturnus.*'))
+                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.directory.view') || $user->hasPermission('saturnus.registrasi.view') || $user->hasPermission('saturnus.unregistrasi.view'))
                     <a href="{{ route('saturnus.dashboard') }}" class="sub-tree-link {{ request()->routeIs('saturnus.dashboard') ? 'active-tree-item' : '' }}">
                         @if(request()->routeIs('saturnus.dashboard'))<span class="active-bar-indicator"></span>@endif
                         <i data-feather="activity" class="sub-link-icon"></i>
@@ -132,7 +132,7 @@
                         </span>
                     </div>
 
-                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.registrasi.view') || $user->hasPermission('saturnus.*'))
+                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.registrasi.view'))
                     <a href="{{ route('saturnus.form_registrasi') }}" class="sub-tree-link sub-link-reg {{ request()->routeIs('saturnus.form_registrasi') || request()->routeIs('form-registrasi') ? 'active-tree-item active-tree-reg' : '' }}">
                         @if(request()->routeIs('saturnus.form_registrasi') || request()->routeIs('form-registrasi'))<span class="active-bar-indicator bar-reg"></span>@endif
                         <i data-feather="file-plus" class="sub-link-icon"></i>
@@ -140,7 +140,7 @@
                     </a>
                     @endif
 
-                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.registrasi.approve') || $user->hasPermission('saturnus.registrasi.view') || $user->hasPermission('saturnus.*'))
+                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.registrasi.approve') || $user->hasPermission('saturnus.registrasi.view'))
                     <a href="{{ route('saturnus.proses_approval') }}" class="sub-tree-link sub-link-reg {{ request()->routeIs('saturnus.proses_approval') || request()->routeIs('proses-approval') ? 'active-tree-item active-tree-reg' : '' }}">
                         @if(request()->routeIs('saturnus.proses_approval') || request()->routeIs('proses-approval'))<span class="active-bar-indicator bar-reg"></span>@endif
                         <i data-feather="check-circle" class="sub-link-icon"></i>
@@ -148,7 +148,7 @@
                     </a>
                     @endif
 
-                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.directory.view') || $user->hasPermission('saturnus.registrasi.view') || $user->hasPermission('saturnus.*'))
+                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.directory.view') || $user->hasPermission('saturnus.registrasi.view'))
                     <a href="{{ route('saturnus.data_view') }}" class="sub-tree-link sub-link-reg {{ request()->routeIs('saturnus.data_view') || request()->routeIs('data-view') ? 'active-tree-item active-tree-reg' : '' }}">
                         @if(request()->routeIs('saturnus.data_view') || request()->routeIs('data-view'))<span class="active-bar-indicator bar-reg"></span>@endif
                         <i data-feather="layers" class="sub-link-icon"></i>
@@ -165,7 +165,7 @@
                         </span>
                     </div>
 
-                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.unregistrasi.view') || $user->hasPermission('saturnus.*'))
+                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.unregistrasi.view'))
                     <a href="{{ route('saturnus.form_unregistrasi') }}" class="sub-tree-link sub-link-unreg {{ request()->routeIs('saturnus.form_unregistrasi') || request()->routeIs('form-unregistrasi') ? 'active-tree-item active-tree-unreg' : '' }}">
                         @if(request()->routeIs('saturnus.form_unregistrasi') || request()->routeIs('form-unregistrasi'))<span class="active-bar-indicator bar-unreg"></span>@endif
                         <i data-feather="file-minus" class="sub-link-icon"></i>
@@ -173,7 +173,7 @@
                     </a>
                     @endif
 
-                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.unregistrasi.approve') || $user->hasPermission('saturnus.unregistrasi.view') || $user->hasPermission('saturnus.*'))
+                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.unregistrasi.approve') || $user->hasPermission('saturnus.unregistrasi.view'))
                     <a href="{{ route('saturnus.unregistrasi_approval') }}" class="sub-tree-link sub-link-unreg {{ request()->routeIs('saturnus.unregistrasi_approval') || request()->routeIs('saturnus.unregistrasi.approval') || request()->routeIs('unregistrasi-approval*') ? 'active-tree-item active-tree-unreg' : '' }}">
                         @if(request()->routeIs('saturnus.unregistrasi_approval') || request()->routeIs('saturnus.unregistrasi.approval') || request()->routeIs('unregistrasi-approval*'))<span class="active-bar-indicator bar-unreg"></span>@endif
                         <i data-feather="shield" class="sub-link-icon"></i>
@@ -181,7 +181,7 @@
                     </a>
                     @endif
 
-                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.directory.view') || $user->hasPermission('saturnus.unregistrasi.view') || $user->hasPermission('saturnus.*'))
+                    @if($isMasterOrAdmin || $user->hasPermission('saturnus.unregistrasi.view'))
                     <a href="{{ route('saturnus.unregistrasi_history') }}" class="sub-tree-link sub-link-unreg {{ request()->routeIs('saturnus.unregistrasi_history') || request()->routeIs('saturnus.unregistrasi.history') || request()->routeIs('unregistrasi-history*') ? 'active-tree-item active-tree-unreg' : '' }}">
                         @if(request()->routeIs('saturnus.unregistrasi_history') || request()->routeIs('saturnus.unregistrasi.history') || request()->routeIs('unregistrasi-history*'))<span class="active-bar-indicator bar-unreg"></span>@endif
                         <i data-feather="archive" class="sub-link-icon"></i>

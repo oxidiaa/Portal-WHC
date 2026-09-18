@@ -4,9 +4,9 @@
     $userRole = strtoupper(trim($user->role ?? 'GUEST'));
     $isMasterOrAdmin = in_array($userRole, ['MASTER', 'ADMIN']) || ($user && $user->isMaster());
 
-    $canAccessMars = $user && ($isMasterOrAdmin || $user->canAccessModule('mars') || $user->hasPermission('mars.*'));
-    $canAccessSaturnus = $user && ($isMasterOrAdmin || $user->canAccessModule('saturnus') || $user->hasPermission('saturnus.*'));
-    $canAccessSettings = $user && ($isMasterOrAdmin || $user->canAccessModule('settings') || $user->hasPermission('settings.*'));
+    $canAccessMars = $user && ($isMasterOrAdmin || $user->canAccessModule('mars'));
+    $canAccessSaturnus = $user && ($isMasterOrAdmin || $user->canAccessModule('saturnus'));
+    $canAccessSettings = $user && ($isMasterOrAdmin || $user->canAccessModule('settings'));
 @endphp
 
 <!-- partial:partials/_navbar.html -->

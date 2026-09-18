@@ -121,19 +121,35 @@ class User extends Authenticatable
 
         $rolePermissions = $roleModel->permissions->pluck('slug')->toArray();
 
+        // 1. If role has global wildcard '*'
+        if (in_array('*', $rolePermissions, true)) {
+            return true;
+        }
+
         foreach ($permissions as $permission) {
             $perm = trim($permission);
             if (empty($perm)) continue;
 
+            // 2. Direct exact match
             if (in_array($perm, $rolePermissions, true)) {
                 return true;
             }
 
-            // Support wildcards like "saturnus.*" or "mars.*" or "settings.*"
+            // 3. If role has module wildcard permission (e.g. role was granted 'saturnus.*', which covers 'saturnus.unregistrasi.view')
+            foreach ($rolePermissions as $rp) {
+                if (str_ends_with($rp, '.*')) {
+                    $rpPrefix = substr($rp, 0, -2);
+                    if ($rpPrefix === $perm || str_starts_with($perm, $rpPrefix . '.')) {
+                        return true;
+                    }
+                }
+            }
+
+            // 4. If the permission string itself requested a wildcard check (e.g. $user->hasPermission('saturnus.*'))
             if (str_ends_with($perm, '.*')) {
                 $prefix = substr($perm, 0, -2);
                 foreach ($rolePermissions as $rp) {
-                    if (str_starts_with($rp, $prefix . '.')) {
+                    if ($rp === $prefix || str_starts_with($rp, $prefix . '.')) {
                         return true;
                     }
                 }

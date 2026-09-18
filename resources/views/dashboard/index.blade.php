@@ -9,8 +9,8 @@
     $userRole = strtoupper(trim($user->role ?? 'GUEST'));
     $isMasterOrAdmin = in_array($userRole, ['MASTER', 'ADMIN']) || ($user && $user->isMaster());
     
-    $canAccessMars = $user && ($isMasterOrAdmin || $user->canAccessModule('mars') || $user->hasPermission('mars.*'));
-    $canAccessSaturnus = $user && ($isMasterOrAdmin || $user->canAccessModule('saturnus') || $user->hasPermission('saturnus.*'));
+    $canAccessMars = $user && ($isMasterOrAdmin || $user->canAccessModule('mars'));
+    $canAccessSaturnus = $user && ($isMasterOrAdmin || $user->canAccessModule('saturnus'));
 @endphp
 
 <!-- Three.js 3D WebGL Engine from CDN -->

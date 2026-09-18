@@ -4,6 +4,12 @@
 
 @section('content')
 
+@php
+    $user = auth()->user();
+    $userRole = strtoupper(trim($user->role ?? 'GUEST'));
+    $isMasterOrAdmin = in_array($userRole, ['MASTER', 'ADMIN']) || ($user && $user->isMaster());
+@endphp
+
 <style>
     /* ==========================================================================
        🪐 DEEP COSMIC BLACK SPACE BACKGROUND (ORIGINAL SATURNUS THEME)
@@ -161,6 +167,7 @@
 
     <!-- Floating Sci-Fi Command Dock (Clean Bottom Quick Launcher) -->
     <div class="saturn-floating-dock" style="display: flex; gap: 0.65rem; flex-wrap: wrap; justify-content: center;">
+        @if($isMasterOrAdmin || ($user && $user->hasPermission('saturnus.registrasi.view')))
         <a href="{{ route('saturnus.form_registrasi') }}" class="dock-launcher-btn primary">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -168,7 +175,9 @@
             </svg>
             <span>+ Form Registrasi</span>
         </a>
+        @endif
 
+        @if($isMasterOrAdmin || ($user && $user->hasPermission('saturnus.unregistrasi.view')))
         <a href="{{ route('saturnus.form_unregistrasi') }}" class="dock-launcher-btn secondary">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -177,7 +186,9 @@
             </svg>
             <span>- Form Unregistrasi</span>
         </a>
+        @endif
 
+        @if($isMasterOrAdmin || ($user && ($user->hasPermission('saturnus.unregistrasi.approve') || $user->hasPermission('saturnus.unregistrasi.view'))))
         <a href="{{ route('saturnus.unregistrasi_approval') }}" class="dock-launcher-btn secondary">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -186,7 +197,9 @@
             </svg>
             <span>Approval Unregistrasi</span>
         </a>
+        @endif
 
+        @if($isMasterOrAdmin || ($user && $user->hasPermission('saturnus.unregistrasi.view')))
         <a href="{{ route('saturnus.unregistrasi_history') }}" class="dock-launcher-btn secondary">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -194,6 +207,7 @@
             </svg>
             <span>History Discontinue</span>
         </a>
+        @endif
     </div>
 </div>
 
