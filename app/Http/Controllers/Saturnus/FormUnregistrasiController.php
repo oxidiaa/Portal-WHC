@@ -9,6 +9,7 @@ use App\Models\UnregistrasiApproval;
 use App\Models\UnregistrasiComment;
 use App\Models\FormItem;
 use App\Models\User;
+use App\Services\ApprovalEmailNotificationService;
 use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -290,6 +291,17 @@ class FormUnregistrasiController extends Controller
             ]
         );
 
+        // Send real-time notification to Staff approver(s)
+        $itemsList = UnregistrasiItem::where('form_number', $targetFormNo)->get()->toArray();
+        app(ApprovalEmailNotificationService::class)->notifyStaffOnFormCreated(
+            formNumber: $targetFormNo,
+            moduleName: 'Unregistrasi Consumable',
+            requestorName: $currentUser->name ?? 'User',
+            requestorDept: $currentUser->department ?? 'Production',
+            formDate: date('d/m/Y'),
+            items: $itemsList
+        );
+
         return redirect()->route('saturnus.form_unregistrasi', ['form' => $targetFormNo])
             ->with('success', 'Formulir ' . $targetFormNo . ' untuk barang "' . $item->nama_barang . '" berhasil dibuat.');
     }
@@ -370,6 +382,20 @@ class FormUnregistrasiController extends Controller
             $approval->save();
 
             $msg = "Form $formNo berhasil disetujui oleh Staff ($name). Tahap selanjutnya: Verifikasi Warehouse Consumable.";
+
+            // Send real-time notification to Warehouse Consumable team
+            $itemsList = UnregistrasiItem::where('form_number', $formNo)->get()->toArray();
+            app(ApprovalEmailNotificationService::class)->notifyWarehouseOnNextStage(
+                formNumber: $formNo,
+                moduleName: 'Unregistrasi Consumable',
+                approvedByRole: 'Staff',
+                approverName: $name,
+                approverComment: $comment,
+                requestorName: $approval->requestor_name ?: $reqName,
+                requestorDept: $approval->requestor_dept ?: $reqDept,
+                formDate: $approval->form_date ?: date('d/m/Y'),
+                items: $itemsList
+            );
         } elseif ($role === 'warehouse') {
             if (!$isMaster && !str_contains($currentUserRole, 'WAREHOUSE')) {
                 if ($request->wantsJson() || $request->ajax()) {
@@ -392,6 +418,23 @@ class FormUnregistrasiController extends Controller
             $approval->save();
 
             $msg = "Form $formNo telah berhasil diverifikasi dan discontinue oleh Warehouse Consumable ($name). Proses Selesai.";
+
+            // Send confirmation email to Requestor
+            $itemsList = UnregistrasiItem::where('form_number', $formNo)->get()->toArray();
+            $reqUser = $approval->user_id ? User::find($approval->user_id) : null;
+            $reqEmail = $reqUser?->email;
+
+            app(ApprovalEmailNotificationService::class)->notifyRequestorOnFinalApproval(
+                formNumber: $formNo,
+                moduleName: 'Unregistrasi Consumable',
+                warehouseSignerName: $name,
+                warehouseComment: $comment,
+                requestorEmail: $reqEmail,
+                requestorName: $approval->requestor_name ?: $reqName,
+                requestorDept: $approval->requestor_dept ?: $reqDept,
+                formDate: $approval->form_date ?: date('d/m/Y'),
+                items: $itemsList
+            );
         }
 
         if ($request->wantsJson() || $request->ajax()) {

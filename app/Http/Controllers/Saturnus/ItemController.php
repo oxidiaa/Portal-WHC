@@ -10,6 +10,7 @@ use App\Models\UnregistrasiItem;
 use App\Models\User;
 use App\Models\FormApproval;
 use App\Models\FormComment;
+use App\Services\ApprovalEmailNotificationService;
 use Illuminate\Support\Facades\DB;
 
 class ItemController extends Controller
@@ -484,6 +485,17 @@ class ItemController extends Controller
                     'user_comment'     => 'Formulir pendaftaran diajukan.',
                 ]
             );
+
+            // Send real-time notification to Staff approver(s)
+            $itemsList = FormItem::where('form_number', $targetForm)->get()->toArray();
+            app(ApprovalEmailNotificationService::class)->notifyStaffOnFormCreated(
+                formNumber: $targetForm,
+                moduleName: 'Registrasi Consumable',
+                requestorName: $currentUser->name ?? 'User',
+                requestorDept: $currentUser->department ?? 'Production',
+                formDate: date('d/m/Y'),
+                items: $itemsList
+            );
         }
 
         $redirectParams = $targetForm ? ['form' => $targetForm] : [];
@@ -568,6 +580,18 @@ class ItemController extends Controller
             $approval->save();
 
             $msg = "Form $formNo berhasil disetujui oleh Staff ($name). Tahap selanjutnya: Butuh Approval Accounting.";
+
+            // Send real-time notification to Accounting team
+            $itemsList = FormItem::where('form_number', $formNo)->get()->toArray();
+            app(ApprovalEmailNotificationService::class)->notifyAccountingOnStaffApproved(
+                formNumber: $formNo,
+                staffSignerName: $name,
+                staffComment: $comment,
+                requestorName: $approval->requestor_name ?: $reqName,
+                requestorDept: $approval->requestor_dept ?: $reqDept,
+                formDate: $approval->form_date ?: date('d/m/Y'),
+                items: $itemsList
+            );
         } elseif ($role === 'accounting') {
             if (!$isMaster && !str_contains($currentUserRole, 'ACC')) {
                 if ($request->wantsJson() || $request->ajax()) {
@@ -590,6 +614,20 @@ class ItemController extends Controller
             $approval->save();
 
             $msg = "Form $formNo berhasil disetujui oleh Accounting ($name). Tahap selanjutnya: Butuh Approval Warehouse Consumable.";
+
+            // Send real-time notification to Warehouse Consumable team
+            $itemsList = FormItem::where('form_number', $formNo)->get()->toArray();
+            app(ApprovalEmailNotificationService::class)->notifyWarehouseOnNextStage(
+                formNumber: $formNo,
+                moduleName: 'Registrasi Consumable',
+                approvedByRole: 'Accounting',
+                approverName: $name,
+                approverComment: $comment,
+                requestorName: $approval->requestor_name ?: $reqName,
+                requestorDept: $approval->requestor_dept ?: $reqDept,
+                formDate: $approval->form_date ?: date('d/m/Y'),
+                items: $itemsList
+            );
         } elseif ($role === 'warehouse') {
             if (!$isMaster && !str_contains($currentUserRole, 'WAREHOUSE')) {
                 if ($request->wantsJson() || $request->ajax()) {
@@ -612,6 +650,23 @@ class ItemController extends Controller
             $approval->save();
 
             $msg = "Form $formNo telah berhasil diregistrasi oleh Warehouse Consumable ($name). Proses Selesai.";
+
+            // Send confirmation email to Requestor
+            $itemsList = FormItem::where('form_number', $formNo)->get()->toArray();
+            $reqUser = $approval->user_id ? User::find($approval->user_id) : null;
+            $reqEmail = $reqUser?->email;
+
+            app(ApprovalEmailNotificationService::class)->notifyRequestorOnFinalApproval(
+                formNumber: $formNo,
+                moduleName: 'Registrasi Consumable',
+                warehouseSignerName: $name,
+                warehouseComment: $comment,
+                requestorEmail: $reqEmail,
+                requestorName: $approval->requestor_name ?: $reqName,
+                requestorDept: $approval->requestor_dept ?: $reqDept,
+                formDate: $approval->form_date ?: date('d/m/Y'),
+                items: $itemsList
+            );
         }
 
         if ($request->wantsJson() || $request->ajax()) {
