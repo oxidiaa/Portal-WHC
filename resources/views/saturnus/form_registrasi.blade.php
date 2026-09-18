@@ -408,7 +408,7 @@
                 <span class="pulse-beacon"></span>
                 <span>MAI CONSUMABLE REGISTRY & WORKSPACE</span>
             </div>
-            <h1 class="galactic-title" style="font-size: 1.6rem; margin-bottom: 0.2rem;">Form Pendaftaran Barang Consumable</h1>
+            <h1 class="galactic-title" style="font-size: 1.6rem; margin-bottom: 0.2rem;">Form Registrasi Item Consumable</h1>
             <p class="galactic-subtitle">Lembar kerja resmi pendaftaran barang consumable, tabel item, tanda tangan QR Code, dan cetak A4.</p>
         </div>
         <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
@@ -467,7 +467,7 @@
                 </div>
             </div>
             <div class="form-reg-header-center">
-                <h2 class="form-reg-title">FORM PENDAFTARAN BARANG CONSUMABLE</h2>
+                <h2 class="form-reg-title">FORM REGISTRASI ITEM CONSUMABLE</h2>
                 <p class="form-reg-nodoc" id="preview-docno">No Doc : W1-CDS-PP-20/F1 Rev 2 &nbsp;|&nbsp; No. Form: <span id="form-number-display" style="font-weight: 700; color: var(--color-primary);">{{ $currentFormNo }}</span></p>
             </div>
             <div class="form-reg-header-right"></div>
