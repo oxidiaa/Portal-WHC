@@ -696,7 +696,7 @@ html, body, .main-wrapper, .page-wrapper, .page-content {
             <div class="orbit-logo-ring">
                 <div class="orbit-logo-dot"></div>
             </div>
-            <span class="orbit-brand-text">ORBIT</span>
+            <span class="orbit-brand-text">NOVA</span>
         </a>
 
         <ul class="orbit-nav-links">
@@ -721,7 +721,7 @@ html, body, .main-wrapper, .page-wrapper, .page-content {
     <div class="orbit-hero-content">
         <!-- Welcoming Typography -->
         <div class="orbit-hero-header" id="orbitHeader">
-            <span class="orbit-welcome-tag">WELCOME TO ORBIT</span>
+            <span class="orbit-welcome-tag">WELCOME TO NOVA</span>
             <h1 class="orbit-main-heading">CHOOSE YOUR DESTINATION</h1>
         </div>
 
