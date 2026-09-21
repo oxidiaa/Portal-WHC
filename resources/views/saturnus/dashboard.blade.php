@@ -1601,10 +1601,16 @@
                     </div>
                     <p>Kirim notifikasi email otomatis ke approver terkait formulir pending approval.</p>
                 </div>
+                @if($isMasterOrAdmin)
                 <a href="{{ route('saturnus.email_reminder') }}" class="launchpad-btn primary">
                     <span>Kirim Pengingat Email</span>
                     <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </a>
+                @else
+                <button class="launchpad-btn primary" disabled style="opacity: 0.5; cursor: not-allowed; background: rgba(56, 189, 248, 0.2); color: rgba(255, 255, 255, 0.5); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <span>Khusus Administrator</span>
+                </button>
+                @endif
             </div>
         </div>
     </div>

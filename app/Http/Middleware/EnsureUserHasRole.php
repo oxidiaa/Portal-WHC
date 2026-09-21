@@ -26,6 +26,13 @@ class EnsureUserHasRole
             return $next($request);
         }
 
-        abort(403, 'Akses Ditolak: Anda tidak memiliki izin untuk mengakses halaman ini.');
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses Ditolak: Fitur ini hanya dapat diakses oleh Administrator.'
+            ], 403);
+        }
+
+        abort(403, 'Akses Ditolak: Halaman ini hanya dapat diakses oleh Administrator.');
     }
 }

@@ -42,6 +42,7 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'View SATURNUS Form Unregistrasi', 'slug' => 'saturnus.unregistrasi.view', 'module' => 'saturnus', 'description' => 'Melihat checksheet form unregistrasi'],
             ['name' => 'Create SATURNUS Form Unregistrasi', 'slug' => 'saturnus.unregistrasi.create', 'module' => 'saturnus', 'description' => 'Membuat dan mengisi checksheet unregistrasi'],
             ['name' => 'Approve SATURNUS Unregistrasi', 'slug' => 'saturnus.unregistrasi.approve', 'module' => 'saturnus', 'description' => 'Menandatangani / approve form unregistrasi'],
+            ['name' => 'Manage SATURNUS Email Reminder', 'slug' => 'saturnus.email_reminder.manage', 'module' => 'saturnus', 'description' => 'Kirim email pengingat approval dan jadwal broadcast'],
 
             // Settings Permissions
             ['name' => 'Manage Users', 'slug' => 'settings.users.manage', 'module' => 'settings', 'description' => 'Kelola akun pengguna'],
