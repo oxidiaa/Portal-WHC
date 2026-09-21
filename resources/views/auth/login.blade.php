@@ -176,49 +176,60 @@
 
         .welcome-title-wrapper {
             position: relative;
-            padding-left: 1.25rem;
-            margin-bottom: 0.75rem;
+            padding-left: 1.35rem;
+            margin-bottom: 1rem;
         }
 
         .welcome-accent-bar {
             position: absolute;
             left: 0;
-            top: 6px;
-            bottom: 6px;
-            width: 4px;
-            background: linear-gradient(180deg, #1d68e0, #0284c7);
+            top: 4px;
+            bottom: 4px;
+            width: 5px;
+            background: #0062ff;
+            background: linear-gradient(180deg, #0066ff 0%, #0052fe 100%);
             border-radius: 4px;
         }
 
-        .welcome-title {
+        .welcome-text-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .welcome-title-top {
             font-family: var(--font-head);
-            font-size: 2.75rem;
+            font-size: 2.85rem;
             font-weight: 800;
-            line-height: 1.08;
-            letter-spacing: -0.03em;
-            color: var(--text-dark);
+            line-height: 1.05;
+            letter-spacing: -0.025em;
+            color: #0b132b;
             margin: 0;
+            display: block;
         }
 
-        .welcome-saturnus {
+        .welcome-nova-title {
             font-family: var(--font-head);
-            font-size: 2.25rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            color: #000000;
-            padding-left: 1.25rem;
-            margin-top: 0.25rem;
-            margin-bottom: 0.75rem;
-            line-height: 1.1;
+            font-size: 5.25rem;
+            font-weight: 900;
+            line-height: 0.95;
+            letter-spacing: -0.015em;
+            color: #0052fe;
+            background: linear-gradient(180deg, #1d64ff 0%, #0052fe 55%, #0044cc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0.1rem 0 0 0;
+            text-transform: uppercase;
         }
 
-        .welcome-desc {
-            font-size: 1rem;
-            line-height: 1.55;
-            color: var(--text-body);
-            max-width: 4000px;
-            padding-left: 1.25rem;
-            font-weight: 450;
+        .welcome-tagline {
+            font-family: var(--font-main);
+            font-size: 0.875rem;
+            font-weight: 700;
+            letter-spacing: 0.17em;
+            line-height: 1.4;
+            color: #1e293b;
+            text-transform: uppercase;
+            padding-left: 1.35rem;
             margin: 0;
         }
 
@@ -706,8 +717,17 @@
                 padding: 2.5rem 2.5rem 1.5rem;
             }
 
-            .welcome-title {
-                font-size: 2.25rem;
+            .welcome-title-top {
+                font-size: 2.35rem;
+            }
+
+            .welcome-nova-title {
+                font-size: 4.2rem;
+            }
+
+            .welcome-tagline {
+                font-size: 0.8rem;
+                letter-spacing: 0.14em;
             }
 
             .bottom-features-grid {
@@ -746,19 +766,21 @@
 
             .welcome-title-wrapper {
                 padding-left: 0;
+                align-items: center;
             }
 
             .welcome-accent-bar {
                 display: none;
             }
 
-            .welcome-saturnus {
-                padding-left: 0;
+            .welcome-text-content {
+                align-items: center;
             }
 
-            .welcome-desc {
+            .welcome-tagline {
                 padding-left: 0;
                 max-width: 440px;
+                text-align: center;
             }
 
             .login-card-container {
@@ -782,8 +804,17 @@
                 border-radius: 28px;
             }
 
-            .welcome-title {
-                font-size: 2rem;
+            .welcome-title-top {
+                font-size: 1.85rem;
+            }
+
+            .welcome-nova-title {
+                font-size: 3.25rem;
+            }
+
+            .welcome-tagline {
+                font-size: 0.725rem;
+                letter-spacing: 0.1em;
             }
 
             .bottom-features-grid {
@@ -1215,15 +1246,13 @@
             <div class="login-hero-left">
                 <div class="welcome-title-wrapper">
                     <div class="welcome-accent-bar"></div>
-                    <h1 class="welcome-title" style="color: black;">
-                        Welcome<br>Back
-                    </h1>
+                    <div class="welcome-text-content">
+                        <span class="welcome-title-top">Welcome to</span>
+                        <h1 class="welcome-nova-title">NOVA</h1>
+                    </div>
                 </div>
-                <!-- <h2 class="welcome-saturnus" style="color: black;">
-                    WAREHOUSE CONSUMABLE SYSTEM
-                </h2> -->
-                <p class="welcome-desc" style="color: black;">
-                    WAREHOUSE CONSUMABLE SYSTEM
+                <p class="welcome-tagline">
+                    ONE PORTAL. ALL WAREHOUSE INFORMATION.
                 </p>
             </div>
 
