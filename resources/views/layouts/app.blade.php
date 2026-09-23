@@ -18,7 +18,6 @@
     <link rel="stylesheet" href="{{ asset('assets/vendors/flatpickr/flatpickr.min.css') }}">
     <!-- Feather Font Icons -->
     <link rel="stylesheet" href="{{ asset('assets/fonts/feather-font/css/iconfont.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/vendors/flag-icon-css/css/flag-icon.min.css') }}">
     <!-- Layout styles (NobleUI / MARS base) -->
     <link rel="stylesheet" href="{{ asset('assets/css/demo1/style.css') }}">
     <!-- Unified Portal Custom Enhancements -->
