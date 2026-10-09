@@ -438,7 +438,7 @@
         // Group items by form_number
         const formMap = {};
         serverFormItems.forEach(item => {
-            const fNo = item.form_number || '01/PRODUCTION/' + new Date().getFullYear();
+            const fNo = item.form_number || ('01/PRODUCTION/' + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + new Date().getFullYear());
             if (!formMap[fNo]) {
                 formMap[fNo] = {
                     formNo: fNo,

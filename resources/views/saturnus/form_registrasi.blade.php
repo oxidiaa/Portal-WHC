@@ -1065,10 +1065,12 @@
         const dateObj = new Date();
         const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
         const yyyy = dateObj.getFullYear();
+        const targetMY = `${mm}-${yyyy}`;
         let dept = currentUserDept || 'PRODUCTION';
         if (dept.includes('PRODUCTION') && dept.includes('DIES ASSY')) {
             dept = 'PRODUCTION';
         }
+        const targetDept = dept.toUpperCase();
 
         // Find max sequence in current month and department
         let maxSeq = 0;
@@ -1076,14 +1078,18 @@
             if (item.form_number && item.form_number.includes('/')) {
                 const parts = item.form_number.split('/');
                 if (parts.length >= 3) {
-                    const seq = parseInt(parts[0], 10);
-                    if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+                    const itemDept = parts[1] ? parts[1].trim().toUpperCase() : '';
+                    const itemMY = parts[2] ? parts[2].trim() : '';
+                    if (itemDept === targetDept && itemMY === targetMY) {
+                        const seq = parseInt(parts[0], 10);
+                        if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+                    }
                 }
             }
         });
 
         const nextSeq = String(maxSeq + 1).padStart(2, '0');
-        const nextFormNo = `${nextSeq}/${dept}/${mm}-${yyyy}`;
+        const nextFormNo = `${nextSeq}/${dept}/${targetMY}`;
 
         selectedChecksheetId = nextFormNo;
         const hiddenFormNo = document.getElementById('modal_form_number');

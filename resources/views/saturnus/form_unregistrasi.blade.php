@@ -1724,21 +1724,35 @@
         }
 
         let maxSeq = 0;
+        const targetDept = defaultDeptTag.toUpperCase();
+
+        const allCheckedForms = new Set();
+        serverFormItems.forEach(i => { if (i.form_number) allCheckedForms.add(i.form_number); });
+        serverFormApprovals.forEach(a => { if (a.form_number) allCheckedForms.add(a.form_number); });
         for (const fNo in checksheets) {
-            const parts = fNo.split('/');
-            const fDept = parts.length >= 2 ? parts[1].trim().toUpperCase() : '';
-            const fMY = parts.length >= 3 ? parts[2].trim() : '';
-            if (fDept === userTag.toUpperCase() && fMY === monthYearStr) {
-                const seq = parseInt(parts[0], 10);
-                if (!isNaN(seq) && seq > maxSeq) {
-                    maxSeq = seq;
-                }
+            const cs = checksheets[fNo];
+            if (cs && cs.items && cs.items.length > 0) {
+                allCheckedForms.add(fNo);
             }
         }
 
+        allCheckedForms.forEach(fNo => {
+            const parts = fNo.split('/');
+            if (parts.length >= 3) {
+                const fDept = parts[1].trim().toUpperCase();
+                const fMY = parts[2].trim();
+                if (fDept === targetDept && fMY === monthYearStr) {
+                    const seq = parseInt(parts[0], 10);
+                    if (!isNaN(seq) && seq > maxSeq) {
+                        maxSeq = seq;
+                    }
+                }
+            }
+        });
+
         const nextSeq = String(maxSeq + 1).padStart(2, '0');
         const todayStr = '{{ date("d-m-Y") }}';
-        const nextFormNo = `${nextSeq}/${userTag}/${monthYearStr}`;
+        const nextFormNo = `${nextSeq}/${defaultDeptTag}/${monthYearStr}`;
 
         checksheets[nextFormNo] = {
             formNo: nextFormNo,

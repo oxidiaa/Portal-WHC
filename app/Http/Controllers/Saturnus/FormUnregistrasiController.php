@@ -121,7 +121,7 @@ class FormUnregistrasiController extends Controller
         }
         $defaultFormNo = '01/' . $defaultDeptTag . '/' . date('m-Y');
 
-        $formsToCheck = $allFormNumbers->isEmpty() ? collect([$defaultFormNo]) : $allFormNumbers;
+        $formsToCheck = $allFormNumbers;
 
         foreach ($formsToCheck as $fNo) {
             if (!$formApprovals->contains('form_number', $fNo)) {
@@ -247,7 +247,22 @@ class FormUnregistrasiController extends Controller
             $userTag = 'PRODUCTION';
         }
 
-        $defaultFormNo = '01/' . $userTag . '/' . date('m-Y');
+        $monthYear = date('m-Y');
+        $existingFormsThisMonth = UnregistrasiItem::where('form_number', 'LIKE', "%/{$userTag}/{$monthYear}")
+            ->pluck('form_number')
+            ->unique();
+        $maxSeq = 0;
+        foreach ($existingFormsThisMonth as $fNo) {
+            $parts = explode('/', $fNo);
+            if (count($parts) >= 3 && strtoupper(trim($parts[1])) === strtoupper($userTag) && trim($parts[2]) === $monthYear) {
+                $seq = (int)$parts[0];
+                if ($seq > $maxSeq) {
+                    $maxSeq = $seq;
+                }
+            }
+        }
+        $nextSeq = str_pad($maxSeq + 1, 2, '0', STR_PAD_LEFT);
+        $defaultFormNo = "{$nextSeq}/{$userTag}/{$monthYear}";
         $targetFormNo = $validated['form_number'] ?: $defaultFormNo;
 
         if (!$isMaster) {

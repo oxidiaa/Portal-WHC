@@ -451,7 +451,22 @@ class ItemController extends Controller
         if (empty($targetForm)) {
             $monthYear = date('m-Y');
             $defaultDept = (str_contains($currentUserDept, 'PRODUCTION') && str_contains($currentUserDept, 'DIES ASSY')) ? 'PRODUCTION' : $currentUserDept;
-            $targetForm = "01/{$defaultDept}/{$monthYear}";
+
+            $existingFormsThisMonth = FormItem::where('form_number', 'LIKE', "%/{$defaultDept}/{$monthYear}")
+                ->pluck('form_number')
+                ->unique();
+            $maxSeq = 0;
+            foreach ($existingFormsThisMonth as $fNo) {
+                $parts = explode('/', $fNo);
+                if (count($parts) >= 3 && strtoupper(trim($parts[1])) === strtoupper($defaultDept) && trim($parts[2]) === $monthYear) {
+                    $seq = (int)$parts[0];
+                    if ($seq > $maxSeq) {
+                        $maxSeq = $seq;
+                    }
+                }
+            }
+            $nextSeq = str_pad($maxSeq + 1, 2, '0', STR_PAD_LEFT);
+            $targetForm = "{$nextSeq}/{$defaultDept}/{$monthYear}";
         }
 
         // Formulir yang sudah berhasil dibuat tidak boleh ditambahkan item lagi
