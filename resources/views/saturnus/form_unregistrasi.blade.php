@@ -67,8 +67,82 @@
     $hasUserSig = ($currentApproval && $currentApproval->user_signed_at) || $firstCurrentItem;
     $hasStaffSig = (bool)($currentApproval && ($currentApproval->staff_signed_at || $currentApproval->staff_signer_name));
     $hasWhSig = (bool)($currentApproval && ($currentApproval->warehouse_signed_at || $currentApproval->warehouse_signer_name));
+
+    $currentFormDept = $currentApproval?->requestor_dept ?? $firstCurrentItem?->created_by_dept ?? '';
+    if (empty($currentFormDept) && $currentFormNo && str_contains($currentFormNo, '/')) {
+        $parts = explode('/', $currentFormNo);
+        if (count($parts) >= 2) $currentFormDept = $parts[1];
+    }
+    $isDeptMatch = in_array(strtoupper(trim($currentFormDept)), $allowedDepts) || $canViewAllDept;
+
+    $canApproveStaff = ($isMaster || str_contains($userRoleRaw, 'STAFF')) && $currentFormItems->isNotEmpty() && !$hasStaffSig && $isDeptMatch;
+    $canApproveWh = ($isMaster || str_contains($userRoleRaw, 'WAREHOUSE')) && $currentFormItems->isNotEmpty() && $hasStaffSig && !$hasWhSig;
+
+    $hasPendingAction = $canApproveStaff || $canApproveWh;
+    $pendingActionRole = $canApproveStaff ? 'staff' : ($canApproveWh ? 'warehouse' : '');
+    $pendingActionLabel = $canApproveStaff ? 'Approve (Staff)' : ($canApproveWh ? 'Discontinue (Warehouse)' : '');
 @endphp
 <style>
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .btn-approval-check-toolbar {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        color: #ffffff !important;
+        border: none;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 0.45rem 1.15rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    }
+    .btn-approval-check-toolbar:hover {
+        transform: translateY(-1.5px);
+        box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
+        background: linear-gradient(135deg, #047857 0%, #059669 100%);
+    }
+    .btn-sig-approve {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        color: #ffffff !important;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.4rem 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        cursor: pointer;
+        box-shadow: 0 3px 10px rgba(16, 185, 129, 0.3);
+        transition: all 0.2s ease;
+        margin: 4px auto;
+    }
+    .btn-sig-approve:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);
+        background: linear-gradient(135deg, #047857 0%, #059669 100%);
+    }
+    .form-selector-select {
+        background: transparent;
+        border: 1px solid rgba(0, 173, 239, 0.3);
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.78rem;
+        color: var(--color-primary);
+        cursor: pointer;
+        padding: 0.15rem 0.4rem;
+        outline: none;
+    }
+    .form-selector-select:focus {
+        border-color: var(--color-primary);
+    }
     /* Sheet Tabs & Stepper Enhancements for Form Unregistrasi */
     .filter-pill-btn {
         border-radius: 20px !important;
@@ -620,20 +694,36 @@
     
     <!-- Quick Document Status Bar (No Print) -->
     <div class="sheet-doc-toolbar no-print">
-        <div class="doc-toolbar-left">
+        <div class="doc-toolbar-left" style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
             <div class="doc-badge-pill">
                 <span class="pulse-beacon-inline green"></span>
-                <span>STATUS LEMBAR: <strong>AKTIF / SIAP CETAK</strong></span>
+                <span>STATUS LEMBAR: <strong>{{ strtoupper($currentApproval?->status ?? 'AKTIF / SIAP CETAK') }}</strong></span>
             </div>
             <div class="doc-badge-pill secondary">
                 <span>NO FORM: <strong id="toolbar-form-no">{{ $currentFormNo }}</strong></span>
             </div>
+            @if($existingFormNumbers->count() > 1)
+            <div class="doc-badge-pill" style="gap: 0.4rem;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">PILIH FORM:</span>
+                <select class="form-selector-select" onchange="if(this.value) window.location.href='{{ route('saturnus.form_unregistrasi') }}?form='+encodeURIComponent(this.value);" title="Pilih formulir unregistrasi lain untuk ditampilkan">
+                    @foreach($existingFormNumbers as $fOpt)
+                        <option value="{{ $fOpt }}" {{ $fOpt === $currentFormNo ? 'selected' : '' }}>{{ $fOpt }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
             <div class="doc-badge-pill comment-pill" onclick="scrollToComments()" title="Lihat Diskusi & Komentar Form">
                 <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                 </svg>
-                <span>KOMENTAR: <strong id="toolbar-comment-count">0</strong></span>
+                <span>KOMENTAR: <strong id="toolbar-comment-count">{{ $formComments->where('form_number', $currentFormNo)->count() }}</strong></span>
             </div>
+            @if($hasPendingAction)
+            <button type="button" class="btn-approval-check-toolbar" onclick="quickApproveUnreg('{{ $currentFormNo }}', '{{ $pendingActionRole }}', this)" title="Klik untuk menyetujui formulir unregistrasi ini langsung">
+                <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Setujui Formulir ({{ $pendingActionLabel }})</span>
+            </button>
+            @endif
         </div>
     </div>
 
@@ -768,6 +858,12 @@
                         <div style="color: var(--color-success); font-weight: 700; font-size: 0.72rem; margin-bottom: 0.15rem;">✓ APPROVED BY STAFF</div>
                         <div class="sig-qrcode" id="blade-sig-qrcode-staff" data-val="{{ $staffSigner }} (Tgl: {{ $staffSigDate }})"></div>
                         <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">{{ $staffSigner }} (Tgl: {{ $staffSigDate }})</div>
+                    @elseif($canApproveStaff)
+                        <button type="button" class="btn-sig-approve no-print" onclick="quickApproveUnreg('{{ $currentFormNo }}', 'staff', this)" title="Setujui formulir unregistrasi ini sebagai Staff">
+                            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span>Approve Staff</span>
+                        </button>
+                        <span class="only-print" style="color: var(--text-muted); font-size: 0.75rem; font-style: italic;">...................</span>
                     @else
                         <span style="color: var(--text-muted); font-size: 0.75rem; font-style: italic;">...................</span>
                     @endif
@@ -781,6 +877,12 @@
                         <div style="color: var(--color-success); font-weight: 700; font-size: 0.72rem; margin-bottom: 0.15rem;">✓ DISCONTINUED BY WAREHOUSE</div>
                         <div class="sig-qrcode" id="blade-sig-qrcode-warehouse" data-val="{{ $whSigner }} (Tgl: {{ $whSigDate }})"></div>
                         <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">{{ $whSigner }} (Tgl: {{ $whSigDate }})</div>
+                    @elseif($canApproveWh)
+                        <button type="button" class="btn-sig-approve no-print" onclick="quickApproveUnreg('{{ $currentFormNo }}', 'warehouse', this)" title="Verifikasi discontinue barang consumable">
+                            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span>Discontinue Warehouse</span>
+                        </button>
+                        <span class="only-print" style="color: var(--text-muted); font-size: 0.75rem; font-style: italic;">...................</span>
                     @else
                         <span style="color: var(--text-muted); font-size: 0.75rem; font-style: italic;">...................</span>
                     @endif
@@ -1279,6 +1381,70 @@
     }
 
     const canViewAllDepartments = (userRoleType === 'admin' || userRoleType === 'warehouse');
+
+    async function quickApproveUnreg(formNo, roleKey, btnEl) {
+        if (!formNo) formNo = selectedChecksheetId || activeFormNo;
+
+        const roleLabels = {
+            staff: 'Staff / Section Head (Tahap 1)',
+            warehouse: 'Warehouse Consumable (Tahap 2 / Discontinue)'
+        };
+        const labelText = roleLabels[roleKey] || (roleKey ? roleKey.toUpperCase() : 'Approver');
+
+        const isConfirmed = confirm(`Apakah Anda yakin ingin menyetujui Formulir Unregistrasi ${formNo} sebagai ${labelText}?`);
+        if (!isConfirmed) return;
+
+        let originalContent = '';
+        if (btnEl) {
+            originalContent = btnEl.innerHTML;
+            btnEl.disabled = true;
+            btnEl.style.opacity = '0.75';
+            btnEl.innerHTML = `
+                <svg style="animation: spin 1s linear infinite;" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path></svg>
+                <span>Menyetujui...</span>
+            `;
+        }
+
+        try {
+            const response = await fetch('{{ route("saturnus.form_unregistrasi.approve") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    form_number: formNo,
+                    role: roleKey,
+                    name: authUserName,
+                    comment: 'Disetujui langsung melalui Lembar Formulir Unregistrasi.'
+                })
+            });
+
+            const res = await response.json();
+            if (response.ok && res.success) {
+                showToast(res.message || `Formulir Unregistrasi ${formNo} berhasil disetujui!`, 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 600);
+            } else {
+                alert(res.message || 'Gagal menyetujui form unregistrasi. Pastikan Anda memiliki wewenang untuk tahap ini.');
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.style.opacity = '1';
+                    btnEl.innerHTML = originalContent;
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Terjadi kesalahan jaringan saat memproses approval.');
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.style.opacity = '1';
+                btnEl.innerHTML = originalContent;
+            }
+        }
+    }
     
     function getUserAllowedDepartments() {
         const userDept = (authUserDept || '').trim().toUpperCase();
