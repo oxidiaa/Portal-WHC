@@ -121,6 +121,7 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/form-registrasi/item/{id}', [Saturnus\ItemController::class, 'deleteFormItem'])->name('form_registrasi.item.delete')->middleware('permission:saturnus.registrasi.create');
         Route::post('/form-registrasi/comment', [Saturnus\ItemController::class, 'storeComment'])->name('form_registrasi.comment.store')->middleware('permission:saturnus.registrasi.view');
         Route::delete('/form-registrasi/comment/{id}', [Saturnus\ItemController::class, 'deleteComment'])->name('form_registrasi.comment.delete')->middleware('permission:saturnus.registrasi.view');
+        Route::post('/clear-add-prompt-session', [Saturnus\ItemController::class, 'clearAddPromptSession'])->name('clear_add_prompt_session');
 
         // Form Unregistrasi & Dedicated Views
         Route::get('/form-unregistrasi', [Saturnus\FormUnregistrasiController::class, 'formUnregistrasi'])->name('form_unregistrasi')->middleware('permission:saturnus.unregistrasi.view');

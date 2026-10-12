@@ -181,6 +181,10 @@ class FormUnregistrasiController extends Controller
      */
     public function formUnregistrasi(Request $request)
     {
+        $this->abortIfGuest();
+        if (!session('show_add_more_prompt')) {
+            session()->forget('allow_add_more_unreg_form');
+        }
         $data = $this->getUnregistrasiFormData($request);
         return view('saturnus.form_unregistrasi', $data);
     }
@@ -234,13 +238,13 @@ class FormUnregistrasiController extends Controller
         $currentUserRole = strtoupper(trim($currentUser->role ?? 'USER'));
         $isMaster = in_array($currentUserRole, ['MASTER', 'ADMIN']) || str_contains($currentUserRole, 'WAREHOUSE');
 
+        $infoNote = null;
         $existingUnreg = UnregistrasiItem::where('kode_barang', $validated['kode_barang'])->latest()->first();
         if ($existingUnreg) {
             $isAllowedDept = $isMaster || $this->isDepartmentAllowed($currentUser, $existingUnreg->created_by_dept ?? '');
-            $formRef = $isAllowedDept ? "pada Form Unregistrasi {$existingUnreg->form_number}" : "pada sistem";
+            $formRef = $isAllowedDept ? "pada Form Unregistrasi {$existingUnreg->form_number}" : "pada arsip unregistrasi";
             $nameRef = ($isAllowedDept && !empty($existingUnreg->nama_barang)) ? " ({$existingUnreg->nama_barang})" : "";
-            $msg = "Peringatan: Kode barang '{$validated['kode_barang']}'{$nameRef} telah di-discontinue sebelumnya {$formRef}!";
-            return back()->withErrors(['kode_barang' => $msg])->withInput()->with('error', $msg);
+            $infoNote = "Catatan: Kode barang '{$validated['kode_barang']}'{$nameRef} sebelumnya pernah tercatat {$formRef}.";
         }
         $userTag = strtoupper($currentUser->department ?? $currentUser->name ?? 'PRODUCTION');
         if (str_contains($userTag, 'PRODUCTION') && str_contains($userTag, 'DIES ASSY')) {
@@ -274,10 +278,32 @@ class FormUnregistrasiController extends Controller
             }
         }
 
-        // Formulir unregistrasi yang sudah berhasil dibuat tidak boleh ditambahkan item lagi
-        if (UnregistrasiItem::where('form_number', $targetFormNo)->exists()) {
+        // Cek apakah kode barang sudah ada dalam formulir ini (hanya sebagai catatan notifikasi, tetap diizinkan)
+        $existingUnregInForm = UnregistrasiItem::where('kode_barang', $validated['kode_barang'])
+            ->where('form_number', $targetFormNo)
+            ->first();
+        if ($existingUnregInForm) {
+            $infoNote = "Catatan: Kode barang '{$validated['kode_barang']}' sudah ada sebelumnya di formulir ini.";
+        }
+
+        // Formulir unregistrasi yang sudah terisi tidak boleh ditambah item lagi kecuali dari pop-up konfirmasi saat pengisian
+        $existingItemsCount = UnregistrasiItem::where('form_number', $targetFormNo)->count();
+        if ($existingItemsCount > 0) {
+            $isFromPrompt = $request->input('from_prompt') === '1' && session('allow_add_more_unreg_form') === $targetFormNo;
+            if (!$isFromPrompt) {
+                $msg = "Formulir unregistrasi {$targetFormNo} sudah terisi. Penambahan data barang hanya diperbolehkan melalui konfirmasi pop-up saat pengisian formulir.";
+                return redirect()->route('saturnus.form_unregistrasi', ['form' => $targetFormNo])
+                    ->withErrors(['form_number' => $msg])
+                    ->withInput()
+                    ->with('error', $msg);
+            }
+        }
+
+        // Formulir unregistrasi yang sudah disetujui/discontinue oleh Warehouse tidak boleh ditambah item lagi
+        $unregApproval = UnregistrasiApproval::where('form_number', $targetFormNo)->first();
+        if ($unregApproval && $unregApproval->warehouse_signed_at) {
             return redirect()->route('saturnus.form_unregistrasi', ['form' => $targetFormNo])
-                ->with('error', 'Formulir ' . $targetFormNo . ' sudah berhasil dibuat. Penambahan item ke formulir yang sudah ada tidak diperbolehkan. Silakan klik "+ Form Baru".');
+                ->with('error', 'Formulir ' . $targetFormNo . ' sudah disetujui/discontinue oleh Warehouse dan tidak dapat ditambah item lagi.');
         }
 
         $item = new UnregistrasiItem();
@@ -291,6 +317,9 @@ class FormUnregistrasiController extends Controller
         $item->kategori        = $validated['kategori'] ?? null;
         $item->keterangan      = $validated['keterangan'] ?? null;
         $item->save();
+
+        // Allow adding more items to this form through the sequential prompt modal
+        session(['allow_add_more_unreg_form' => $targetFormNo]);
 
         UnregistrasiApproval::firstOrCreate(
             ['form_number' => $targetFormNo],
@@ -317,8 +346,14 @@ class FormUnregistrasiController extends Controller
             items: $itemsList
         );
 
+        $successMsg = 'Data barang "' . $item->nama_barang . '" berhasil ditambahkan ke formulir ' . $targetFormNo . '.';
+        if ($infoNote) {
+            $successMsg .= ' (' . $infoNote . ')';
+        }
+
         return redirect()->route('saturnus.form_unregistrasi', ['form' => $targetFormNo])
-            ->with('success', 'Formulir ' . $targetFormNo . ' untuk barang "' . $item->nama_barang . '" berhasil dibuat.');
+            ->with('success', $successMsg)
+            ->with('show_add_more_prompt', true);
     }
 
     /**

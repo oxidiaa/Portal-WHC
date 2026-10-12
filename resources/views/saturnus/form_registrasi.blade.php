@@ -488,7 +488,7 @@
         </div>
         <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
             @if($canCreateForm)
-            <button class="btn btn-secondary" id="btn-form-baru" onclick="createNewForm()" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1.25rem; border-radius: var(--radius-md); cursor: pointer;">
+            <button class="btn btn-primary" id="btn-form-baru" onclick="createNewForm()" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1.25rem; border-radius: var(--radius-md); cursor: pointer; box-shadow: 0 4px 14px rgba(0, 132, 255, 0.35);">
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                     <polyline points="14 2 14 8 20 8"></polyline>
@@ -890,6 +890,7 @@
         <form action="{{ route('saturnus.form_registrasi.item.store') }}" method="POST">
             @csrf
             <input type="hidden" name="form_number" id="modal_form_number" value="{{ $currentFormNo }}">
+            <input type="hidden" name="from_prompt" id="modal_from_prompt" value="0">
 
             {{-- Row 1: Kode & Nama --}}
             <div style="display: grid; grid-template-columns: 1fr 1.6fr; gap: 1.15rem; margin-bottom: 1.15rem;">
@@ -1048,6 +1049,32 @@
     </div>
 </div>
 
+{{-- ===== MODAL: KONFIRMASI TAMBAH ITEM LAGI ===== --}}
+<div class="modal" id="addMorePromptModal">
+    <div class="modal-content" style="max-width: 480px; text-align: center; padding: 2.25rem 1.75rem; border-radius: 20px; border: none; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35); background: #ffffff;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: #10b981; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.15rem;">
+            <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="2.5" fill="none">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+        <h3 style="font-family: inherit; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem; font-size: 1.25rem;">
+            Data Barang Berhasil Disimpan!
+        </h3>
+        <p style="color: #64748b; font-size: 0.88rem; line-height: 1.5; margin-bottom: 1.5rem;">
+            Apakah Anda ingin menambahkan item barang consumable lainnya ke dalam formulir <strong id="prompt_form_number_display">{{ $currentFormNo }}</strong>?
+        </p>
+        <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary" onclick="closeAddMorePrompt()" style="padding: 0.6rem 1.25rem; font-weight: 700; border-radius: 10px; min-width: 120px; background: #ffffff; border: 1.5px solid #cbd5e1; color: #1e293b; cursor: pointer;">
+                Tidak, Selesai
+            </button>
+            <button type="button" class="btn btn-primary" onclick="closeModal('addMorePromptModal'); openAddItemModalClean(true);" style="padding: 0.6rem 1.25rem; font-weight: 700; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; min-width: 160px; background: linear-gradient(135deg, #1a3fa8 0%, #00adef 100%); border: none; color: #ffffff; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 173, 239, 0.35);">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Ya, Tambah Item Lagi
+            </button>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @section('scripts')
@@ -1131,25 +1158,76 @@
     }
 
     function openModal(id) {
+        const formVal = selectedChecksheetId || activeFormNo;
         if (id === 'addItemModal') {
             const hiddenFormNo = document.getElementById('modal_form_number');
             const displayFormNo = document.getElementById('modal_form_number_display');
-            const formVal = selectedChecksheetId || activeFormNo;
             if (hiddenFormNo) hiddenFormNo.value = formVal;
             if (displayFormNo) displayFormNo.innerText = formVal;
+        }
+        if (id === 'addMorePromptModal') {
+            const promptDisplay = document.getElementById('prompt_form_number_display');
+            if (promptDisplay) promptDisplay.innerText = formVal;
         }
         const el = document.getElementById(id);
         if (el) el.classList.add('show');
     }
 
+    function openAddItemModalClean(fromPrompt = false) {
+        const form = document.querySelector('#addItemModal form');
+        const formVal = selectedChecksheetId || activeFormNo;
+        if (form) {
+            const textInputs = form.querySelectorAll('input:not([type="hidden"]):not([type="radio"]), textarea');
+            textInputs.forEach(el => el.value = '');
+            const nonB3Radio = form.querySelector('input[type="radio"][value="non_b3"]');
+            if (nonB3Radio) nonB3Radio.checked = true;
+            const alertBox = document.getElementById('fi_kode_alert_box');
+            if (alertBox) {
+                alertBox.style.display = 'none';
+                alertBox.innerHTML = '';
+            }
+            const modalFormNo = document.getElementById('modal_form_number');
+            if (modalFormNo) modalFormNo.value = formVal;
+            const displayFormNo = document.getElementById('modal_form_number_display');
+            if (displayFormNo) displayFormNo.innerText = formVal;
+            const promptInput = document.getElementById('modal_from_prompt');
+            if (promptInput) promptInput.value = fromPrompt ? '1' : '0';
+        }
+        openModal('addItemModal');
+        setTimeout(() => {
+            document.getElementById('fi_kode')?.focus();
+        }, 150);
+    }
+
+    function closeAddMorePrompt() {
+        closeModal('addMorePromptModal');
+        const promptInput = document.getElementById('modal_from_prompt');
+        if (promptInput) promptInput.value = '0';
+        fetch('{{ route('saturnus.clear_add_prompt_session') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        }).catch(() => {});
+    }
+
     function closeModal(id) {
+        if (id === 'addMorePromptModal') {
+            const promptInput = document.getElementById('modal_from_prompt');
+            if (promptInput) promptInput.value = '0';
+        }
         const el = document.getElementById(id);
         if (el) el.classList.remove('show');
     }
 
     window.addEventListener('click', function(e) {
         if (e.target.classList && e.target.classList.contains('modal')) {
-            e.target.classList.remove('show');
+            if (e.target.id === 'addMorePromptModal') {
+                closeAddMorePrompt();
+            } else {
+                e.target.classList.remove('show');
+            }
         }
     });
 
@@ -1205,10 +1283,10 @@
         const unregMatch = unregList.find(i => (i.kode_barang || '').trim().toUpperCase() === code);
         if (unregMatch) {
             alertBox.style.display = 'block';
-            alertBox.style.background = '#fee2e2';
-            alertBox.style.color = '#ef4444';
-            alertBox.style.border = '1px solid #fecaca';
-            alertBox.innerHTML = `🚫 <strong>PERINGATAN:</strong> Item dengan Kode Barang <strong>${escapeHtml(code)}</strong> (${escapeHtml(unregMatch.nama_barang || '')}) telah di-discontinue sebelumnya pada <strong>Form Unregistrasi ${escapeHtml(unregMatch.form_number || '')}</strong>!`;
+            alertBox.style.background = '#fef3c7';
+            alertBox.style.color = '#92400e';
+            alertBox.style.border = '1px solid #fde68a';
+            alertBox.innerHTML = `⚠️ <strong>Pemberitahuan:</strong> Kode Barang <strong>${escapeHtml(code)}</strong> (${escapeHtml(unregMatch.nama_barang || '')}) sebelumnya pernah tercatat pada <strong>Form Unregistrasi ${escapeHtml(unregMatch.form_number || '')}</strong>. <em>Item tetap dapat didaftarkan ke dalam formulir ini.</em>`;
             return;
         }
 
@@ -1216,9 +1294,9 @@
         if (regMatch) {
             alertBox.style.display = 'block';
             alertBox.style.background = '#eff6ff';
-            alertBox.style.color = '#2563eb';
+            alertBox.style.color = '#1e40af';
             alertBox.style.border = '1px solid #bfdbfe';
-            alertBox.innerHTML = `ℹ <strong>Info:</strong> Kode Barang <strong>${escapeHtml(code)}</strong> terdaftar pada <strong>Form ${escapeHtml(regMatch.form_number || '')}</strong> (${escapeHtml(regMatch.nama_barang || '')}).`;
+            alertBox.innerHTML = `ℹ️ <strong>Informasi:</strong> Kode Barang <strong>${escapeHtml(code)}</strong> sebelumnya pernah terdaftar pada <strong>Form ${escapeHtml(regMatch.form_number || '')}</strong> (${escapeHtml(regMatch.nama_barang || '')}). <em>Item tetap dapat didaftarkan ke dalam formulir ini.</em>`;
             return;
         }
 
@@ -1319,6 +1397,23 @@
         }
 
         renderComments(nextFormNo);
+
+        const promptInput = document.getElementById('modal_from_prompt');
+        if (promptInput) promptInput.value = '0';
+
+        const addForm = document.querySelector('#addItemModal form');
+        if (addForm) {
+            const textInputs = addForm.querySelectorAll('input:not([type="hidden"]):not([type="radio"]), textarea');
+            textInputs.forEach(el => el.value = '');
+            const nonB3Radio = addForm.querySelector('input[type="radio"][value="non_b3"]');
+            if (nonB3Radio) nonB3Radio.checked = true;
+            const alertBox = document.getElementById('fi_kode_alert_box');
+            if (alertBox) {
+                alertBox.style.display = 'none';
+                alertBox.innerHTML = '';
+            }
+        }
+
         showToast(`Formulir Baru ${nextFormNo} Siap. Silakan isi data pendaftaran barang.`, 'success');
         openModal('addItemModal');
     }
@@ -1508,6 +1603,15 @@
             alert('Terjadi kesalahan saat menghapus komentar.');
         }
     }
+
+    // Auto-open prompt modal konfirmasi tambah item lagi setelah simpan
+    @if(session('show_add_more_prompt'))
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                openModal('addMorePromptModal');
+            }, 300);
+        });
+    @endif
 
     // Auto-open modal jika ada validation error dari form tambah data
     @if($errors->any())

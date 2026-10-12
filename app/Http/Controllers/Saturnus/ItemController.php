@@ -342,6 +342,9 @@ class ItemController extends Controller
      */
     public function formRegistrasi(Request $request)
     {
+        if (!session('show_add_more_prompt')) {
+            session()->forget('allow_add_more_form');
+        }
         $data = $this->getRegistrasiFormData($request);
         return view('saturnus.form_registrasi', $data);
     }
@@ -429,14 +432,21 @@ class ItemController extends Controller
 
         $kodeBarangInput = trim($validated['kode_barang']);
 
-        // Duplicate checks on kode_barang
+        // Cek riwayat kode_barang untuk notifikasi informatif (tetap diizinkan daftar)
+        $infoNote = null;
         $existingUnreg = UnregistrasiItem::where('kode_barang', $kodeBarangInput)->latest()->first();
         if ($existingUnreg) {
             $isAllowedDept = $canViewAllDepartments || $this->isDepartmentAllowed($currentUser, $existingUnreg->created_by_dept ?? '');
-            $formRef = $isAllowedDept ? "pada Form Unregistrasi {$existingUnreg->form_number}" : "pada sistem";
+            $formRef = $isAllowedDept ? "pada Form Unregistrasi {$existingUnreg->form_number}" : "pada arsip unregistrasi";
             $nameRef = ($isAllowedDept && !empty($existingUnreg->nama_barang)) ? " ({$existingUnreg->nama_barang})" : "";
-            $msg = "Peringatan: Kode barang '{$kodeBarangInput}'{$nameRef} telah di-discontinue sebelumnya {$formRef}!";
-            return back()->withErrors(['kode_barang' => $msg])->withInput()->with('error', $msg);
+            $infoNote = "Catatan: Kode barang '{$kodeBarangInput}'{$nameRef} sebelumnya pernah tercatat {$formRef}.";
+        } else {
+            $existingRegPrev = FormItem::where('kode_barang', $kodeBarangInput)->latest()->first();
+            if ($existingRegPrev) {
+                $formRef = $existingRegPrev->form_number ?: 'sebelumnya';
+                $nameRef = !empty($existingRegPrev->nama_barang) ? " ({$existingRegPrev->nama_barang})" : "";
+                $infoNote = "Catatan: Kode barang '{$kodeBarangInput}'{$nameRef} sebelumnya pernah terdaftar pada Form {$formRef}.";
+            }
         }
 
         $targetForm = $request->input('form_number');
@@ -469,9 +479,27 @@ class ItemController extends Controller
             $targetForm = "{$nextSeq}/{$defaultDept}/{$monthYear}";
         }
 
-        // Formulir yang sudah berhasil dibuat tidak boleh ditambahkan item lagi
-        if (FormItem::where('form_number', $targetForm)->exists()) {
-            $msg = "Formulir {$targetForm} sudah berhasil dibuat. Penambahan item ke formulir yang sudah ada tidak diperbolehkan. Silakan klik '+ Form Baru'.";
+        // Cek apakah kode barang sudah ada dalam formulir ini (hanya sebagai catatan notifikasi, tetap diizinkan)
+        $existingRegInSameForm = FormItem::where('kode_barang', $kodeBarangInput)->where('form_number', $targetForm)->latest()->first();
+        if ($existingRegInSameForm) {
+            $nameRef = !empty($existingRegInSameForm->nama_barang) ? " ({$existingRegInSameForm->nama_barang})" : "";
+            $infoNote = "Catatan: Kode barang '{$kodeBarangInput}'{$nameRef} sudah ada sebelumnya di formulir ini.";
+        }
+
+        // Formulir yang sudah terisi tidak boleh ditambah item lagi kecuali dari pop-up konfirmasi saat pengisian
+        $existingItemsCount = FormItem::where('form_number', $targetForm)->count();
+        if ($existingItemsCount > 0) {
+            $isFromPrompt = $request->input('from_prompt') === '1' && session('allow_add_more_form') === $targetForm;
+            if (!$isFromPrompt) {
+                $msg = "Formulir {$targetForm} sudah terisi. Penambahan data barang hanya diperbolehkan melalui konfirmasi pop-up saat pengisian formulir.";
+                return back()->withErrors(['form_number' => $msg])->withInput()->with('error', $msg);
+            }
+        }
+
+        // Formulir yang sudah disetujui penuh oleh Warehouse tidak boleh ditambah item lagi
+        $existingApproval = FormApproval::where('form_number', $targetForm)->first();
+        if ($existingApproval && $existingApproval->warehouse_signed_at) {
+            $msg = "Formulir {$targetForm} sudah disetujui penuh oleh Warehouse dan tidak dapat ditambah item lagi.";
             return back()->withErrors(['form_number' => $msg])->withInput()->with('error', $msg);
         }
 
@@ -484,6 +512,9 @@ class ItemController extends Controller
         $validated['created_by_dept'] = $currentUser->department ?? 'Production';
 
         FormItem::create($validated);
+
+        // Allow adding more items to this form through the sequential prompt modal
+        session(['allow_add_more_form' => $targetForm]);
 
         // Ensure FormApproval exists for the targetForm
         if ($targetForm) {
@@ -515,8 +546,23 @@ class ItemController extends Controller
 
         $redirectParams = $targetForm ? ['form' => $targetForm] : [];
 
+        $successMsg = 'Data barang "' . $validated['nama_barang'] . '" berhasil ditambahkan ke Formulir ' . $targetForm . '.';
+        if ($infoNote) {
+            $successMsg .= ' (' . $infoNote . ')';
+        }
+
         return redirect()->route('saturnus.form_registrasi', $redirectParams)
-            ->with('success', 'Formulir ' . $targetForm . ' untuk barang "' . $validated['nama_barang'] . '" berhasil dibuat.');
+            ->with('success', $successMsg)
+            ->with('show_add_more_prompt', true);
+    }
+
+    /**
+     * Clear session allowance for adding more items to a form when prompt is dismissed.
+     */
+    public function clearAddPromptSession()
+    {
+        session()->forget(['allow_add_more_form', 'allow_add_more_unreg_form']);
+        return response()->json(['success' => true]);
     }
 
     /**

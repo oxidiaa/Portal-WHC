@@ -6,6 +6,7 @@
 @php
     $userDeptTag = strtoupper(Auth::user()->department ?? Auth::user()->name ?? 'PRODUCTION');
     $userRoleRaw = strtoupper(trim(Auth::user()->role ?? 'USER'));
+    $isMaster = in_array($userRoleRaw, ['MASTER', 'ADMIN']) || (Auth::user() && method_exists(Auth::user(), 'isMaster') && Auth::user()->isMaster());
     $canViewAllDept = in_array($userRoleRaw, ['MASTER', 'ADMIN'])
         || str_contains($userRoleRaw, 'ACCOUNTING')
         || str_contains($userRoleRaw, 'ACC')
@@ -670,7 +671,7 @@
     </div>
     <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
         @if($canCreateForm)
-        <button class="btn btn-secondary" id="btn-form-baru" onclick="createNewForm()" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1.25rem; border-radius: var(--radius-md); cursor: pointer;">
+        <button class="btn btn-primary" id="btn-form-baru" onclick="createNewForm()" style="font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1.25rem; border-radius: var(--radius-md); cursor: pointer; box-shadow: 0 4px 14px rgba(0, 132, 255, 0.35);">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
@@ -1206,13 +1207,17 @@
 <div class="modal" id="addItemModal">
     <div class="modal-content" style="max-width: 620px; max-height: 90vh; overflow-y: auto; padding: 2.25rem 2.5rem 2rem; border-radius: 24px; border: none; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35); background: #ffffff;">
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1.15rem; margin-bottom: 1.35rem; border-bottom: 1.5px solid #f1f5f9;">
-            <h3 style="font-family: inherit; font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.01em;">Formulir Pengajuan Unregistrasi Baru</h3>
+            <div>
+                <h3 style="font-family: inherit; font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.01em;">Formulir Pengajuan Unregistrasi Baru</h3>
+                <p style="font-size: 0.78rem; color: #64748b; margin: 0.2rem 0 0 0;">Nomor Formulir: <strong style="color: #0084ff;" id="modal_form_number_display">{{ $currentFormNo }}</strong></p>
+            </div>
             <button class="btn-close" onclick="closeModal('addItemModal')" style="background: transparent; border: none; font-size: 1.35rem; line-height: 1; color: #94a3b8; cursor: pointer; padding: 0.25rem; border-radius: 6px; transition: all 0.2s;">&times;</button>
         </div>
 
         <form action="{{ route('form-unregistrasi.store') }}" method="POST">
             @csrf
             <input type="hidden" name="form_number" id="modal_form_number" value="{{ $currentFormNo }}">
+            <input type="hidden" name="from_prompt" id="modal_from_prompt" value="0">
 
             <div class="form-group" style="margin-bottom: 1.15rem;">
                 <label for="fi_kode" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.45rem;">Kode Barang <span style="color: #ef4444; margin-left: 2px;">*</span></label>
@@ -1266,6 +1271,32 @@
     </div>
 </div>
 
+{{-- ===== MODAL: KONFIRMASI TAMBAH ITEM UNREG LAGI ===== --}}
+<div class="modal" id="addMorePromptModal">
+    <div class="modal-content" style="max-width: 480px; text-align: center; padding: 2.25rem 1.75rem; border-radius: 20px; border: none; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35); background: #ffffff;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: #10b981; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.15rem;">
+            <svg viewBox="0 0 24 24" width="34" height="34" stroke="currentColor" stroke-width="2.5" fill="none">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+        <h3 style="font-family: inherit; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem; font-size: 1.25rem;">
+            Data Barang Berhasil Disimpan!
+        </h3>
+        <p style="color: #64748b; font-size: 0.88rem; line-height: 1.5; margin-bottom: 1.5rem;">
+            Apakah Anda ingin menambahkan item barang discontinue lainnya ke dalam formulir <strong id="prompt_form_number_display">{{ $currentFormNo }}</strong>?
+        </p>
+        <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary" onclick="closeAddMorePrompt()" style="padding: 0.6rem 1.25rem; font-weight: 700; border-radius: 10px; min-width: 120px; background: #ffffff; border: 1.5px solid #cbd5e1; color: #1e293b; cursor: pointer;">
+                Tidak, Selesai
+            </button>
+            <button type="button" class="btn btn-primary" onclick="closeModal('addMorePromptModal'); openAddItemModalClean(true);" style="padding: 0.6rem 1.25rem; font-weight: 700; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; min-width: 160px; background: #0084ff; border: none; color: #ffffff; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 132, 255, 0.35);">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Ya, Tambah Item Lagi
+            </button>
+        </div>
+    </div>
+</div>
+
 </div> {{-- End .workspace-light-theme --}}
 
 @endsection
@@ -1273,22 +1304,82 @@
 @section('scripts')
 <script>
     function openModal(id) {
+        const formVal = selectedChecksheetId || '{{ $currentFormNo }}';
         if (id === 'addItemModal') {
             const hiddenFormNo = document.getElementById('modal_form_number');
+            const displayFormNo = document.getElementById('modal_form_number_display');
             if (hiddenFormNo) {
-                hiddenFormNo.value = selectedChecksheetId;
+                hiddenFormNo.value = formVal;
+            }
+            if (displayFormNo) {
+                displayFormNo.innerText = formVal;
             }
         }
-        document.getElementById(id).classList.add('show');
-    }
-    function closeModal(id) {
-        document.getElementById(id).classList.remove('show');
-    }
-    window.onclick = function(e) {
-        if (e.target.classList.contains('modal')) {
-            e.target.classList.remove('show');
+        if (id === 'addMorePromptModal') {
+            const promptDisplay = document.getElementById('prompt_form_number_display');
+            if (promptDisplay) {
+                promptDisplay.innerText = formVal;
+            }
         }
+        const el = document.getElementById(id);
+        if (el) el.classList.add('show');
     }
+
+    function openAddItemModalClean(fromPrompt = false) {
+        const form = document.querySelector('#addItemModal form');
+        const formVal = selectedChecksheetId || '{{ $currentFormNo }}';
+        if (form) {
+            const inputs = form.querySelectorAll('input:not([type="hidden"]), select, textarea');
+            inputs.forEach(el => el.value = '');
+            const alertBox = document.getElementById('fi_kode_alert_box');
+            if (alertBox) {
+                alertBox.style.display = 'none';
+                alertBox.innerHTML = '';
+            }
+            const modalFormNo = document.getElementById('modal_form_number');
+            if (modalFormNo) modalFormNo.value = formVal;
+            const displayFormNo = document.getElementById('modal_form_number_display');
+            if (displayFormNo) displayFormNo.innerText = formVal;
+            const promptInput = document.getElementById('modal_from_prompt');
+            if (promptInput) promptInput.value = fromPrompt ? '1' : '0';
+        }
+        openModal('addItemModal');
+        setTimeout(() => {
+            document.getElementById('fi_kode')?.focus();
+        }, 150);
+    }
+
+    function closeAddMorePrompt() {
+        closeModal('addMorePromptModal');
+        const promptInput = document.getElementById('modal_from_prompt');
+        if (promptInput) promptInput.value = '0';
+        fetch('{{ route('saturnus.clear_add_prompt_session') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        }).catch(() => {});
+    }
+
+    function closeModal(id) {
+        if (id === 'addMorePromptModal') {
+            const promptInput = document.getElementById('modal_from_prompt');
+            if (promptInput) promptInput.value = '0';
+        }
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('show');
+    }
+
+    window.onclick = function(e) {
+        if (e.target.classList && e.target.classList.contains('modal')) {
+            if (e.target.id === 'addMorePromptModal') {
+                closeAddMorePrompt();
+            } else {
+                e.target.classList.remove('show');
+            }
+        }
+    };
 
     function editAccount(id, name, username, department, role) {
         const form = document.getElementById('form-edit-account');
@@ -1328,10 +1419,10 @@
         const unregMatch = unregList.find(i => (i.kode_barang || '').trim().toUpperCase() === code);
         if (unregMatch) {
             alertBox.style.display = 'block';
-            alertBox.style.background = 'rgba(239, 68, 68, 0.12)';
-            alertBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
-            alertBox.style.color = '#b91c1c';
-            alertBox.innerHTML = `🚫 <strong>PERINGATAN:</strong> Item dengan Kode Barang <strong>${escapeHtml(code)}</strong> (${escapeHtml(unregMatch.nama_barang || '')}) telah di-discontinue sebelumnya pada <strong>Form Unregistrasi ${escapeHtml(unregMatch.form_number || '')}</strong>!`;
+            alertBox.style.background = '#fef3c7';
+            alertBox.style.border = '1px solid #fde68a';
+            alertBox.style.color = '#92400e';
+            alertBox.innerHTML = `⚠️ <strong>Pemberitahuan:</strong> Item dengan Kode Barang <strong>${escapeHtml(code)}</strong> (${escapeHtml(unregMatch.nama_barang || '')}) sebelumnya pernah diajukan pada <strong>Form Unregistrasi ${escapeHtml(unregMatch.form_number || '')}</strong>. <em>Item tetap dapat didaftarkan ke dalam formulir ini.</em>`;
             return;
         }
 
@@ -1835,6 +1926,12 @@
         const displayEl = document.getElementById('form-number-display');
         if (displayEl) displayEl.innerText = csId;
 
+        const modalDisplay = document.getElementById('modal_form_number_display');
+        if (modalDisplay) modalDisplay.innerText = csId;
+
+        const promptDisplay = document.getElementById('prompt_form_number_display');
+        if (promptDisplay) promptDisplay.innerText = csId;
+
         const toolbarFormNo = document.getElementById('toolbar-form-no');
         if (toolbarFormNo) toolbarFormNo.innerText = csId;
 
@@ -1954,6 +2051,20 @@
         const modalFormNoInput = document.getElementById('modal_form_number');
         if (modalFormNoInput) {
             modalFormNoInput.value = nextFormNo;
+        }
+
+        const promptInput = document.getElementById('modal_from_prompt');
+        if (promptInput) promptInput.value = '0';
+
+        const addForm = document.querySelector('#addItemModal form');
+        if (addForm) {
+            const inputs = addForm.querySelectorAll('input:not([type="hidden"]), select, textarea');
+            inputs.forEach(el => el.value = '');
+            const alertBox = document.getElementById('fi_kode_alert_box');
+            if (alertBox) {
+                alertBox.style.display = 'none';
+                alertBox.innerHTML = '';
+            }
         }
 
         populateDateFilterOptions();
@@ -2779,6 +2890,12 @@
         const initialTargetForm = (urlFormParam && checksheets[urlFormParam]) ? urlFormParam : selectedChecksheetId;
         viewChecksheet(initialTargetForm, false);
         initAllSignaturesQRCodes();
+
+        @if(session('show_add_more_prompt'))
+            setTimeout(function() {
+                openModal('addMorePromptModal');
+            }, 300);
+        @endif
 
         @if($errors->any())
             openModal('addItemModal');
