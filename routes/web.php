@@ -117,6 +117,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/data-view', [Saturnus\ItemController::class, 'dataView'])->name('data_view')->middleware('permission:saturnus.directory.view,saturnus.registrasi.view');
         Route::post('/form-registrasi/item', [Saturnus\ItemController::class, 'storeFormItem'])->name('form_registrasi.item.store')->middleware('permission:saturnus.registrasi.create');
         Route::post('/form-registrasi/approve', [Saturnus\ItemController::class, 'approveForm'])->name('form_registrasi.approve')->middleware('permission:saturnus.registrasi.approve');
+        Route::post('/form-registrasi/cancel', [Saturnus\ItemController::class, 'cancelForm'])->name('form_registrasi.cancel')->middleware('permission:saturnus.registrasi.approve,saturnus.registrasi.create');
         Route::match(['delete', 'post'], '/form-registrasi/delete-checksheet', [Saturnus\ItemController::class, 'deleteFormChecksheet'])->name('form_registrasi.delete_checksheet')->middleware('permission:saturnus.registrasi.create');
         Route::delete('/form-registrasi/item/{id}', [Saturnus\ItemController::class, 'deleteFormItem'])->name('form_registrasi.item.delete')->middleware('permission:saturnus.registrasi.create');
         Route::post('/form-registrasi/comment', [Saturnus\ItemController::class, 'storeComment'])->name('form_registrasi.comment.store')->middleware('permission:saturnus.registrasi.view');
@@ -132,6 +133,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/unregistrasi/export-excel', [Saturnus\FormUnregistrasiController::class, 'exportExcel'])->name('unregistrasi.export')->middleware('permission:saturnus.unregistrasi.view');
         Route::post('/form-unregistrasi/item', [Saturnus\FormUnregistrasiController::class, 'storeFormItem'])->name('form_unregistrasi.item.store')->middleware('permission:saturnus.unregistrasi.create');
         Route::post('/form-unregistrasi/approve', [Saturnus\FormUnregistrasiController::class, 'approveForm'])->name('form_unregistrasi.approve')->middleware('permission:saturnus.unregistrasi.approve');
+        Route::post('/form-unregistrasi/cancel', [Saturnus\FormUnregistrasiController::class, 'cancelForm'])->name('form_unregistrasi.cancel')->middleware('permission:saturnus.unregistrasi.approve,saturnus.unregistrasi.create');
         Route::match(['delete', 'post'], '/form-unregistrasi/delete-checksheet', [Saturnus\FormUnregistrasiController::class, 'deleteFormChecksheet'])->name('form_unregistrasi.delete_checksheet')->middleware('permission:saturnus.unregistrasi.create');
         Route::post('/form-unregistrasi/comment', [Saturnus\FormUnregistrasiController::class, 'storeComment'])->name('form_unregistrasi.comment.store')->middleware('permission:saturnus.unregistrasi.view');
         Route::delete('/form-unregistrasi/comment/{id}', [Saturnus\FormUnregistrasiController::class, 'deleteComment'])->name('form_unregistrasi.comment.delete')->middleware('permission:saturnus.unregistrasi.view');
@@ -289,6 +291,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/form-registrasi/store-item', [Saturnus\ItemController::class, 'storeFormItem']);
         Route::post('/form-registrasi/approve', [Saturnus\ItemController::class, 'approveForm'])->name('form-registrasi.approve');
         Route::post('/form-registrasi/approve-action', [Saturnus\ItemController::class, 'approveForm']);
+        Route::post('/form-registrasi/cancel', [Saturnus\ItemController::class, 'cancelForm'])->name('form-registrasi.cancel');
         Route::match(['delete', 'post'], '/form-registrasi/form/delete', [Saturnus\ItemController::class, 'deleteFormChecksheet'])->name('form-registrasi.delete-checksheet');
         Route::match(['delete', 'post'], '/form-registrasi/delete-checksheet-action', [Saturnus\ItemController::class, 'deleteFormChecksheet']);
         Route::delete('/form-registrasi/{id}', [Saturnus\ItemController::class, 'deleteFormItem'])->name('form-registrasi.delete');
@@ -313,6 +316,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/form-unregistrasi/store-item', [Saturnus\FormUnregistrasiController::class, 'storeFormItem']);
         Route::post('/form-unregistrasi/approve', [Saturnus\FormUnregistrasiController::class, 'approveForm'])->name('form-unregistrasi.approve');
         Route::post('/form-unregistrasi/approve-action', [Saturnus\FormUnregistrasiController::class, 'approveForm']);
+        Route::post('/form-unregistrasi/cancel', [Saturnus\FormUnregistrasiController::class, 'cancelForm'])->name('form-unregistrasi.cancel');
         Route::match(['delete', 'post'], '/form-unregistrasi/form/delete', [Saturnus\FormUnregistrasiController::class, 'deleteFormChecksheet'])->name('form-unregistrasi.delete-checksheet');
         Route::match(['delete', 'post'], '/form-unregistrasi/delete-checksheet-action', [Saturnus\FormUnregistrasiController::class, 'deleteFormChecksheet']);
         Route::delete('/form-unregistrasi/{id}', [Saturnus\FormUnregistrasiController::class, 'deleteFormItem'])->name('form-unregistrasi.delete');

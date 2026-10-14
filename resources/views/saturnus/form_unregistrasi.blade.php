@@ -7,12 +7,18 @@
     $userDeptTag = strtoupper(Auth::user()->department ?? Auth::user()->name ?? 'PRODUCTION');
     $userRoleRaw = strtoupper(trim(Auth::user()->role ?? 'USER'));
     $isMaster = in_array($userRoleRaw, ['MASTER', 'ADMIN']) || (Auth::user() && method_exists(Auth::user(), 'isMaster') && Auth::user()->isMaster());
+    $usernameLower = strtolower(trim(Auth::user()->username ?? ''));
+    $roleSlug = Auth::user()->getRoleModel() ? strtolower(Auth::user()->getRoleModel()->slug) : '';
     $canViewAllDept = in_array($userRoleRaw, ['MASTER', 'ADMIN'])
         || str_contains($userRoleRaw, 'ACCOUNTING')
         || str_contains($userRoleRaw, 'ACC')
         || str_contains($userRoleRaw, 'WAREHOUSE');
 
-    $canCreateForm = Auth::user() && (Auth::user()->isMaster() || (Auth::user()->hasRole('user') && Auth::user()->hasPermission('saturnus.unregistrasi.create')));
+    $canCreateForm = Auth::user() && (
+        $userRoleRaw === 'USER' || $roleSlug === 'user'
+    ) && !in_array($userRoleRaw, ['MASTER', 'ADMIN'])
+      && !in_array($usernameLower, ['master', 'admin'])
+      && Auth::user()->hasPermission('saturnus.unregistrasi.create');
 
     $allowedDepts = [strtoupper(trim(Auth::user()->department ?? 'PRODUCTION'))];
     if (
@@ -76,12 +82,25 @@
     }
     $isDeptMatch = in_array(strtoupper(trim($currentFormDept)), $allowedDepts) || $canViewAllDept;
 
-    $canApproveStaff = ($isMaster || str_contains($userRoleRaw, 'STAFF')) && $currentFormItems->isNotEmpty() && !$hasStaffSig && $isDeptMatch;
-    $canApproveWh = ($isMaster || str_contains($userRoleRaw, 'WAREHOUSE')) && $currentFormItems->isNotEmpty() && $hasStaffSig && !$hasWhSig;
+    $isCancelled = ($currentApproval?->status === 'Dibatalkan');
+
+    $canApproveStaff = !$isCancelled && ($isMaster || str_contains($userRoleRaw, 'STAFF')) && $currentFormItems->isNotEmpty() && !$hasStaffSig && $isDeptMatch;
+    $canApproveWh = !$isCancelled && ($isMaster || str_contains($userRoleRaw, 'WAREHOUSE')) && $currentFormItems->isNotEmpty() && $hasStaffSig && !$hasWhSig;
 
     $hasPendingAction = $canApproveStaff || $canApproveWh;
     $pendingActionRole = $canApproveStaff ? 'staff' : ($canApproveWh ? 'warehouse' : '');
     $pendingActionLabel = $canApproveStaff ? 'Approve (Staff)' : ($canApproveWh ? 'Discontinue (Warehouse)' : '');
+
+    // Check if user can cancel / reject the unregistrasi form following approval hierarchy: User > Staff > Warehouse Consumable
+    $isCreator = ($currentApproval && $currentApproval->user_id == Auth::id()) || strcasecmp($currentFormReqName, Auth::user()->name ?? '') === 0;
+    $canCreatorCancel = $isCreator && !$hasStaffSig; // User pembuat hanya bisa membatalkan di tahap 1 (sebelum Staff approve)
+
+    $canCancelForm = !$isCancelled && !$hasWhSig && (
+        $isMaster ||
+        $canCreatorCancel ||
+        $canApproveStaff ||
+        $canApproveWh
+    );
 @endphp
 <style>
     @keyframes spin {
@@ -109,6 +128,27 @@
         box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
         background: linear-gradient(135deg, #047857 0%, #059669 100%);
     }
+    .btn-cancel-check-toolbar {
+        background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%);
+        color: #ffffff !important;
+        border: none;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 0.45rem 1.15rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(225, 29, 72, 0.35);
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    }
+    .btn-cancel-check-toolbar:hover {
+        transform: translateY(-1.5px);
+        box-shadow: 0 6px 18px rgba(225, 29, 72, 0.45);
+        background: linear-gradient(135deg, #be123c 0%, #e11d48 100%);
+    }
     .btn-sig-approve {
         background: linear-gradient(135deg, #059669 0%, #10b981 100%);
         color: #ffffff !important;
@@ -129,6 +169,27 @@
         transform: translateY(-1px);
         box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);
         background: linear-gradient(135deg, #047857 0%, #059669 100%);
+    }
+    .btn-sig-cancel {
+        background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%);
+        color: #ffffff !important;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.4rem 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        cursor: pointer;
+        box-shadow: 0 3px 10px rgba(225, 29, 72, 0.3);
+        transition: all 0.2s ease;
+        margin: 4px auto;
+    }
+    .btn-sig-cancel:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(225, 29, 72, 0.45);
+        background: linear-gradient(135deg, #be123c 0%, #e11d48 100%);
     }
     .form-selector-select {
         background: transparent;
@@ -696,10 +757,17 @@
     <!-- Quick Document Status Bar (No Print) -->
     <div class="sheet-doc-toolbar no-print">
         <div class="doc-toolbar-left" style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+            @if($isCancelled)
+            <div class="doc-badge-pill" style="background: rgba(239, 68, 68, 0.12); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3);">
+                <span class="pulse-beacon-inline" style="background: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);"></span>
+                <span>STATUS LEMBAR: <strong>DIBATALKAN</strong></span>
+            </div>
+            @else
             <div class="doc-badge-pill">
                 <span class="pulse-beacon-inline green"></span>
                 <span>STATUS LEMBAR: <strong>{{ strtoupper($currentApproval?->status ?? 'AKTIF / SIAP CETAK') }}</strong></span>
             </div>
+            @endif
             <div class="doc-badge-pill secondary">
                 <span>NO FORM: <strong id="toolbar-form-no">{{ $currentFormNo }}</strong></span>
             </div>
@@ -723,6 +791,12 @@
             <button type="button" class="btn-approval-check-toolbar" onclick="quickApproveUnreg('{{ $currentFormNo }}', '{{ $pendingActionRole }}', this)" title="Klik untuk menyetujui formulir unregistrasi ini langsung">
                 <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 <span>Setujui Formulir ({{ $pendingActionLabel }})</span>
+            </button>
+            @endif
+            @if($canCancelForm)
+            <button type="button" class="btn-cancel-check-toolbar" onclick="openCancelModal('{{ $currentFormNo }}')" title="Tolak / Batalkan formulir unregistrasi ini">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <span>Batalkan Formulir</span>
             </button>
             @endif
         </div>
@@ -815,19 +889,8 @@
                                     </div>
                                     <div>
                                         <h4 class="empty-state-title">Belum Ada Data Barang Unregistrasi</h4>
-                                        <p class="empty-state-desc">Formulir unregistrasi ini masih kosong. Klik tombol di bawah untuk mengisi data formulir discontinue.</p>
+                                        <p class="empty-state-desc">Formulir unregistrasi ini masih kosong.@if($canCreateForm) Silakan gunakan tombol <strong>+ Form Baru</strong> di bagian atas untuk membuat formulir unregistrasi discontinue.@else Belum ada formulir discontinue yang diajukan.@endif</p>
                                     </div>
-                                    @if($canCreateForm)
-                                    <div class="empty-state-actions">
-                                        <button type="button" class="empty-state-btn" onclick="openModal('addItemModal')">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                                            </svg>
-                                            + Isi Data Formulir
-                                        </button>
-                                    </div>
-                                    @endif
                                 </div>
                             </div>
                         </td>
@@ -855,16 +918,13 @@
             <div class="sig-box">
                 <div class="sig-label">Approved Staff / Section Head</div>
                 <div class="sig-space" id="preview-sig-staff">
-                    @if($hasStaffSig)
+                    @if($isCancelled && !$hasStaffSig)
+                        <div style="color: #dc2626; font-weight: 700; font-size: 0.72rem; margin-bottom: 0.15rem;">✕ DIBATALKAN</div>
+                        <div style="font-size: 0.65rem; color: #ef4444; font-weight: 600;">Tidak Disetujui</div>
+                    @elseif($hasStaffSig)
                         <div style="color: var(--color-success); font-weight: 700; font-size: 0.72rem; margin-bottom: 0.15rem;">✓ APPROVED BY STAFF</div>
                         <div class="sig-qrcode" id="blade-sig-qrcode-staff" data-val="{{ $staffSigner }} (Tgl: {{ $staffSigDate }})"></div>
                         <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">{{ $staffSigner }} (Tgl: {{ $staffSigDate }})</div>
-                    @elseif($canApproveStaff)
-                        <button type="button" class="btn-sig-approve no-print" onclick="quickApproveUnreg('{{ $currentFormNo }}', 'staff', this)" title="Setujui formulir unregistrasi ini sebagai Staff">
-                            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            <span>Approve Staff</span>
-                        </button>
-                        <span class="only-print" style="color: var(--text-muted); font-size: 0.75rem; font-style: italic;">...................</span>
                     @else
                         <span style="color: var(--text-muted); font-size: 0.75rem; font-style: italic;">...................</span>
                     @endif
@@ -874,16 +934,13 @@
             <div class="sig-box">
                 <div class="sig-label">Telah Discontinue (Warehouse)</div>
                 <div class="sig-space" id="preview-sig-warehouse">
-                    @if($hasWhSig)
+                    @if($isCancelled && !$hasWhSig)
+                        <div style="color: #dc2626; font-weight: 700; font-size: 0.72rem; margin-bottom: 0.15rem;">✕ DIBATALKAN</div>
+                        <div style="font-size: 0.65rem; color: #ef4444; font-weight: 600;">Tidak Discontinue</div>
+                    @elseif($hasWhSig)
                         <div style="color: var(--color-success); font-weight: 700; font-size: 0.72rem; margin-bottom: 0.15rem;">✓ DISCONTINUED BY WAREHOUSE</div>
                         <div class="sig-qrcode" id="blade-sig-qrcode-warehouse" data-val="{{ $whSigner }} (Tgl: {{ $whSigDate }})"></div>
                         <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">{{ $whSigner }} (Tgl: {{ $whSigDate }})</div>
-                    @elseif($canApproveWh)
-                        <button type="button" class="btn-sig-approve no-print" onclick="quickApproveUnreg('{{ $currentFormNo }}', 'warehouse', this)" title="Verifikasi discontinue barang consumable">
-                            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            <span>Discontinue Warehouse</span>
-                        </button>
-                        <span class="only-print" style="color: var(--text-muted); font-size: 0.75rem; font-style: italic;">...................</span>
                     @else
                         <span style="color: var(--text-muted); font-size: 0.75rem; font-style: italic;">...................</span>
                     @endif
@@ -1297,12 +1354,139 @@
     </div>
 </div>
 
+{{-- ===== MODAL: BATALKAN FORMULIR UNREGISTRASI ===== --}}
+<div class="modal" id="modalCancelForm">
+    <div class="modal-content" style="max-width: 480px; padding: 1.5rem 1.75rem; border-radius: 18px; border: none; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35); background: #ffffff;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.85rem; margin-bottom: 1rem; border-bottom: 1.5px solid #fee2e2;">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+                <div style="width: 38px; height: 38px; border-radius: 10px; background: #ffe4e6; color: #e11d48; display: flex; align-items: center; justify-content: center;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                </div>
+                <div>
+                    <h3 style="font-family: inherit; font-size: 1.15rem; font-weight: 800; color: #9f1239; margin: 0;">Batalkan Formulir Unregistrasi</h3>
+                    <p style="font-size: 0.78rem; color: #be123c; margin: 0.15rem 0 0 0; font-weight: 600;">No Form: <span id="cancelModalFormNoDisplay">-</span></p>
+                </div>
+            </div>
+            <button type="button" class="btn-close" onclick="closeCancelModal()" style="background: transparent; border: none; font-size: 1.35rem; line-height: 1; color: #94a3b8; cursor: pointer;">&times;</button>
+        </div>
+
+        <div>
+            <p style="font-size: 0.85rem; color: #475569; margin-top: 0; margin-bottom: 0.85rem; line-height: 1.45;">
+                Apakah Anda yakin ingin menolak / membatalkan formulir unregistrasi ini? Status formulir akan berubah menjadi <strong style="color: #e11d48;">Dibatalkan</strong> dan proses discontinue dihentikan.
+            </p>
+            <div class="form-group" style="margin-bottom: 0.85rem;">
+                <label for="cancelModalReasonInput" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.35rem;">
+                    Alasan Pembatalan / Penolakan <span style="color: #e11d48;">*</span>
+                </label>
+                <textarea id="cancelModalReasonInput" rows="3" class="form-control" placeholder="Contoh: Barang masih aktif digunakan di line, pengajuan dibatalkan, atau revisi kode barang..." style="width: 100%; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 0.65rem 0.85rem; font-size: 0.85rem; resize: vertical; box-sizing: border-box;"></textarea>
+                <div id="cancelModalError" style="display: none; color: #e11d48; font-size: 0.75rem; font-weight: 600; margin-top: 0.35rem;">
+                    Alasan pembatalan wajib diisi minimal 3 karakter.
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.65rem; justify-content: flex-end; margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid #f1f5f9;">
+            <button type="button" class="btn btn-secondary" onclick="closeCancelModal()" style="padding: 0.5rem 1.15rem; font-weight: 700; border-radius: 8px; background: #ffffff; border: 1.5px solid #cbd5e1; color: #1e293b; cursor: pointer; font-size: 0.82rem;">
+                Tutup
+            </button>
+            <button type="button" id="btnConfirmCancelModal" onclick="submitCancelModal()" style="padding: 0.5rem 1.25rem; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); border: none; color: #ffffff; cursor: pointer; box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35); font-size: 0.82rem;">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <span>Ya, Batalkan Form</span>
+            </button>
+        </div>
+    </div>
+</div>
+
 </div> {{-- End .workspace-light-theme --}}
 
 @endsection
 
 @section('scripts')
 <script>
+    let targetCancelFormNo = '';
+    function openCancelModal(formNo) {
+        targetCancelFormNo = formNo || selectedChecksheetId || '{{ $currentFormNo }}';
+        const displayEl = document.getElementById('cancelModalFormNoDisplay');
+        if (displayEl) displayEl.innerText = targetCancelFormNo;
+        const reasonInput = document.getElementById('cancelModalReasonInput');
+        if (reasonInput) reasonInput.value = '';
+        const errEl = document.getElementById('cancelModalError');
+        if (errEl) errEl.style.display = 'none';
+        openModal('modalCancelForm');
+        setTimeout(() => {
+            if (reasonInput) reasonInput.focus();
+        }, 150);
+    }
+
+    function closeCancelModal() {
+        closeModal('modalCancelForm');
+    }
+
+    async function submitCancelModal() {
+        const reasonInput = document.getElementById('cancelModalReasonInput');
+        const reason = reasonInput ? reasonInput.value.trim() : '';
+        const errEl = document.getElementById('cancelModalError');
+        if (!reason || reason.length < 3) {
+            if (errEl) {
+                errEl.innerText = 'Alasan pembatalan wajib diisi minimal 3 karakter.';
+                errEl.style.display = 'block';
+            }
+            if (reasonInput) reasonInput.focus();
+            return;
+        }
+        if (errEl) errEl.style.display = 'none';
+
+        const btnConfirm = document.getElementById('btnConfirmCancelModal');
+        let origContent = '';
+        if (btnConfirm) {
+            origContent = btnConfirm.innerHTML;
+            btnConfirm.disabled = true;
+            btnConfirm.style.opacity = '0.75';
+            btnConfirm.innerHTML = `
+                <svg style="animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 4px;" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path></svg>
+                <span>Membatalkan...</span>
+            `;
+        }
+
+        try {
+            const response = await fetch('{{ route("saturnus.form_unregistrasi.cancel") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    form_number: targetCancelFormNo,
+                    reason: reason
+                })
+            });
+
+            const res = await response.json();
+            if (response.ok && res.success) {
+                closeCancelModal();
+                showToast(res.message || `Formulir ${targetCancelFormNo} berhasil dibatalkan.`, 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 600);
+            } else {
+                alert(res.message || 'Gagal membatalkan formulir.');
+                if (btnConfirm) {
+                    btnConfirm.disabled = false;
+                    btnConfirm.style.opacity = '1';
+                    btnConfirm.innerHTML = origContent;
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Terjadi kesalahan jaringan saat membatalkan formulir.');
+            if (btnConfirm) {
+                btnConfirm.disabled = false;
+                btnConfirm.style.opacity = '1';
+                btnConfirm.innerHTML = origContent;
+            }
+        }
+    }
     function openModal(id) {
         const formVal = selectedChecksheetId || '{{ $currentFormNo }}';
         if (id === 'addItemModal') {
@@ -1605,16 +1789,7 @@
                         </div>
                         <div>
                             <h4 class="empty-state-title">Belum Ada Data Barang Unregistrasi</h4>
-                            <p class="empty-state-desc">Formulir unregistrasi ini masih kosong. Klik tombol di bawah untuk mengisi data formulir discontinue.</p>
-                        </div>
-                        <div class="empty-state-actions">
-                            <button type="button" class="empty-state-btn" onclick="openModal('addItemModal')">
-                                <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                + Isi Data Formulir
-                            </button>
+                            <p class="empty-state-desc">Formulir unregistrasi ini masih kosong. Silakan buat form baru untuk mendaftarkan barang discontinue.</p>
                         </div>
                     </div>
                 </div>

@@ -215,7 +215,18 @@ class FormUnregistrasiController extends Controller
         $this->abortIfGuest();
 
         $user = auth()->user();
-        if (!$user || (!$user->isMaster() && !$user->hasRole('user') && !$user->hasPermission('saturnus.unregistrasi.create'))) {
+        $userRoleRaw = strtoupper(trim($user?->role ?? ''));
+        $usernameLower = strtolower(trim($user?->username ?? ''));
+        $rm = $user?->getRoleModel();
+        $roleSlug = $rm ? strtolower($rm->slug) : '';
+
+        $isStrictUser = $user && (
+            $userRoleRaw === 'USER' || $roleSlug === 'user'
+        ) && !in_array($userRoleRaw, ['MASTER', 'ADMIN'])
+          && !in_array($usernameLower, ['master', 'admin'])
+          && $user->hasPermission('saturnus.unregistrasi.create');
+
+        if (!$isStrictUser) {
             return redirect()->back()->with('error', 'Akses Ditolak: Hanya akun dengan role User yang memiliki hak akses untuk membuat formulir unregistrasi baru.');
         }
 
@@ -501,6 +512,138 @@ class FormUnregistrasiController extends Controller
         }
 
         return redirect()->route('saturnus.form_unregistrasi', ['form' => $formNo])->with('success', $msg);
+    }
+
+    /**
+     * Handle cancellation / rejection of an unregistrasi form.
+     */
+    public function cancelForm(Request $request)
+    {
+        $this->abortIfGuest();
+
+        $request->validate([
+            'form_number' => 'required|string',
+            'reason'      => 'required|string|min:3|max:1000',
+        ], [
+            'reason.required' => 'Alasan pembatalan formulir unregistrasi wajib diisi.',
+            'reason.min'      => 'Alasan pembatalan minimal 3 karakter.',
+        ]);
+
+        $formNo = $request->input('form_number');
+        $reason = trim($request->input('reason'));
+        $currentUser = auth()->user();
+        $currentUserRole = strtoupper(trim($currentUser->role ?? ''));
+        $isMaster = in_array($currentUserRole, ['MASTER', 'ADMIN']);
+
+        $firstItem = UnregistrasiItem::where('form_number', $formNo)->orderBy('created_at', 'asc')->first();
+        $parts = explode('/', $formNo);
+        $reqDept = (count($parts) >= 2 && !empty($parts[1]))
+            ? strtoupper(trim($parts[1]))
+            : ($firstItem?->created_by_dept ?? $currentUser->department ?? 'Production');
+        $reqName = $firstItem?->created_by_name ?? $currentUser->name ?? 'User';
+
+        $approval = UnregistrasiApproval::firstOrCreate(
+            ['form_number' => $formNo],
+            [
+                'user_id'          => $firstItem?->user_id ?? $currentUser->id,
+                'requestor_name'   => $reqName,
+                'requestor_dept'   => $reqDept,
+                'form_date'        => $firstItem?->created_at ? $firstItem->created_at->format('d-m-Y') : date('d-m-Y'),
+                'status'           => 'Butuh Approval Staff / Section Head',
+                'user_signed_at'   => now(),
+                'user_signer_name' => $reqName,
+                'user_comment'     => 'Formulir diajukan.',
+            ]
+        );
+
+        if (($approval->status === 'Telah Discontinue' || $approval->status === 'Telah Discontinue oleh Warehouse Consumable') && !$isMaster) {
+            $msg = 'Formulir ini sudah berstatus discontinue dan tidak dapat dibatalkan kecuali oleh Master.';
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+            return back()->with('error', $msg);
+        }
+
+        if ($approval->status === 'Dibatalkan') {
+            $msg = 'Formulir ini sudah berstatus Dibatalkan.';
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 400);
+            }
+            return back()->with('error', $msg);
+        }
+
+        $isCreator = ($currentUser->id && $approval->user_id == $currentUser->id) || (strcasecmp($currentUser->name ?? '', $approval->requestor_name ?? '') === 0);
+        $isDeptStaff = str_contains($currentUserRole, 'STAFF') && $this->isDepartmentAllowed($currentUser, $reqDept);
+        $isWh = str_contains($currentUserRole, 'WAREHOUSE');
+
+        // Wewenang batalkan form mengikuti hierarki approval: User > Staff > Warehouse Consumable
+        $canCancel = false;
+        $stageDeniedMsg = '';
+
+        if ($isMaster) {
+            $canCancel = true;
+        } elseif (!$approval->staff_signed_at) {
+            // Tahap 1: Belum disetujui Staff -> Hanya Pembuat (User) dan Staff departemen terkait yang berwenang
+            if ($isCreator || $isDeptStaff) {
+                $canCancel = true;
+            } else {
+                $stageDeniedMsg = 'Akses Ditolak: Formulir unregistrasi masih dalam tahap persetujuan Staff / Section Head. Hanya Staff departemen terkait, pembuat form, atau Master yang dapat membatalkan pada tahap ini.';
+            }
+        } elseif (!$approval->warehouse_signed_at) {
+            // Tahap 2: Sudah disetujui Staff, menunggu Warehouse -> Hanya Warehouse yang berwenang
+            if ($isWh) {
+                $canCancel = true;
+            } else {
+                $stageDeniedMsg = 'Akses Ditolak: Formulir unregistrasi sedang dalam tahap verifikasi Warehouse Consumable. Hanya tim Warehouse atau Master yang berwenang membatalkan pada tahap ini.';
+            }
+        } else {
+            $stageDeniedMsg = 'Akses Ditolak: Formulir unregistrasi telah selesai discontinue dan tidak dapat dibatalkan.';
+        }
+
+        if (!$canCancel) {
+            $msg = $stageDeniedMsg ?: 'Akses Ditolak: Anda tidak memiliki wewenang untuk membatalkan formulir unregistrasi ini.';
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+            return back()->with('error', $msg);
+        }
+
+        $cancellerName = $currentUser->name ?? 'User';
+        $cancellerRole = $currentUser->role ?? 'User';
+
+        $approval->status = 'Dibatalkan';
+        $cancelNote = "DIBATALKAN oleh {$cancellerName} ({$cancellerRole}). Alasan: {$reason}";
+
+        if ($isWh && $approval->staff_signed_at) {
+            $approval->warehouse_comment = $cancelNote;
+        } elseif (($isDeptStaff || $isMaster) && !$approval->staff_signed_at) {
+            $approval->staff_comment = $cancelNote;
+        } else {
+            $approval->user_comment = $cancelNote;
+        }
+        $approval->save();
+
+        // Log to UnregistrasiComment
+        $comment = new UnregistrasiComment();
+        $comment->form_number = $formNo;
+        $comment->user_id     = $currentUser->id;
+        $comment->user_name   = $cancellerName;
+        $comment->user_dept   = $currentUser->department ?? $reqDept;
+        $comment->user_role   = $cancellerRole;
+        $comment->comment     = '🚫 [FORM DIBATALKAN] Alasan: ' . $reason;
+        $comment->save();
+
+        $msg = "Formulir unregistrasi {$formNo} berhasil dibatalkan.";
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success'  => true,
+                'message'  => $msg,
+                'approval' => $approval,
+            ]);
+        }
+
+        return redirect()->back()->with('success', $msg);
     }
 
     /**

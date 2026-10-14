@@ -86,6 +86,7 @@
                         <option value="">Semua Status</option>
                         <option value="completed">✓ Selesai (Registrasi WH)</option>
                         <option value="outstanding">⏳ Outstanding (Proses)</option>
+                        <option value="cancelled">✕ Dibatalkan</option>
                     </select>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.35rem;">
@@ -245,7 +246,9 @@
         checksheets.forEach(cs => {
             const dbAppr = serverFormApprovals.find(a => a.form_number === cs.formNo);
             const status = dbAppr?.status || 'Butuh Approval Staff / Section Head';
-            if (dbAppr?.warehouse_signed_at || status === 'Item Telah didaftarkan' || status === 'SELESAI') {
+            if (status === 'Dibatalkan') {
+                // Cancelled
+            } else if (dbAppr?.warehouse_signed_at || status === 'Item Telah didaftarkan' || status === 'SELESAI') {
                 approvedCount++;
             } else {
                 processCount++;
@@ -264,9 +267,11 @@
             const dbAppr = serverFormApprovals.find(a => a.form_number === cs.formNo);
             const status = dbAppr?.status || 'Butuh Approval Staff / Section Head';
             const whDone = Boolean(dbAppr?.warehouse_signed_at || status === 'Item Telah didaftarkan' || status === 'SELESAI');
+            const isCancelled = (status === 'Dibatalkan');
 
-            if (selStatus === 'completed' && !whDone) return false;
-            if (selStatus === 'outstanding' && whDone) return false;
+            if (selStatus === 'completed' && (!whDone || isCancelled)) return false;
+            if (selStatus === 'outstanding' && (whDone || isCancelled)) return false;
+            if (selStatus === 'cancelled' && !isCancelled) return false;
 
             let itemMonth = '';
             let itemYear = '';
@@ -321,7 +326,9 @@
             const whDone = Boolean(dbAppr?.warehouse_signed_at || status === 'Item Telah didaftarkan' || status === 'SELESAI');
 
             let statusBadge = '';
-            if (whDone) {
+            if (status === 'Dibatalkan') {
+                statusBadge = '<span class="status-badge" style="background: rgba(239, 68, 68, 0.12); color: #dc2626; font-weight: 700; border: 1px solid rgba(239, 68, 68, 0.25); padding: 0.35rem 0.65rem; border-radius: 8px; font-size: 0.78rem;">✕ Dibatalkan</span>';
+            } else if (whDone) {
                 statusBadge = '<span class="status-badge" style="background: rgba(16,185,129,0.15); color: #059669; font-weight: 700; border: 1px solid rgba(16,185,129,0.3); padding: 0.35rem 0.65rem; border-radius: 8px; font-size: 0.78rem;">✓ Telah Diregistrasi (WH)</span>';
             } else if (dbAppr?.accounting_signed_at) {
                 statusBadge = '<span class="status-badge" style="background: rgba(16,185,129,0.1); color: #059669; font-weight: 700; border: 1px solid rgba(16,185,129,0.25); padding: 0.35rem 0.65rem; border-radius: 8px; font-size: 0.78rem;">⏳ Butuh WH Consumable</span>';

@@ -17,7 +17,7 @@
     
     $completedItems = $formItems->filter(function($item) use ($formApprovals) {
         $appr = $formApprovals->firstWhere('form_number', $item->form_number);
-        return (bool)($appr && ($appr->warehouse_signed_at || $appr->warehouse_signer_name));
+        return (bool)($appr && ($appr->warehouse_signed_at || $appr->warehouse_signer_name) && $appr->status !== 'Dibatalkan');
     })->count();
 
     $thisMonthCount = $formItems->filter(function($item) {
@@ -414,6 +414,7 @@
                     <option value="">Semua Status</option>
                     <option value="completed">Selesai Discontinue</option>
                     <option value="pending">Dalam Proses Approval</option>
+                    <option value="cancelled">✕ Dibatalkan</option>
                 </select>
             </div>
 
@@ -458,8 +459,9 @@
                     @forelse($formItems as $index => $item)
                         @php
                             $approval = $formApprovals->firstWhere('form_number', $item->form_number);
-                            $isCompleted = (bool)($approval && ($approval->warehouse_signed_at || $approval->warehouse_signer_name));
-                            $statusType = $isCompleted ? 'completed' : 'pending';
+                            $isCancelled = ($approval?->status === 'Dibatalkan');
+                            $isCompleted = !$isCancelled && (bool)($approval && ($approval->warehouse_signed_at || $approval->warehouse_signer_name));
+                            $statusType = $isCancelled ? 'cancelled' : ($isCompleted ? 'completed' : 'pending');
                         @endphp
                         <tr class="history-row"
                             data-dept="{{ strtolower($item->created_by_dept ?? '') }}"
@@ -514,7 +516,11 @@
 
                             {{-- Status Discontinue --}}
                             <td>
-                                @if($isCompleted)
+                                @if($isCancelled)
+                                    <span class="badge-status-danger" style="background: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.25); padding: 0.25rem 0.65rem; border-radius: 20px; font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.3rem;">
+                                        ✕ Dibatalkan
+                                    </span>
+                                @elseif($isCompleted)
                                     <span class="badge-status-completed">
                                         ✓ Selesai Discontinue
                                     </span>

@@ -294,6 +294,49 @@
 
 </div>
 
+{{-- ===== MODAL: BATALKAN FORMULIR ===== --}}
+<div id="modalCancelForm" style="display: none; position: fixed; inset: 0; z-index: 1050; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+    <div style="background: #ffffff; border-radius: 18px; width: 95%; max-width: 480px; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35); overflow: hidden; padding: 1.5rem 1.75rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.85rem; margin-bottom: 1rem; border-bottom: 1.5px solid #fee2e2;">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+                <div style="width: 38px; height: 38px; border-radius: 10px; background: #ffe4e6; color: #e11d48; display: flex; align-items: center; justify-content: center;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                </div>
+                <div>
+                    <h3 style="font-family: inherit; font-size: 1.15rem; font-weight: 800; color: #9f1239; margin: 0;">Batalkan Formulir</h3>
+                    <p style="font-size: 0.78rem; color: #be123c; margin: 0.15rem 0 0 0; font-weight: 600;">No Form: <span id="cancelModalFormNoDisplay">-</span></p>
+                </div>
+            </div>
+            <button type="button" onclick="closeCancelModal()" style="background: transparent; border: none; font-size: 1.35rem; line-height: 1; color: #94a3b8; cursor: pointer;">&times;</button>
+        </div>
+
+        <div>
+            <p style="font-size: 0.85rem; color: #475569; margin-top: 0; margin-bottom: 0.85rem; line-height: 1.45;">
+                Apakah Anda yakin ingin menolak / membatalkan formulir ini? Status formulir akan berubah menjadi <strong style="color: #e11d48;">Dibatalkan</strong> dan dikeluarkan dari antrean approval.
+            </p>
+            <div style="margin-bottom: 0.85rem;">
+                <label for="cancelModalReasonInput" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.35rem;">
+                    Alasan Pembatalan / Penolakan <span style="color: #e11d48;">*</span>
+                </label>
+                <textarea id="cancelModalReasonInput" rows="3" class="form-control" placeholder="Contoh: Spesifikasi barang tidak sesuai kebutuhan, revisi anggaran, atau salah input..." style="width: 100%; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 0.65rem 0.85rem; font-size: 0.85rem; resize: vertical; box-sizing: border-box;"></textarea>
+                <div id="cancelModalError" style="display: none; color: #e11d48; font-size: 0.75rem; font-weight: 600; margin-top: 0.35rem;">
+                    Alasan pembatalan wajib diisi minimal 3 karakter.
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.65rem; justify-content: flex-end; margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid #f1f5f9;">
+            <button type="button" class="btn btn-secondary" onclick="closeCancelModal()" style="padding: 0.5rem 1.15rem; font-weight: 700; border-radius: 8px; background: #ffffff; border: 1.5px solid #cbd5e1; color: #1e293b; cursor: pointer; font-size: 0.82rem;">
+                Tutup
+            </button>
+            <button type="button" id="btnConfirmCancelModal" onclick="submitCancelModal()" style="padding: 0.5rem 1.25rem; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); border: none; color: #ffffff; cursor: pointer; box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35); font-size: 0.82rem;">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <span>Ya, Batalkan Form</span>
+            </button>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @section('scripts')
@@ -428,7 +471,7 @@
         const fNo = cs.formNo;
         const dbAppr = serverFormApprovals.find(a => a.form_number === fNo);
         const status = dbAppr?.status || '';
-        return Boolean(dbAppr?.warehouse_signed_at || status === 'Item Telah didaftarkan' || status === 'SELESAI');
+        return Boolean(dbAppr?.warehouse_signed_at || status === 'Item Telah didaftarkan' || status === 'SELESAI' || status === 'Dibatalkan');
     }
 
     function renderApprovalMonitoringTable() {
@@ -632,6 +675,9 @@
                         <button class="btn btn-sm btn-primary" onclick="directApproveForm('${escapeHtml(fNo)}', '${targetRole}', this)" style="font-size: 0.75rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 8px; background: linear-gradient(135deg, #1a3fa8 0%, #00adef 100%); border: none; cursor: pointer;">
                             ${roleLabel}
                         </button>
+                        <button class="btn btn-sm btn-danger" onclick="openCancelModal('${escapeHtml(fNo)}')" style="font-size: 0.75rem; font-weight: 700; padding: 0.35rem 0.65rem; border-radius: 8px; background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); border: none; cursor: pointer; color: white;" title="Tolak / Batalkan Form">
+                            Batal
+                        </button>
                     ` : `
                         <button class="btn btn-sm btn-secondary" disabled style="font-size: 0.75rem; font-weight: 600; padding: 0.35rem 0.65rem; border-radius: 8px; opacity: 0.6;" title="Menunggu wewenang role terkait">
                             ${roleLabel || 'Proses'}
@@ -719,6 +765,100 @@
                 btnEl.disabled = false;
                 btnEl.style.opacity = '1';
                 btnEl.innerHTML = originalContent;
+            }
+        }
+    }
+
+    let targetCancelFormNo = '';
+    function openCancelModal(formNo) {
+        targetCancelFormNo = formNo;
+        const displayEl = document.getElementById('cancelModalFormNoDisplay');
+        if (displayEl) displayEl.innerText = targetCancelFormNo;
+        const reasonInput = document.getElementById('cancelModalReasonInput');
+        if (reasonInput) reasonInput.value = '';
+        const errEl = document.getElementById('cancelModalError');
+        if (errEl) errEl.style.display = 'none';
+
+        const modalEl = document.getElementById('modalCancelForm');
+        if (modalEl) modalEl.style.display = 'flex';
+        setTimeout(() => {
+            if (reasonInput) reasonInput.focus();
+        }, 150);
+    }
+
+    function closeCancelModal() {
+        const modalEl = document.getElementById('modalCancelForm');
+        if (modalEl) modalEl.style.display = 'none';
+    }
+
+    async function submitCancelModal() {
+        const reasonInput = document.getElementById('cancelModalReasonInput');
+        const reason = reasonInput ? reasonInput.value.trim() : '';
+        const errEl = document.getElementById('cancelModalError');
+        if (!reason || reason.length < 3) {
+            if (errEl) {
+                errEl.innerText = 'Alasan pembatalan wajib diisi minimal 3 karakter.';
+                errEl.style.display = 'block';
+            }
+            if (reasonInput) reasonInput.focus();
+            return;
+        }
+        if (errEl) errEl.style.display = 'none';
+
+        const btnConfirm = document.getElementById('btnConfirmCancelModal');
+        let origContent = '';
+        if (btnConfirm) {
+            origContent = btnConfirm.innerHTML;
+            btnConfirm.disabled = true;
+            btnConfirm.style.opacity = '0.75';
+            btnConfirm.innerHTML = `
+                <svg style="animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 4px;" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path></svg>
+                <span>Membatalkan...</span>
+            `;
+        }
+
+        try {
+            const response = await fetch('{{ route("saturnus.form_registrasi.cancel") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    form_number: targetCancelFormNo,
+                    reason: reason
+                })
+            });
+
+            const res = await response.json();
+            if (response.ok && res.success) {
+                closeCancelModal();
+                showToast(`Formulir ${targetCancelFormNo} berhasil dibatalkan.`, 'success');
+
+                // Update local model
+                const exist = serverFormApprovals.find(a => a.form_number === targetCancelFormNo);
+                if (exist && res.approval) {
+                    Object.assign(exist, res.approval);
+                } else if (res.approval) {
+                    serverFormApprovals.push(res.approval);
+                }
+                renderApprovalMonitoringTable();
+            } else {
+                alert(res.message || 'Gagal membatalkan formulir.');
+                if (btnConfirm) {
+                    btnConfirm.disabled = false;
+                    btnConfirm.style.opacity = '1';
+                    btnConfirm.innerHTML = origContent;
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Terjadi kesalahan jaringan saat membatalkan formulir.');
+            if (btnConfirm) {
+                btnConfirm.disabled = false;
+                btnConfirm.style.opacity = '1';
+                btnConfirm.innerHTML = origContent;
             }
         }
     }

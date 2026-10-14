@@ -50,8 +50,8 @@
         $isStaffApproved = (bool)($approval && ($approval->staff_signed_at || $approval->staff_signer_name));
         $isWhApproved = (bool)($approval && ($approval->warehouse_signed_at || $approval->warehouse_signer_name));
 
-        // Form yang telah di-discontinue oleh Warehouse Consumable berpindah ke History Discontinue
-        if ($isWhApproved) {
+        // Form yang telah di-discontinue oleh Warehouse Consumable atau Dibatalkan tidak muncul di antrean approval
+        if ($isWhApproved || $status === 'Dibatalkan') {
             continue;
         }
 
@@ -422,6 +422,16 @@
         color: #0f172a;
     }
 
+    .btn-appr-danger {
+        background: #e11d48;
+        color: #ffffff;
+    }
+    .btn-appr-danger:hover {
+        background: #be123c;
+        color: #ffffff;
+        box-shadow: 0 4px 10px rgba(225, 29, 72, 0.3);
+    }
+
     /* Modal Standard */
     .modal {
         position: fixed;
@@ -687,6 +697,14 @@
                                             </svg>
                                             <span>Approve</span>
                                         </button>
+                                        <button type="button" class="btn-appr-action btn-appr-danger" 
+                                                onclick="openCancelModal('{{ $form['form_number'] }}')" title="Tolak / Batalkan Formulir">
+                                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                            <span>Batal</span>
+                                        </button>
                                     @endif
 
                                     {{-- Detail Modal Button --}}
@@ -811,6 +829,49 @@
                 </svg>
                 <span>Cetak Lembar Unregistrasi</span>
             </a>
+        </div>
+    </div>
+</div>
+
+{{-- MODAL: BATALKAN FORMULIR UNREGISTRASI --}}
+<div class="modal" id="modalCancelUnregApproval">
+    <div class="modal-content-custom" style="max-width: 480px; padding: 1.5rem 1.75rem; border-radius: 18px; border: none; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35); background: #ffffff;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.85rem; margin-bottom: 1rem; border-bottom: 1.5px solid #fee2e2;">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+                <div style="width: 38px; height: 38px; border-radius: 10px; background: #ffe4e6; color: #e11d48; display: flex; align-items: center; justify-content: center;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                </div>
+                <div>
+                    <h5 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #9f1239;">Batalkan Formulir Unregistrasi</h5>
+                    <p style="font-size: 0.78rem; color: #be123c; margin: 0.15rem 0 0 0; font-weight: 600;">No Form: <span id="cancelModalFormNoDisplay">-</span></p>
+                </div>
+            </div>
+            <button type="button" class="btn-close" onclick="closeCancelModal()" style="background: transparent; border: none; font-size: 1.35rem; line-height: 1; color: #94a3b8; cursor: pointer;">&times;</button>
+        </div>
+
+        <div>
+            <p style="font-size: 0.85rem; color: #475569; margin-top: 0; margin-bottom: 0.85rem; line-height: 1.45;">
+                Apakah Anda yakin ingin menolak / membatalkan formulir unregistrasi ini? Status formulir akan berubah menjadi <strong style="color: #e11d48;">Dibatalkan</strong> dan dikeluarkan dari antrean approval.
+            </p>
+            <div style="margin-bottom: 0.85rem;">
+                <label for="cancelModalReasonInput" style="display: block; font-size: 0.78rem; font-weight: 800; color: #1e293b; margin-bottom: 0.35rem;">
+                    Alasan Pembatalan / Penolakan <span style="color: #e11d48;">*</span>
+                </label>
+                <textarea id="cancelModalReasonInput" rows="3" class="form-control" placeholder="Contoh: Barang masih aktif digunakan, alasan unregistrasi tidak memenuhi kriteria, dsb..." style="width: 100%; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 0.65rem 0.85rem; font-size: 0.85rem; resize: vertical; box-sizing: border-box;"></textarea>
+                <div id="cancelModalError" style="display: none; color: #e11d48; font-size: 0.75rem; font-weight: 600; margin-top: 0.35rem;">
+                    Alasan pembatalan wajib diisi minimal 3 karakter.
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.65rem; justify-content: flex-end; margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid #f1f5f9;">
+            <button type="button" class="btn-appr-action btn-appr-outline" onclick="closeCancelModal()">
+                Tutup
+            </button>
+            <button type="button" id="btnConfirmCancelModal" onclick="submitCancelModal()" class="btn-appr-action btn-appr-danger" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.25rem;">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <span>Ya, Batalkan Form</span>
+            </button>
         </div>
     </div>
 </div>
@@ -981,10 +1042,101 @@
         document.getElementById('modalDetailUnreg').classList.remove('show');
     }
 
+    // Cancel Modal Helpers
+    let targetCancelFormNo = '';
+    function openCancelModal(formNo) {
+        targetCancelFormNo = formNo;
+        const displayEl = document.getElementById('cancelModalFormNoDisplay');
+        if (displayEl) displayEl.innerText = targetCancelFormNo;
+        const reasonInput = document.getElementById('cancelModalReasonInput');
+        if (reasonInput) reasonInput.value = '';
+        const errEl = document.getElementById('cancelModalError');
+        if (errEl) errEl.style.display = 'none';
+
+        const modalEl = document.getElementById('modalCancelUnregApproval');
+        if (modalEl) modalEl.classList.add('show');
+        setTimeout(() => {
+            if (reasonInput) reasonInput.focus();
+        }, 150);
+    }
+
+    function closeCancelModal() {
+        const modalEl = document.getElementById('modalCancelUnregApproval');
+        if (modalEl) modalEl.classList.remove('show');
+    }
+
+    async function submitCancelModal() {
+        const reasonInput = document.getElementById('cancelModalReasonInput');
+        const reason = reasonInput ? reasonInput.value.trim() : '';
+        const errEl = document.getElementById('cancelModalError');
+        if (!reason || reason.length < 3) {
+            if (errEl) {
+                errEl.innerText = 'Alasan pembatalan wajib diisi minimal 3 karakter.';
+                errEl.style.display = 'block';
+            }
+            if (reasonInput) reasonInput.focus();
+            return;
+        }
+        if (errEl) errEl.style.display = 'none';
+
+        const btnConfirm = document.getElementById('btnConfirmCancelModal');
+        let origContent = '';
+        if (btnConfirm) {
+            origContent = btnConfirm.innerHTML;
+            btnConfirm.disabled = true;
+            btnConfirm.style.opacity = '0.75';
+            btnConfirm.innerHTML = `
+                <svg style="animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 4px;" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path></svg>
+                <span>Membatalkan...</span>
+            `;
+        }
+
+        try {
+            const response = await fetch('{{ route("saturnus.form_unregistrasi.cancel") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    form_number: targetCancelFormNo,
+                    reason: reason
+                })
+            });
+
+            const res = await response.json();
+            if (response.ok && res.success) {
+                closeCancelModal();
+                showToast(res.message || `Formulir ${targetCancelFormNo} berhasil dibatalkan.`, 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 600);
+            } else {
+                alert(res.message || 'Gagal membatalkan formulir.');
+                if (btnConfirm) {
+                    btnConfirm.disabled = false;
+                    btnConfirm.style.opacity = '1';
+                    btnConfirm.innerHTML = origContent;
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Terjadi kesalahan jaringan saat membatalkan formulir.');
+            if (btnConfirm) {
+                btnConfirm.disabled = false;
+                btnConfirm.style.opacity = '1';
+                btnConfirm.innerHTML = origContent;
+            }
+        }
+    }
+
     // Close on outside click
     window.addEventListener('click', function(e) {
         const dtModal = document.getElementById('modalDetailUnreg');
         if (e.target === dtModal) closeDetailModal();
+        const cancelModal = document.getElementById('modalCancelUnregApproval');
+        if (e.target === cancelModal) closeCancelModal();
     });
 </script>
 @endsection
