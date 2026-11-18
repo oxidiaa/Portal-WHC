@@ -569,17 +569,23 @@
             width: 100% !important;
             min-width: 100% !important;
             max-width: 100% !important;
+            height: auto !important;
+            min-height: auto !important;
             left: 0 !important;
             top: 0 !important;
             background: #ffffff !important;
             display: block !important;
             box-sizing: border-box !important;
+            overflow: visible !important;
         }
         #print-preview-pane {
             display: block !important;
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
+            height: auto !important;
+            min-height: auto !important;
+            overflow: visible !important;
         }
         .form-reg-card {
             border: 1.5px solid #000000 !important;
@@ -591,6 +597,7 @@
             width: 100% !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
+            overflow: visible !important;
         }
         .form-reg-header {
             padding: 4px 10px !important;
@@ -2017,13 +2024,29 @@
 
     function printCurrentSheet() {
         switchSheet('print-preview');
-        setTimeout(function() { window.print(); }, 150);
+        const targetForm = selectedChecksheetId || '{{ $currentFormNo }}';
+        if (targetForm && typeof viewChecksheet === 'function') {
+            viewChecksheet(targetForm, true);
+        }
+        initAllSignaturesQRCodes();
+        setTimeout(function() { window.print(); }, 250);
     }
 
     function printChecksheet(csId) {
-        viewChecksheet(csId);
-        setTimeout(function() { window.print(); }, 150);
+        selectedChecksheetId = csId;
+        viewChecksheet(csId, true);
+        initAllSignaturesQRCodes();
+        setTimeout(function() { window.print(); }, 250);
     }
+
+    window.addEventListener('beforeprint', function() {
+        switchSheet('print-preview');
+        const targetForm = selectedChecksheetId || '{{ $currentFormNo }}';
+        if (targetForm && typeof viewChecksheet === 'function') {
+            viewChecksheet(targetForm, true);
+        }
+        initAllSignaturesQRCodes();
+    });
 
     function renderSignatureSlot(containerEl, statusText, val, qrcodeId) {
         if (!containerEl) return;
@@ -3080,6 +3103,12 @@
             switchSheet('proses-approval');
         } else if (activeTabParam === 'data-view' || window.location.hash === '#data-view') {
             switchSheet('data-view');
+        }
+
+        if (urlParams.get('print') === '1' || urlParams.get('auto_print') === '1') {
+            setTimeout(function() {
+                printCurrentSheet();
+            }, 600);
         }
     });
 </script>

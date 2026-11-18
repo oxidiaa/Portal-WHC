@@ -392,10 +392,17 @@
             margin: 0 !important;
             padding: 0 !important;
         }
-        .main-wrapper, .page-wrapper, .page-content, .workspace-light-theme {
+        .main-wrapper,
+        .main-wrapper .page-wrapper,
+        .main-wrapper .page-wrapper .page-content,
+        .page-wrapper,
+        .page-content,
+        .workspace-light-theme,
+        #print-preview-pane {
             padding: 0 !important;
             margin: 0 !important;
             margin-left: 0 !important;
+            margin-top: 0 !important;
             width: 100% !important;
             min-width: 100% !important;
             max-width: 100% !important;
@@ -404,19 +411,23 @@
             background: #ffffff !important;
             display: block !important;
             box-sizing: border-box !important;
+            height: auto !important;
+            min-height: auto !important;
+            overflow: visible !important;
         }
         .form-reg-card {
             border: 1.5px solid #000000 !important;
             box-shadow: none !important;
             border-radius: 0 !important;
             padding: 2mm 3mm !important;
-            margin: 0 !important;
+            margin: 0 auto !important;
             width: 100% !important;
             max-width: 100% !important;
             background: #ffffff !important;
             box-sizing: border-box !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
+            overflow: visible !important;
         }
         .form-reg-header {
             display: flex !important;
@@ -572,7 +583,6 @@
     <!-- Quick Document Status Bar (No Print) -->
     <div class="sheet-doc-toolbar no-print">
         <div class="doc-toolbar-left" style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-            <div class="doc-badge-pill">
             @if($isCancelled)
             <div class="doc-badge-pill" style="background: rgba(239, 68, 68, 0.12); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3);">
                 <span class="pulse-beacon-inline" style="background: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);"></span>
@@ -618,7 +628,7 @@
         </div>
     </div>
 
-    <div class="glass-card form-reg-card">
+    <div class="glass-card form-reg-card" id="print-preview-pane">
 
         {{-- ===== FORM HEADER ===== --}}
         <div class="form-reg-header">
@@ -1489,8 +1499,15 @@
     }
 
     function printCurrentSheet() {
-        window.print();
+        initAllSignaturesQRCodes();
+        setTimeout(function() {
+            window.print();
+        }, 200);
     }
+
+    window.addEventListener('beforeprint', function() {
+        initAllSignaturesQRCodes();
+    });
 
     function createNewForm() {
         if (!{{ $canCreateForm ? 'true' : 'false' }}) {
@@ -1835,6 +1852,14 @@
                     }
                 });
             });
+        }
+
+        // Auto-print if requested via URL (?print=1 or ?auto_print=1)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('print') === '1' || urlParams.get('auto_print') === '1') {
+            setTimeout(function() {
+                printCurrentSheet();
+            }, 500);
         }
     });
 </script>

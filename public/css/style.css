@@ -3124,6 +3124,9 @@ textarea.form-control {
     .workspace-light-theme {
         padding: 0 !important;
         margin: 0 !important;
+        height: auto !important;
+        min-height: auto !important;
+        overflow: visible !important;
     }
 
     #print-preview-pane {
@@ -3145,7 +3148,7 @@ textarea.form-control {
         max-width: 100% !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
-        overflow: hidden !important;
+        overflow: visible !important;
     }
 
     /* Header */

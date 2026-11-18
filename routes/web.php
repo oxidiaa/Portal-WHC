@@ -138,6 +138,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/form-unregistrasi/comment', [Saturnus\FormUnregistrasiController::class, 'storeComment'])->name('form_unregistrasi.comment.store')->middleware('permission:saturnus.unregistrasi.view');
         Route::delete('/form-unregistrasi/comment/{id}', [Saturnus\FormUnregistrasiController::class, 'deleteComment'])->name('form_unregistrasi.comment.delete')->middleware('permission:saturnus.unregistrasi.view');
 
+        // Monthly Asset Recap
+        Route::get('/monthly-recap', [Saturnus\MonthlyRecapController::class, 'index'])->name('monthly_recap')->middleware('permission:saturnus.directory.view,saturnus.registrasi.view,saturnus.unregistrasi.view');
+        Route::get('/monthly-recap/export-excel', [Saturnus\MonthlyRecapController::class, 'exportExcel'])->name('monthly_recap.export_excel')->middleware('permission:saturnus.directory.view,saturnus.registrasi.view,saturnus.unregistrasi.view');
+        Route::get('/monthly-recap/export-pdf', [Saturnus\MonthlyRecapController::class, 'exportPdf'])->name('monthly_recap.export_pdf')->middleware('permission:saturnus.directory.view,saturnus.registrasi.view,saturnus.unregistrasi.view');
+
         // Email Reminder & Notification Routes (Hanya Role Admin / Master)
         Route::middleware(['role:admin,master'])->group(function () {
             Route::get('/email-reminder', [\App\Http\Controllers\EmailReminderController::class, 'index'])->name('email_reminder');

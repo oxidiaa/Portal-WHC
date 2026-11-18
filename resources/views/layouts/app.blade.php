@@ -691,16 +691,27 @@
 
         /* Global Print Reset: Completely hide web chrome/UI and expand printable content */
         @media print {
-            .sidebar, .navbar, nav, .footer, footer, .theme-customizer-trigger, .theme-customizer-drawer, .mai-toast-container, .toast-container, .no-print, .btn, button, .modal, .modal-backdrop {
+            @page {
+                size: A4 landscape;
+                margin: 5mm 5mm 5mm 5mm;
+            }
+            .sidebar, .navbar, nav, .footer, footer, .theme-customizer-trigger, .theme-customizer-drawer, .mai-toast-container, .toast-container, .no-print, .btn, button, .modal, .modal-backdrop, .saturn-floating-dock {
                 display: none !important;
                 visibility: hidden !important;
                 height: 0 !important;
                 margin: 0 !important;
                 padding: 0 !important;
             }
-            .main-wrapper, .page-wrapper, .page-content {
+            .main-wrapper,
+            .main-wrapper .page-wrapper,
+            .main-wrapper .page-wrapper .page-content,
+            .page-wrapper,
+            .page-content,
+            .workspace-light-theme,
+            #print-preview-pane {
                 margin: 0 !important;
                 margin-left: 0 !important;
+                margin-top: 0 !important;
                 padding: 0 !important;
                 width: 100% !important;
                 min-width: 100% !important;
@@ -710,6 +721,9 @@
                 background: #ffffff !important;
                 display: block !important;
                 box-sizing: border-box !important;
+                height: auto !important;
+                min-height: auto !important;
+                overflow: visible !important;
             }
             html, body {
                 margin: 0 !important;
