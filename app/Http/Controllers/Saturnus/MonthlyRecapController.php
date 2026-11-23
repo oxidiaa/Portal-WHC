@@ -155,7 +155,8 @@ class MonthlyRecapController extends Controller
         ];
 
         foreach ($rows as $item) {
-            $sheet->setCellValue('A' . $rowNum, $item['no_form']);
+            $txLabel = $item['transaction_label'] ?? ($item['transaction_type'] === 'unregistration' ? 'Unregistrasi' : 'Registrasi');
+            $sheet->setCellValue('A' . $rowNum, $item['no_form'] . "\n(" . $txLabel . ')');
             $sheet->setCellValue('B' . $rowNum, $item['date_formatted']);
             $sheet->setCellValue('C' . $rowNum, $item['kode_barang']);
             $sheet->setCellValue('D' . $rowNum, $item['nama_barang']);
@@ -166,10 +167,11 @@ class MonthlyRecapController extends Controller
             $sheet->setCellValue('I' . $rowNum, ''); // Qty Saat Ini MUST remain blank
 
             $sheet->getStyle("A{$rowNum}:I{$rowNum}")->applyFromArray($cellBorder);
+            $sheet->getStyle("A{$rowNum}")->getAlignment()->setWrapText(true);
             $sheet->getStyle("B{$rowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle("E{$rowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             $sheet->getStyle("F{$rowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getRowDimension($rowNum)->setRowHeight(22);
+            $sheet->getRowDimension($rowNum)->setRowHeight(28);
 
             $rowNum++;
         }
@@ -297,6 +299,7 @@ class MonthlyRecapController extends Controller
                 $regRows->push([
                     'id'                  => 'reg_' . $item->id,
                     'transaction_type'    => 'registration',
+                    'transaction_label'   => 'Registrasi',
                     'no_form'             => trim((string) ($item->form_number ?? '')) ?: '-',
                     'date_obj'            => $txDate,
                     'date_formatted'      => $txDate->format('d/m/Y'),
@@ -380,6 +383,7 @@ class MonthlyRecapController extends Controller
                 $unregRows->push([
                     'id'                  => 'unreg_' . $item->id,
                     'transaction_type'    => 'unregistration',
+                    'transaction_label'   => 'Unregistrasi',
                     'no_form'             => trim((string) ($item->form_number ?? '')) ?: '-',
                     'date_obj'            => $txDate,
                     'date_formatted'      => $txDate->format('d/m/Y'),

@@ -40,7 +40,7 @@ class MonthlyRecapPdfGenerator
         $headerBlockHeight = 86.0;
         $continuationHeaderHeight = 38.0;
         $tableHeaderHeight = 24.0;
-        $rowHeight = 24.0; // Generous row height for handwriting
+        $rowHeight = 26.0; // Generous row height for 2-line No Form + handwriting
 
         // Paginate rows
         $pages = [];
@@ -119,8 +119,13 @@ class MonthlyRecapPdfGenerator
                 $stream .= $this->pdfText($tx, $y - 15, $emptyMsg, 8.5, false);
             } else {
                 foreach ($pageRows as $row) {
+                    $txLabel = $row['transaction_label']
+                        ?? (($row['transaction_type'] ?? '') === 'unregistration' ? 'Unregistrasi' : 'Registrasi');
                     $values = [
-                        $this->cleanText($row['no_form'] ?? '-'),
+                        [
+                            'line1' => $this->cleanText($row['no_form'] ?? '-'),
+                            'line2' => $this->cleanText('(' . $txLabel . ')'),
+                        ],
                         $this->cleanText($row['date_formatted'] ?? '-'),
                         $this->cleanText($row['kode_barang'] ?? '-'),
                         $this->cleanText($row['nama_barang'] ?? '-'),
@@ -182,7 +187,17 @@ class MonthlyRecapPdfGenerator
             $out .= sprintf("0.5 w 0 0 0 RG %.2f %.2f %.2f %.2f re S\n", $x, $bottomY, $col['width'], $height);
 
             $val = $values[$i] ?? '';
-            if ($val !== '') {
+            if (is_array($val)) {
+                $line1 = $this->fitText($val['line1'] ?? '-', $col['width'] - 8, $fontSize);
+                $line2 = $this->fitText($val['line2'] ?? '', $col['width'] - 8, 6.5);
+                $tx = $x + 4.0;
+                $ty1 = $bottomY + $height - 11.0;
+                $ty2 = $bottomY + 5.0;
+                $out .= $this->pdfText($tx, $ty1, $line1, $fontSize, false);
+                if ($line2 !== '') {
+                    $out .= $this->pdfText($tx, $ty2, $line2, 6.5, true);
+                }
+            } elseif ($val !== '') {
                 $fitted = $this->fitText($val, $col['width'] - 6, $fontSize);
                 $textWidth = $this->estimateTextWidth($fitted, $fontSize);
 

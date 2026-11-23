@@ -121,12 +121,14 @@ class MonthlyAssetRecapTest extends TestCase
         $response->assertSee('MONTHLY ASSET RECAP');
         $response->assertSee('November 2026');
         $response->assertSee('01/PRODUCTION/11-2026');
+        $response->assertSee('Registrasi');
         $response->assertSee('BRG-001');
         $response->assertSee('BRG-002');
         $response->assertSee('Rp 1.500.000');
         $response->assertSee('24 Bulan');
         $response->assertSee('5 Tahun');
         $response->assertSee('01/MAINTENANCE/11-2026');
+        $response->assertSee('Unregistrasi');
         $response->assertDontSee('BRG-PENDING');
         $response->assertDontSee('BRG-CANCEL');
     }
@@ -209,5 +211,6 @@ class MonthlyAssetRecapTest extends TestCase
         $this->assertSame('application/pdf', $pdfResp->headers->get('Content-Type'));
         $this->assertStringStartsWith('%PDF-1.4', $pdfResp->getContent());
         $this->assertStringContainsString('MONTHLY ASSET RECAP', $pdfResp->getContent());
+        $this->assertStringContainsString('\(Registrasi\)', $pdfResp->getContent());
     }
 }

@@ -580,7 +580,10 @@
                     @forelse($items as $row)
                         <tr>
                             <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 600;">
-                                {{ $row['no_form'] }}
+                                <div>{{ $row['no_form'] }}</div>
+                                <span style="display: inline-block; margin-top: 3px; padding: 1px 8px; border-radius: 999px; font-family: 'Outfit', sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.03em; {{ $row['transaction_type'] === 'registration' ? 'background: #dcfce7; color: #166534; border: 1px solid #bbf7d0;' : 'background: #fef3c7; color: #92400e; border: 1px solid #fde68a;' }}">
+                                    {{ $row['transaction_label'] ?? ($row['transaction_type'] === 'unregistration' ? 'Unregistrasi' : 'Registrasi') }}
+                                </span>
                             </td>
                             <td style="text-align: center; white-space: nowrap;">
                                 {{ $row['date_formatted'] }}
@@ -669,7 +672,10 @@
         <tbody>
             @forelse($printRows as $row)
                 <tr>
-                    <td>{{ $row['no_form'] }}</td>
+                    <td>
+                        <div>{{ $row['no_form'] }}</div>
+                        <div style="font-size: 6.8pt; font-weight: 700; margin-top: 2px;">({{ $row['transaction_label'] ?? ($row['transaction_type'] === 'unregistration' ? 'Unregistrasi' : 'Registrasi') }})</div>
+                    </td>
                     <td style="text-align: center;">{{ $row['date_formatted'] }}</td>
                     <td>{{ $row['kode_barang'] }}</td>
                     <td>{{ $row['nama_barang'] }}</td>
