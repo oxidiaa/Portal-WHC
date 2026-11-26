@@ -10,6 +10,7 @@ use App\Models\UnregistrasiComment;
 use App\Models\FormItem;
 use App\Models\User;
 use App\Services\ApprovalEmailNotificationService;
+use App\Services\SaturnusCommentNotificationService;
 use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -738,11 +739,20 @@ class FormUnregistrasiController extends Controller
         $comment->comment     = $commentText;
         $comment->save();
 
+        $notifStats = app(SaturnusCommentNotificationService::class)->notifyOnNewComment(
+            module: 'unregistrasi',
+            formNumber: $formNo,
+            commenter: $currentUser,
+            commentText: $commentText,
+            commentId: $comment->id
+        );
+
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
-                'success' => true,
-                'message' => 'Catatan berhasil ditambahkan.',
-                'comment' => [
+                'success'        => true,
+                'message'        => 'Catatan berhasil ditambahkan.',
+                'notified_count' => $notifStats['notified_users'],
+                'comment'        => [
                     'id'         => $comment->id,
                     'user_name'  => $comment->user_name,
                     'user_dept'  => $comment->user_dept,

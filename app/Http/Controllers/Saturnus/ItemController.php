@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\FormApproval;
 use App\Models\FormComment;
 use App\Services\ApprovalEmailNotificationService;
+use App\Services\SaturnusCommentNotificationService;
 use Illuminate\Support\Facades\DB;
 
 class ItemController extends Controller
@@ -1004,11 +1005,20 @@ class ItemController extends Controller
             'comment'     => $commentText,
         ]);
 
+        $notifStats = app(SaturnusCommentNotificationService::class)->notifyOnNewComment(
+            module: 'registrasi',
+            formNumber: $formNo,
+            commenter: $currentUser,
+            commentText: $commentText,
+            commentId: $comment->id
+        );
+
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
-                'success' => true,
-                'message' => 'Komentar berhasil ditambahkan.',
-                'comment' => [
+                'success'        => true,
+                'message'        => 'Komentar berhasil ditambahkan.',
+                'notified_count' => $notifStats['notified_users'],
+                'comment'        => [
                     'id'             => $comment->id,
                     'form_number'    => $comment->form_number,
                     'user_id'        => $comment->user_id,
